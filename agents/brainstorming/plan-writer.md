@@ -15,6 +15,9 @@ permission:
     "git log*": "allow"
     "git status*": "allow"
     "tree*": "allow"
+    "cat*": "allow"
+    "sed*": "allow"
+    "wc*": "allow"
   task:
     "*": "deny"
   skill:

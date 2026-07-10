@@ -22,6 +22,7 @@ permission:
     "rm*": "ask"
     "sed*": "ask"
     "cp*": "ask"
+    "wc*": "allow"
     "find*": "allow"
   task:
     "*": "deny"

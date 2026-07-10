@@ -25,6 +25,7 @@ permission:
     "tree*": allow
     "echo*": allow
     "cat*": allow
+    "wc*": allow
     "mkdir*": allow
     "mv*": ask
     "rm*": ask
