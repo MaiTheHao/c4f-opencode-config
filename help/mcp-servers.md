@@ -1,5 +1,7 @@
 # MCP Servers
 
+> **Source:** [OpenCode MCP Servers Documentation](https://opencode.ai/docs/mcp-servers/)
+
 Add local and remote MCP tools to OpenCode.
 
 You can extend OpenCode with external tools using the **Model Context Protocol (MCP)**. Both local and remote servers are supported. Once added, MCP tools are automatically available to the LLM alongside built-in tools.

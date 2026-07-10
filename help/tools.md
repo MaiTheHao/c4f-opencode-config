@@ -1,5 +1,7 @@
 # Tools
 
+> **Source:** [OpenCode Tools Documentation](https://opencode.ai/docs/tools/)
+
 Manage the tools an LLM can use.
 
 Tools allow the LLM to perform actions in your codebase. OpenCode comes with a set of built-in tools, but you can extend it with custom tools or MCP servers.

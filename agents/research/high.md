@@ -166,7 +166,7 @@ Run only if the user explicitly requests saving output. Otherwise, skip.
 
 1. Determine save path:
    - If user specified a path, use that.
-   - Otherwise, let `general` generate: `research-outputs/{YYYYMMDD-HHMMSS}-{topic-slug}.md`
+   - Otherwise, let `general` generate: `agents/research/research-normal/{YYYYMMDD-HHMMSS}-{topic-slug}.md`
 2. Take the full response text from Stage 8 (Synthesis). Launch `general` with: "Replace {timestamp} with current date/time, replace {topic-slug} with a short slug from the topic. Prepend a header '# Research Output\n\nDate: {timestamp}\n\n' to this content. Create research-outputs/ if not exists. Save to the resulting path:\n\n[full response text]"
 3. Report to user: "Output saved to {path}"
 

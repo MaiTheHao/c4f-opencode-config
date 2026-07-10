@@ -1,5 +1,7 @@
 # Rules
 
+> **Source:** [OpenCode Rules Documentation](https://opencode.ai/docs/rules/)
+
 Set custom instructions for OpenCode to tailor the LLM's behavior to your specific project.
 
 Create an `AGENTS.md` file in your project root — similar to Cursor's rules — with instructions that will be injected into every agent session's context.

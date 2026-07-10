@@ -1,5 +1,7 @@
 # Permissions
 
+> **Source:** [OpenCode Permissions Documentation](https://opencode.ai/docs/permissions/)
+
 Control which actions require approval to run.
 
 OpenCode uses the `permission` config to decide whether a given action should run automatically, prompt you, or be blocked.

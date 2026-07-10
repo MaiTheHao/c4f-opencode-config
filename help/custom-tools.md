@@ -1,5 +1,7 @@
 # Custom Tools
 
+> **Source:** [OpenCode Custom Tools Documentation](https://opencode.ai/docs/custom-tools/)
+
 Create tools the LLM can call in opencode.
 
 Custom tools are functions you create that the LLM can call during conversations. They work alongside opencode's built-in tools like `read`, `write`, and `bash`.

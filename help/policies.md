@@ -1,5 +1,7 @@
 # Policies
 
+> **Source:** [OpenCode Policies Documentation](https://opencode.ai/docs/policies/)
+
 Control which configured resources OpenCode may use.
 
 Policies control whether OpenCode may perform an action on a named resource. This feature is experimental and is configured with the `experimental.policies` array in `opencode.json`.

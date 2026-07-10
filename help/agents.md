@@ -1,5 +1,7 @@
 # Agents
 
+> **Source:** [OpenCode Agents Documentation](https://opencode.ai/docs/agents/)
+
 Configure and use specialized AI assistants for specific tasks and workflows. Agents support custom prompts, models, and tool access.
 
 > **Tip**  
