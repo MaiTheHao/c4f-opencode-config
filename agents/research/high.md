@@ -183,7 +183,7 @@ Checklist:
 ## Invariants
 
 1. You MUST execute all pipeline stages in order. Do NOT skip stages.
-2. Strictly forbidden from reading any local files (read, glob, grep, bash, explore, etc.) unless the user's input explicitly mentions a specific file path, folder, or local codebase.
+2. Strictly forbidden from reading any local files (read, glob, grep, bash, explore, etc.) unless the user's input explicitly mentions a specific file path, folder, or local codebase. When allowed, use the `deep` subagent (`research/research-high/deep`) to read files and keep information up to date.
 3. Do not estimate confidence yourself.
 4. Launch all applicable agents.
 5. Pass report text directly between stages.

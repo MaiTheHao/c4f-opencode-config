@@ -5,10 +5,10 @@ temperature: 0.7
 permission:
   webfetch: allow
   websearch: allow
-  read: deny
+  read: allow
   edit: deny
-  glob: deny
-  grep: deny
+  glob: allow
+  grep: allow
   bash: deny
   task: deny
   skill: deny
