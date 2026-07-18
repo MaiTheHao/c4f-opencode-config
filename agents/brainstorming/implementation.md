@@ -17,6 +17,7 @@ permission:
     "tree*": "allow"
     "echo*": "allow"
     "cat*": "allow"
+    "tail*": "allow"
     "mkdir*": "allow"
     "mv*": "ask"
     "rm*": "ask"

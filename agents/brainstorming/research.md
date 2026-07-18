@@ -16,6 +16,7 @@ permission:
     "git log*": "allow"
     "git status*": "allow"
     "tree*": "allow"
+    "tail*": "allow"
   task: deny
   skill:
     "*": deny
