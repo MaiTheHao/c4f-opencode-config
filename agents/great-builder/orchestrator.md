@@ -10,6 +10,7 @@ permission:
     "great-builder/implementation": allow
     "great-builder/review": allow
   question: allow
+  git: ask
   list: allow
   bash: deny
   edit: deny

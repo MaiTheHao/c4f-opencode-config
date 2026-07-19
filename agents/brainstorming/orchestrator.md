@@ -10,6 +10,7 @@ permission:
     "brainstorming/implementation": allow
     "brainstorming/review": allow
   question: allow
+  git: ask
   bash: deny
   edit: deny
   write: deny
