@@ -103,13 +103,9 @@ REPORT
 
 <ask_user_protocol>
 
-When `great-builder/analyzer` determines that user clarification is required and returns `STATUS = BLOCKED`:
-
-1. **Synthesize Context**: Present the background discovered by `explorer` and `analyzer` in 2-3 concise, non-technical sentences.
-2. **Relay Analyzer Questions**:
-   - Present `analyzer`'s `BLOCKING_QUESTIONS` clearly.
-   - Format questions as structured multiple-choice options or explicit binary choices where applicable.
-3. **Bypass Back to Analyzer**: Upon receiving the user's answer, re-invoke `great-builder/analyzer` with the user's response to unblock contract creation (`STATUS = READY`).
+When `great-builder/analyzer` returns `STATUS = BLOCKED`:
+- Present `BLOCKING_QUESTIONS` with concise context to the user.
+- Re-invoke `great-builder/analyzer` with the user's response to obtain `STATUS = READY`.
 
 </ask_user_protocol>
 
@@ -120,9 +116,7 @@ When `great-builder/analyzer` determines that user clarification is required and
 3. **ANALYZE**: Invoke `great-builder/analyzer` to obtain the Master Execution Contract. 
    - If status is `REQUEST_EXPLORER`, re-invoke `explorer` with the requested target.
    - If status is `BLOCKED`, proceed to step 4.
-4. **CHECK CONTRACT & ASK_USER (Relay & Bypass)**:
-   - If `STATUS = BLOCKED`, execute `<ask_user_protocol>`: present `analyzer`'s questions with context to the user.
-   - When the user answers, immediately re-invoke `great-builder/analyzer` with the user's input to bypass `BLOCKED` status and obtain `STATUS = READY`.
+4. **ASK_USER**: Ask `BLOCKING_QUESTIONS` with context. Pass user answer back to `analyzer` to unblock.
 5. **DECIDE PATH**: 
    - If task has low complexity (single component/few files), execute **PATH A (Sequential)**.
    - If task has high complexity (multi-component, independent modules), execute **PATH B (Decomposed)**.
