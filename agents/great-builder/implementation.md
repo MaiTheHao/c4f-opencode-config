@@ -50,7 +50,7 @@ Executor. Implement required changes from Execution Contract exactly. Do not red
 
 <workflow>
 
-- If Execution Contract is missing or scope/information is insufficient → return `EXIT_STATUS: REQUEST_ANALYZER`.
+- If Execution Contract is missing or scope/information is insufficient → return `EXIT_STATUS: REQUEST_ANALYZER` or `EXIT_STATUS: REQUEST_EXPLORER`.
 - Parallelize using `general` subagents for changes targeting independent files.
 - Pass target files, required changes, and conventions to each subagent.
 - Do not fan-out for sequentially dependent changes.
@@ -65,8 +65,12 @@ Return as inline response text. Do not write report or artifact files.
 FILES_MODIFIED:
   - <file path> | Created | Modified | Deleted
 
-EXIT_STATUS: SUCCESS | REQUEST_ANALYZER
-REASON: <required if REQUEST_ANALYZER>
+EXIT_STATUS: SUCCESS | REQUEST_ANALYZER | REQUEST_EXPLORER
+
+EXPLORATION_REQUEST:
+  - <only if EXIT_STATUS = REQUEST_EXPLORER: missing signature or target component details>
+
+REASON: <required if REQUEST_ANALYZER or REQUEST_EXPLORER>
 ```
 
 </output>

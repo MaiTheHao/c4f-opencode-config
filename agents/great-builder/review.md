@@ -1,5 +1,5 @@
 ---
-description: Quick Verifier. Checks imports, signatures, conventions, and critical security. Runs compile if available. Outputs Pass or Fix Required.
+description: Quick Verifier. Checks imports, signatures, conventions, and critical security. Runs compile if available. Outputs Pass, Fix Required, or Request Explorer.
 mode: subagent
 temperature: 0.0
 permission:
@@ -68,7 +68,10 @@ Verifier. Independently verify modified files against the Execution Contract. Do
 Return as inline response text. Do not write to files.
 
 ```
-RESULT: PASS | FIX_REQUIRED
+RESULT: PASS | FIX_REQUIRED | REQUEST_EXPLORER
+
+EXPLORATION_REQUEST:
+  - <only if RESULT = REQUEST_EXPLORER: missing context for verification>
 
 ISSUES:
   - <Critical|Major> | <file:line> | <description>
