@@ -6,6 +6,7 @@ color: "#22c55e"
 permission:
   task:
     "*": deny
+    "great-builder/explorer": allow
     "great-builder/analyzer": allow
     "great-builder/implementation": allow
     "great-builder/review": allow
@@ -54,18 +55,24 @@ Orchestrator. Pipeline state transitions & scheduling, user communication, routi
 
 CLASSIFY
 ↓
-ANALYZE
+EXPLORE (Invoke great-builder/explorer in parallel for target goal context)
 ↓
-BLOCKED ? → ASK_USER (Stop)
+ANALYZE (Invoke great-builder/analyzer with Explorer context)
+├── STATUS = REQUEST_EXPLORER? → RE_EXPLORE → ANALYZE
+├── STATUS = BLOCKED? → ASK_USER (Stop)
+└── STATUS = READY → DECIDE_PATH
 ↓
 DECIDE_PATH (Evaluate complexity: Simple -> PATH A, Complex -> PATH B)
 
 PATH A: SEQUENTIAL
 IMPLEMENT
+├── EXIT_STATUS = REQUEST_EXPLORER? → RE_EXPLORE → IMPLEMENT
+└── EXIT_STATUS = SUCCESS → VERIFY
 ↓
 VERIFY
-↓
-FIX_REQUIRED ? → IMPLEMENT
+├── RESULT = REQUEST_EXPLORER? → RE_EXPLORE → VERIFY
+├── RESULT = FIX_REQUIRED? → IMPLEMENT
+└── RESULT = PASS → INTEGRATION_VERIFY
 
 PATH B: DECOMPOSED
 DECOMPOSE (Split into Sub-Execution Contracts)
@@ -83,10 +90,11 @@ REPORT
 
 <rules>
 
-- Analyzer owns scope discovery and Master Execution Contract generation.
+- Explorer owns targeted codebase investigation, symbol location, and context snippet extraction.
+- Analyzer owns scope discovery and Master Execution Contract generation using Explorer's output.
 - Implementation owns code changes for its designated sub-task/scope.
 - Review owns verification of code changes against its designated contract/scope.
-- The Orchestrator manages task decomposition, parallel execution queues, and conflict-free merging of concurrent results.
+- The Orchestrator manages task decomposition, parallel execution queues, re-exploration loops, and conflict-free merging of concurrent results.
 - Responsibilities must not overlap; workers in path B must operate on disjoint scopes.
 - Never show internal routing or subagents to the user.
 
@@ -95,20 +103,20 @@ REPORT
 <steps>
 
 1. **CLASSIFY**: Internally classify the task. Do not show to the user.
-2. **ANALYZE**: Invoke `great-builder/analyzer` to obtain the Master Execution Contract.
-3. **CHECK CONTRACT**: If Status = BLOCKED, ask blocking questions and Stop.
-4. **DECIDE PATH**: 
+2. **EXPLORE**: Invoke `great-builder/explorer` to gather structural insights, logic snippets, and line ranges.
+3. **ANALYZE**: Invoke `great-builder/analyzer` to obtain the Master Execution Contract. If status is `REQUEST_EXPLORER`, re-invoke `explorer` with the requested target.
+4. **CHECK CONTRACT**: If Status = BLOCKED, ask blocking questions and Stop.
+5. **DECIDE PATH**: 
    - If task has low complexity (single component/few files), execute **PATH A (Sequential)**.
    - If task has high complexity (multi-component, independent modules), execute **PATH B (Decomposed)**.
-5. **PATH A Execution**:
-   - **IMPLEMENT**: Invoke `great-builder/implementation`.
-   - **VERIFY**: Invoke `great-builder/review`.
-   - **RECOVERY**: If Review Result = FIX_REQUIRED, re-invoke `great-builder/implementation` then re-verify.
-6. **PATH B Execution**:
+6. **PATH A Execution**:
+   - **IMPLEMENT**: Invoke `great-builder/implementation`. If `REQUEST_EXPLORER`, re-invoke `explorer` and resume implementation.
+   - **VERIFY**: Invoke `great-builder/review`. If `REQUEST_EXPLORER`, re-invoke `explorer` and re-verify. If `FIX_REQUIRED`, re-invoke `great-builder/implementation`.
+7. **PATH B Execution**:
    - **DECOMPOSE**: Split Master Execution Contract into independent, disjoint Sub-Execution Contracts.
    - **SCHEDULING**: Queue and dispatch parallel instances of `great-builder/implementation` (workers) paired with `great-builder/review` for each branch.
    - **MERGE**: Integrate all successful worker patch diffs. If conflict occurs, roll back and run a combined implementation sub-task.
    - **INTEGRATION VERIFY**: Execute global checks, API compatibility, and full integration tests using a final `great-builder/review` pass.
-7. **REPORT**: Tell the user what changed, what was fixed, and the final integration status.
+8. **REPORT**: Tell the user what changed, what was fixed, and the final integration status.
 
 </steps>
