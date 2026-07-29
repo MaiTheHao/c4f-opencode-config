@@ -1,415 +1,442 @@
-# Agent Configuration Design Principles
+# Agent Configuration Protocol Specification
 
-The core directive of effective agent prompting is:
+> **Primary Model:** DeepSeek MoE (R-series). **Secondary:** Claude, GPT-4o, Gemini.
+> **Paradigm:** *Protocol over Prompt — Define agent configs as deterministic API contracts, not conversational instructions.*
 
-> **Do not write prompts as conversational instructions. Define them as protocols or interfaces.**
-
-This paradigm separates basic prompts from scalable multi-agent systems.
-
----
-
-## 1. Declarative Specifications
-
-An agent configuration is not a user manual; it is a **specification**.
-
-- **Incorrect:**
-  ```text
-  You should analyze the task carefully before implementation.
-  ```
-- **Correct:**
-  ```text
-  Owns
-
-  - Scope discovery
-  ```
-
-Large Language Models (LLMs) do not require context on *why* a constraint exists; they require clear ownership of *what* is under their responsibility.
+This specification defines the standard for authoring agent configuration files. It applies to any LLM but is optimized for DeepSeek MoE as the primary execution model. All directives are consolidated into **8 Pillars**.
 
 ---
 
-## 2. Single-Purpose Sections
+## Architecture Overview
 
-Do not mix concerns within a single section.
+```mermaid
+flowchart TD
+    accTitle: 8 Pillars of Agent Architecture
+    accDescr: Pillars grouped by Attention, Interface, Control, Data, and Model layers
 
-- **Incorrect:**
-  ```text
-  Workflow
+    subgraph Attention["Attention & Boundary Management"]
+        P1["1. Structural Tagging & Sandwich Layout"]
+    end
 
-  - Analyze...
-  - Read...
-  - Verify...
-  ```
-  *This mixes state, permissions, and actions.*
-- **Correct:** Use distinct sections for separate concerns:
-  ```text
-  Role
+    subgraph Interface["Interface & Ownership Design"]
+        P2["2. Declarative Interface & Noun Ownership"]
+        P6["6. Standardized Vocabulary & Isolation"]
+        P7["7. Interface-Like Prompt Layout"]
+    end
 
-  Owns
+    subgraph Control["Behavior & Execution Control"]
+        P3["3. Affirmative & Deterministic Directives"]
+        P5["5. State Machine Workflows"]
+    end
 
-  Inputs
+    subgraph Data["Data & Contract Definition"]
+        P4["4. Schema-Defined Artifacts & Space-Free Keys"]
+    end
 
-  Preconditions
+    subgraph Model["Model-Specific Optimization"]
+        P8["8. DeepSeek MoE Execution Profile"]
+    end
 
-  Output
-
-  Never
-
-  Exit
-  ```
-
-Each section must serve a single, unambiguous purpose.
-
----
-
-## 3. Noun-Based Roles and Tasks
-
-Prioritize nouns over verbs to minimize ambiguity.
-
-- **Incorrect:**
-  ```text
-  Analyze the scope.
-  ```
-- **Correct:**
-  ```text
-  Scope Discovery
-  ```
-  or
-  ```text
-  Owns
-
-  - Scope Discovery
-  ```
+    Attention --> Interface
+    Interface --> Control
+    Control --> Data
+    Data --> Model
+```
 
 ---
 
-## 4. Constraint-Based Behaviors
+## Pillar 1 — Structural Tagging & Sandwich Layout
 
-Avoid soft directives such as "should", "try to avoid", or "prefer". Enforce strict constraints using deterministic keywords.
+**Purpose:** Optimize attention distribution. Mitigate *Lost in the Middle* phenomenon.
 
-- **Incorrect:** "Try to avoid..." / "Should..." / "Prefer..."
-- **Correct:** Use standard constraint blocks:
-  ```text
-  Never
+### XML Attention Boundaries
 
-  ...
+Use concise XML tags as contextual fences. Mandatory tags:
 
-  Must
+| Tag | Layer | Content |
+|---|---|---|
+| `<identity>` | TOP | `Role`, `Owns` declarations |
+| `<core_directives>` | MIDDLE | `Inputs`, `Read`, `Output` schemas |
+| `<execution_modes>` | MIDDLE | State machine, workflows, DTOs |
+| `<critical_constraints>` | BOTTOM | `Preconditions`, `Must`, `Never`, `Exit` |
 
-  ...
+Tags isolate configuration directives from model internal reasoning (e.g., DeepSeek `<think>` blocks).
 
-  Only
+### Sandwich Pattern
 
-  ...
-  ```
+```
+TOP    → <identity>              (Primacy Effect — highest recall)
+MIDDLE → <core_directives>
+         <execution_modes>       (Logic & DTO definitions)
+BOTTOM → <critical_constraints>  (Recency Bias — halt conditions)
+```
 
----
+```xml
+<!-- TOP (Primacy Effect) -->
+<identity>
+Role: Code Implementation Agent
+Owns: CodeModification
+</identity>
 
-## 5. Omit Explanations and Motivations
+<!-- MIDDLE (Technical Details & Workflow) -->
+<execution_modes>
+STATE: CLASSIFY
+  - Validate contract
+STATE: IMPLEMENT
+  - Execute AffectedFiles
+</execution_modes>
 
-Do not explain the reasoning behind a directive.
+<!-- BOTTOM (Recency Bias) — MUST be last block -->
+<critical_constraints>
+Preconditions:
+  - ExecutionContract.Status = READY
+Must:
+  - Output complete FilesModified DTO
+Never:
+  - ExpandScope
+Exit:
+  - SUCCESS
+  - REQUEST_ANALYZER
+</critical_constraints>
+```
 
-- **Incorrect:**
-  ```text
-  Do not scan the entire repository because it consumes too many tokens.
-  ```
-- **Correct:**
-  ```text
-  Read
-
-  - Entry point
-  - Related files
-  ```
-
-LLMs require instruction, not justification.
-
----
-
-## 6. Standardized Vocabulary
-
-Maintain a consistent, standardized terminology across all configuration files to reinforce pattern recognition.
-
-- **Incorrect:** Alternating between synonyms (e.g., using `Input`, `Parameters`, and `Receive` in different files).
-- **Correct:** Stick to a fixed set of keywords:
-  ```text
-  Inputs
-  Output
-  Never
-  Exit
-  Status
-  ```
-
----
-
-## 7. Schema-Defined Outputs
-
-Always define the structure of expected outputs. Use schemas and enums to prevent open-ended responses.
-
-- **Incorrect:**
-  ```text
-  Return affected files.
-  ```
-- **Correct:**
-  ```text
-  Output
-
-  AffectedFiles:
-
-  RequiredChanges:
-
-  Constraints:
-  ```
-
-For states, define strict enums:
-  ```text
-  Status
-
-  READY
-  BLOCKED
-  ```
+> **Critical:** `<critical_constraints>` must always be the **last block** in the file. Never embed halt conditions inside middle sections.
 
 ---
 
-## 8. Single-Source-of-Truth Artifacts
+## Pillar 2 — Declarative Interface & Noun-Based Ownership
 
-Avoid passing disparate, unstructured results between different agents (e.g., separate `Analyzer Result`, `Review Result`, `Implementation Summary`).
+**Purpose:** Transform config into a specification contract, not a user manual.
 
-- **Correct:** Define a single standard object (e.g., `Execution Contract`) that is passed and updated across the entire pipeline.
+### Noun over Verb
 
----
+| Pattern | Example |
+|---|---|
+| ❌ Verb instruction | `You should analyze the codebase carefully.` |
+| ✅ Noun ownership | `Owns: ScopeDiscovery` |
 
-## 9. Exclusive Ownership
+### Single Responsibility & Exclusive Ownership
 
-Each responsibility must have a single owner. This is the strongest invariant of a multi-agent system.
+Each responsibility belongs to **exactly one** agent. No overlap.
 
-- **Example:**
-  - `Analyzer` owns `Scope Discovery`
-  - `Implementation` owns `Code Modification`
-  - `Review` owns `Verification`
-
-Responsibilities must never overlap.
-
----
-
-## 10. State Machine Workflows
-
-Do not represent workflows as sequential paragraphs ("First", "Then", "Finally"). Model them as state machines.
-
-- **Correct:**
-  ```text
-  CLASSIFY
-
-  ↓
-
-  ANALYZE
-
-  ↓
-
-  IMPLEMENT
-
-  ↓
-
-  VERIFY
-
-  ↓
-
-  REPORT
-  ```
-
-LLMs process state transitions more reliably than conversational steps.
+```
+Explorer       → Owns: CodebaseExploration, DataHunting
+Analyzer       → Owns: ScopeDiscovery, ExecutionContractGeneration
+Implementation → Owns: CodeModification
+Review         → Owns: Verification
+```
 
 ---
 
-## 11. Explicit Preconditions
+## Pillar 3 — Affirmative & Deterministic Directives
 
-Define states that must be satisfied before execution starts, rather than embedding checks within the instructions.
+**Purpose:** Eliminate logical inversion overhead. LLMs process affirmative directives more reliably than negatives.
 
-- **Incorrect:**
-  ```text
-  Only implement when ready.
-  ```
-- **Correct:**
-  ```text
-  Preconditions
+### Affirmative Conversion
 
-  Status = READY
-  ```
+| ❌ Prohibition | ✅ Affirmative Directive |
+|---|---|
+| `Never produce placeholder code.` | `Must: Output complete, production-ready code.` |
+| `Do not scan the entire repo.` | `Read: EntryPoint, RelatedFiles` |
 
----
+### Binding Keywords
 
-## 12. Explicit Exit Conditions
+Use exclusively: `Must` · `Only` · `Never` · `Preconditions` · `Exit`
 
-Define exact termination states to prevent agents from self-determining when to finish.
+Eliminate: `should` · `prefer` · `try to` · `consider` · `carefully` · `thoroughly`
 
-- **Correct:**
-  ```text
-  Exit
+### Zero Fluff Rule
 
-  REQUEST_ANALYZER
-  ```
-  or
-  ```text
-  Exit
-
-  BLOCKED
-  ```
+- **No qualitative adjectives** — LLMs cannot quantify `carefully`, `thoughtfully`, `comprehensively`.
+- **No motivations** — Omit *"Do X because Y"*. Config files are execution specs, not design docs.
 
 ---
 
-## 13. Declarative Logic Over Procedural Prose
+## Pillar 4 — Schema-Defined Artifacts & Space-Free Keys
 
-Do not use verbose conditional sentences. Use structural constraints and exit states instead.
+**Purpose:** Structure inter-agent data as parseable DTOs.
 
-- **Incorrect:**
-  ```text
-  If the implementation discovers another file that needs modification, it should ask the analyzer...
-  ```
-- **Correct:**
-  ```text
-  Never
+### Single Source-of-Truth Contract
 
-  - Expand scope
+Data passed between agents is serialized into one artifact (e.g., `ExecutionContract`) updated across pipeline stages.
 
-  Exit
+### Space-Free Keys (Parser-Friendly)
 
-  REQUEST_ANALYZER
-  ```
+Keys must use PascalCase or camelCase. No spaces.
 
----
+| ❌ Natural Language Key | ✅ DTO Key |
+|---|---|
+| `Affected Files: ...` | `AffectedFiles: ...` |
+| `Required Changes: ...` | `RequiredChanges: ...` |
+| `Status: Looks good` | `Status: PASS` |
 
-## 14. Structured Fields Over Natural Language
+### Strict Status Enums
 
-Replace descriptive output requests with structured keys.
+```yaml
+# ❌ Incorrect
+Status: Looks good to proceed
 
-- **Incorrect:**
-  ```text
-  The analyzer should output the status and affected files.
-  ```
-- **Correct:**
-  ```text
-  Output
-
-  Status:
-
-  AffectedFiles:
-
-  RequiredChanges:
-  ```
+# ✅ Correct
+Status: PASS | FIX_REQUIRED | BLOCKED
+```
 
 ---
 
-## 15. Standardized Status Enums
+## Pillar 5 — State Machine Workflows
 
-Enforce precise enums instead of natural language phrases for statuses.
+**Purpose:** Model workflows as deterministic state graphs, not sequential paragraphs.
 
-- **Incorrect:** "Looks good" / "Need some fixes" / "Need more information"
-- **Correct:** Use precise enums:
-  - `PASS`
-  - `FIX_REQUIRED`
-  - `BLOCKED`
+### State Transition Format
 
----
+```mermaid
+stateDiagram-v2
+    accTitle: Agent Execution Lifecycle
+    [*] --> Classify: Receive TaskSpec
+    Classify --> Analyze: Boundary Validated
+    Analyze --> Implement: Status=READY
+    Analyze --> Blocked: Insufficient Context
+    Implement --> Verify: ExitStatus=SUCCESS
+    Verify --> Implement: Result=FIX_REQUIRED
+    Verify --> Report: Result=PASS
+    Blocked --> [*]
+    Report --> [*]
+```
 
-## 16. Space-Free Field Keys
+### Explicit Preconditions & Exit States
 
-Use clean key formatting without spaces (e.g., PascalCase or camelCase) to mimic Data Transfer Objects (DTOs) and parser-friendly keys.
+```text
+# ❌ Conversational
+If implementation discovers another file, ask the analyzer.
 
-- **Incorrect:** `Affected Files`, `Required Changes`
-- **Correct:** `AffectedFiles`, `RequiredChanges`
-
----
-
-## 17. Single Abstraction per Section
-
-Ensure that each section header contains only the information defined by its abstraction.
-
-- **Incorrect:** Mixing configuration instructions inside input definitions:
-  ```text
-  Inputs
-
-  Task
-
-  Do not modify the source directory.
-  ```
-- **Correct:** Keep constraint instructions in constraint-based sections (e.g., `Never`).
-
----
-
-## 18. Eliminate Adjectives
-
-Remove fluff adjectives that do not translate to programmatic constraints. LLMs generally ignore qualifiers.
-
-- **Incorrect:** "Carefully analyze...", "Thoughtfully review...", "Comprehensively compile..."
-- **Correct:** Use direct verbs/nouns: "Analyze...", "Review...", "Compile..."
+# ✅ State Machine
+Preconditions:
+  - ExecutionContract.Status = READY
+Never:
+  - ExpandScope
+Exit:
+  - SUCCESS
+  - REQUEST_ANALYZER
+  - BLOCKED
+```
 
 ---
 
-## 19. Eliminate Motivations
+## Pillar 6 — Standardized Vocabulary & Section Isolation
 
-Do not include reasoning or design motivations within prompts. Prompts are execution specs, not design documents.
+**Purpose:** Enforce consistent terminology across all agent configs in a multi-agent system.
 
-- **Incorrect:** "To avoid bugs, do not modify files outside scope."
-- **Correct:**
-  ```text
-  Never
+### Global Vocabulary
 
-  - Modify files outside scope
-  ```
+Fixed keyword set across all config files:
+
+`Inputs` · `Outputs` · `Read` · `Owns` · `Must` · `Never` · `Exit` · `Status` · `Preconditions` · `ExplorationRequest`
+
+### Section Isolation (Single Abstraction Level)
+
+Each section header contains only information at its declared abstraction. Never embed constraints inside data declarations.
+
+```text
+# ❌ Mixed abstraction
+Inputs:
+  - TaskSpec
+  - Do not modify source directory   ← constraint embedded in data section
+
+# ✅ Separated abstraction
+Inputs:
+  - TaskSpec
+
+Never:
+  - ModifySourceDirectory
+```
 
 ---
 
-## 20. Interface-Like Prompt Layouts
+## Pillar 7 — Interface-Like Prompt Layout
 
-Structure the entire agent prompt so that it reads like an interface or class definition.
+**Purpose:** Structure the entire config file as an API contract or class specification.
 
-- **Example:**
-  ```text
-  Role
+### Canonical Skeleton Template
 
-  Analyzer
+```xml
+<identity>
+Role: [AgentName]
+Owns: [PrimaryResponsibility]
+</identity>
 
-  Owns
-
-  - ScopeDiscovery
-
-  Inputs
-
-  - Task
+<core_directives>
+Inputs:
+  - TaskSpec
   - EntryPoint
 
-  Read
-
+Read:
   - EntryPoint
   - RelatedFiles
 
-  Output
+Output:
+  ExecutionContract:
+    Status: READY | BLOCKED | REQUEST_EXPLORER
+    AffectedFiles: Array<String>
+    RequiredChanges: String
+</core_directives>
 
-  ExecutionContract
+<execution_modes>
+STATE: CLASSIFY
+  1. Identify task boundary
+  2. Validate scope
 
-  Never
+STATE: ANALYZE
+  1. Map dependencies
+  2. Identify edge cases
+</execution_modes>
 
-  - ModifyCode
+<critical_constraints>
+Preconditions:
+  - Status = PENDING
+
+Must:
+  - Read EntryPoint prior to ScopeDiscovery
+  - Output complete ExecutionContract DTO
+
+Never:
   - ExpandScope
+  - ModifyCode
 
-  Exit
-
-  READY
-  BLOCKED
-  ```
-
-This structure presents a clean API boundary rather than a prose guide.
+Exit:
+  - READY
+  - BLOCKED
+</critical_constraints>
+```
 
 ---
 
-## 21. "Protocol, Not Prompt" Paradigm
+## Pillar 8 — DeepSeek MoE Execution Profile
 
-This is the guiding philosophy of agent design. An effective configuration is not a verbose, "clever" prompt. It is a strict **protocol** defined by:
+**Purpose:** Targeted optimizations for DeepSeek R-series (MoE architecture) as the primary agent execution model.
 
-* **Roles:** Each agent has exactly one defined role.
-* **Ownership:** Each responsibility has exactly one owner.
-* **Artifacts:** Data transferred between agents is serialized into predefined schemas.
-* **State:** The execution path is defined by explicit states and state transitions.
-* **Constraints:** Behaviors are governed by `Must`, `Never`, `Only`, `Preconditions`, and `Exit` conditions, rather than soft directives like `should` or `prefer`.
-* **Determinism:** Outputs are limited to strict field keys and enums, avoiding natural language variations.
-* **Orthogonality:** Each section and agent handles a single concept without overlapping.
+### 8.1 `<think>` Block Isolation
 
-In short, design agent configuration files as an **API Contract** or a **Domain-Specific Language (DSL)**, rather than a prompt trying to convince an AI to perform well. A robust protocol eliminates ambiguity and forces deterministic execution across the system.
+DeepSeek R-series generates an internal `<think>...</think>` reasoning block before producing output. Config XML tags **must not conflict** with this namespace.
+
+**Reserved tags — never use as config tags:**
+
+`<think>` · `<reasoning>` · `<scratchpad>` · `<reflection>` · `<inner_monologue>`
+
+```xml
+<!-- ❌ Dangerous — conflicts with DeepSeek internal reasoning namespace -->
+<think>Agent reasoning steps...</think>
+
+<!-- ✅ Safe — distinct config tag namespace -->
+<identity>...</identity>
+<execution_modes>...</execution_modes>
+<critical_constraints>...</critical_constraints>
+```
+
+### 8.2 Token Budget & Attention Compaction
+
+DeepSeek MoE is token-efficiency sensitive. Verbose context degrades instruction-following fidelity.
+
+| Technique | Rule |
+|---|---|
+| **DTO Compaction** | Replace prose output with YAML/JSON schema |
+| **No Motivations** | Never write *"Do X because Y"* in config |
+| **Minimal Inputs** | Pass only required contract fields; strip optional metadata |
+| **Enum Payloads** | Prefer `Status: READY \| BLOCKED` over descriptive text |
+| **No Prose Workflows** | Replace paragraph steps with `STATE: X / numbered steps` |
+
+### 8.3 Affirmative-First Ordering in `<critical_constraints>`
+
+DeepSeek R-series resolves affirmative directives with higher fidelity than negations. Ordering within `<critical_constraints>` matters:
+
+```xml
+<critical_constraints>
+<!-- 1. Preconditions first — guard clause -->
+Preconditions:
+  - ExecutionContract.Status = READY
+
+<!-- 2. Must (affirmative) before Never (negation) -->
+Must:
+  - Output complete FilesModified DTO
+
+Never:
+  - ExpandScope
+
+<!-- 3. Exit states last — recency bias anchor -->
+Exit:
+  - SUCCESS
+  - REQUEST_ANALYZER
+</critical_constraints>
+```
+
+### 8.4 Temperature Configuration
+
+| Agent Type | Role | Temperature |
+|---|---|---|
+| Deterministic Subagent | Executor, Verifier | `0.0` |
+| Analytical Subagent | Analyzer, Explorer | `0.1` |
+| Orchestrator | Workflow routing | `0.1` |
+| Creative / Planning | Brainstorming, design | `0.3 – 0.5` |
+
+> DeepSeek R-series exhibits compliance drift above `temperature: 0.3` for structured output tasks. Keep deterministic agents at `0.0`.
+
+### 8.5 Numbered State Steps
+
+DeepSeek R1/V3 has strong alignment with explicit numbered steps within state blocks. Always number steps inside `STATE:` declarations:
+
+```xml
+<execution_modes>
+STATE: CLASSIFY
+  1. Validate TaskSpec fields
+  2. Check AffectedFiles boundary
+
+STATE: ANALYZE
+  1. Read EntryPoint
+  2. Map direct dependencies
+  3. If unmapped symbols: set Status = REQUEST_EXPLORER
+</execution_modes>
+```
+
+Numbered steps reduce ambiguity during internal think-block generation.
+
+### 8.6 Secondary Model Compatibility
+
+Configs authored to this spec are portable across Claude, GPT-4o, and Gemini:
+
+| Feature | DeepSeek | Claude | GPT-4o | Gemini |
+|---|---|---|---|---|
+| XML tag boundary fidelity | ✅ High | ✅ High | ⚠️ Medium | ⚠️ Medium |
+| State machine compliance | ✅ High | ✅ High | ✅ High | ✅ High |
+| Enum status parsing | ✅ High | ✅ High | ✅ High | ✅ High |
+| Recency bias (Sandwich) | ✅ Strong | ✅ Strong | ⚠️ Moderate | ✅ Strong |
+| `<think>` conflict risk | ✅ Isolated | N/A | N/A | N/A |
+
+---
+
+## Protocol Compliance Checklist
+
+Use when authoring or reviewing any agent config file:
+
+```
+[ ] <identity> block at TOP of file (Primacy Effect)
+[ ] <critical_constraints> block at BOTTOM of file (Recency Bias)
+[ ] No reserved DeepSeek tags used as config tags (<think>, <reasoning>, <scratchpad>)
+[ ] All DTO field keys are space-free PascalCase or camelCase
+[ ] Status values are closed enums, not free-form text
+[ ] No qualitative adjectives (carefully, thoroughly, comprehensively)
+[ ] No motivations in directives (no "Do X because Y")
+[ ] Each agent has exactly one Owns declaration per responsibility
+[ ] Constraints NOT embedded inside Inputs or Output sections
+[ ] Temperature ≤ 0.1 for deterministic subagents
+[ ] STATE blocks use numbered steps
+```
+
+---
+
+## Summary
+
+| Benefit | Mechanism |
+|---|---|
+| **High Semantic Density** | 8 pillars eliminate redundant tokens; maximize compliance |
+| **Attention Management** | XML Sandwich Layout protects halt conditions from drift |
+| **Parser Determinism** | Space-free keys and enums enable reliable DTO passing |
+| **Declarative Control** | Affirmative keywords + state machine = predictable lifecycle |
+| **DeepSeek Fidelity** | Think-block isolation + affirmative-first + temperature tuning |
