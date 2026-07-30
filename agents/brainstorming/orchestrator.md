@@ -94,7 +94,7 @@ SubagentContracts:
       RemediationPlan: Array<{FilePath, Modification, AcceptanceCriterion}>
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: CLASSIFY
   1. Inspect UserTask input
   2. If existing plan provided: proceed to STATE: EXECUTE_AND_VERIFY
@@ -121,7 +121,7 @@ STATE: EXECUTE_AND_VERIFY
 STATE: FINAL_REPORT
   1. Synthesize subagent outputs into cohesive report for user
   2. Hide internal subagent routing details and transition logs
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

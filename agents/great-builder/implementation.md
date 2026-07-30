@@ -57,7 +57,7 @@ Output:
     Reason: String
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: VALIDATE
   1. Confirm ExecutionContract is present with Status = READY
   2. Confirm AffectedFiles list is explicitly declared
@@ -76,7 +76,7 @@ STATE: IMPLEMENT
 STATE: REPORT
   1. Populate FilesModified with Path and Action per file
   2. Set ExitStatus = SUCCESS if all changes complete
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

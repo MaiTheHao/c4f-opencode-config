@@ -60,7 +60,7 @@ SubagentContracts:
       WrittenFile: String
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: SCOUT
   1. Launch 1 instance of research/research-fast/scout with UserTopic
   2. Receive Scout output DTO containing TopicMap
@@ -84,7 +84,7 @@ STATE: SAVE_OUTPUT
 
 STATE: FINAL_REPORT
   1. Present synthesized research response to user
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

@@ -55,7 +55,7 @@ Output:
         AcceptanceCriterion: String
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: READ_MODIFIED
   1. Inspect FilesModified array from ImplementationSummary
   2. Read modified files independently from codebase
@@ -78,7 +78,7 @@ STATE: REMEDIATION
   1. If Assessment = FAIL or CRITICAL/MAJOR issues found: construct RemediationPlan step list
   2. Set Reason summary string
   3. Emit ReviewReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

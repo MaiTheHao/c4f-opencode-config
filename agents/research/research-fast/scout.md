@@ -37,7 +37,7 @@ Output:
     RecommendedNextSteps: Array<String>
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: RECONNAISSANCE
   1. Execute 1-2 broad searches concurrently using Parallel Web Search (1-3 word queries)
   2. Identify core terminology, key entities, and major players
@@ -46,7 +46,7 @@ STATE: MAP_GENERATION
   1. Construct TopicMap with 2-3 sub-questions fully covering the topic
   2. Define 2-3 distinct aspects and explicit search queries per sub-question
   3. Emit plaintext ScoutReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

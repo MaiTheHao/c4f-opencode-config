@@ -35,13 +35,13 @@ Output:
     WrittenFile: String
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: WRITE_FILE
   1. Validate presence of ready-to-write Content and SavePath in prompt
   2. Write Content to SavePath using edit tool
   3. Verify file write operation completion
   4. Emit WriterOutput DTO with Status = SUCCESS
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

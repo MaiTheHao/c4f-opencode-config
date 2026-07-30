@@ -42,7 +42,7 @@ Output:
     Confidence: High | Medium | Low
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: CHRONOLOGY_BUILDING
   1. Identify point-in-time claims and historic changes
   2. Build sourced, dated chronology sequence of key events
@@ -53,7 +53,7 @@ STATE: CURRENT_STATE_VERIFICATION
   3. Evaluate StalenessRisk based on topic velocity
   4. Assign Confidence (High requires source within relevant recency window; older sources cap confidence at Medium)
   5. Emit plaintext TimelineReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

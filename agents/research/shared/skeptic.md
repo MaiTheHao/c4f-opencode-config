@@ -39,7 +39,7 @@ Output:
     Confidence: High | Medium | Low
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: FORMULATE_TEST
   1. Restate TargetClaim into precise, falsifiable statement
   2. Formulate failure-mode search queries (criticisms, limitations, counter-examples, rebuttals)
@@ -49,7 +49,7 @@ STATE: AUDIT_DISSENT
   2. Evaluate dissent credibility (distinguish expert evidence from unsubstantiated noise)
   3. Determine Assessment (SURVIVED, WEAKENED, or BROKEN) with explicit evidence justification
   4. Emit plaintext SkepticReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

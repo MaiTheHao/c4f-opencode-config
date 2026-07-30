@@ -74,7 +74,7 @@ SubagentContracts:
       Status: SUCCESS | BLOCKED
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: DISCOVERY
   1. Launch 2 independent instances of research/research-normal/scout concurrently
   2. Merge Topic Maps into unified set of 3-5 sub-queries
@@ -102,7 +102,7 @@ STATE: SAVE_OUTPUT
 
 STATE: FINAL_REPORT
   1. Output final synthesized research report
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

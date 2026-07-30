@@ -40,7 +40,7 @@ Output:
     RecommendedNextSteps: Array<String>
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: BROAD_SEARCH
   1. Run 2-4 broad search queries concurrently using Parallel Web Search
   2. Identify key terminology, entities, consensus points, and controversies
@@ -51,7 +51,7 @@ STATE: MAP_DESIGN
   3. Formulate bias-corrected search queries per aspect
   4. Tag sub-questions as SETTLED, CONTESTED, or TIME_SENSITIVE
   5. Emit plaintext ScoutReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

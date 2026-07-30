@@ -43,7 +43,7 @@ Output:
         Rating: High | Medium | Low
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: CLAIM_EXTRACTION
   1. Extract checkable factual claims from ReportsUnderReview
   2. Treat extracted claims as hypotheses requiring independent verification
@@ -54,7 +54,7 @@ STATE: INDEPENDENT_VERIFICATION
   3. Classify claims as CONFIRMED, CONTRADICTED, or UNVERIFIABLE
   4. Assign independent confidence ratings per claim
   5. Emit plaintext ValidationReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

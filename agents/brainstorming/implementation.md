@@ -62,7 +62,7 @@ Output:
         Reason: String
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: VALIDATE_PLAN
   1. Read full ExecutionPlan prior to file modifications
   2. Extract target file list and step acceptance criteria
@@ -78,7 +78,7 @@ STATE: VERIFY_CONSISTENCY
   2. Construct ImplementationSummary DTO
   3. Set Status = SUCCESS (if all steps verified) or Status = PARTIAL (if blocked mid-plan)
   4. Emit ImplementationSummary DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

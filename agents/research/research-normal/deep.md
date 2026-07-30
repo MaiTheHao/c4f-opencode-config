@@ -46,7 +46,7 @@ Output:
     Confidence: High | Medium | Low
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: TIER_CLASSIFICATION
   1. Determine Tier 1 source type for sub-question domain (science, law, corporate, technical, medical, economic, news)
   2. Prioritize Tier 1 search queries
@@ -62,7 +62,7 @@ STATE: ANALYSIS
   3. Surface all source disagreements without picking sides
   4. Assign Confidence rating (High requires convergent Tier 1 sources)
   5. Emit plaintext DeepReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

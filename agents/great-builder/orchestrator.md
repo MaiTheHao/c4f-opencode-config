@@ -44,8 +44,12 @@ SubagentContracts:
   Explorer:
     InputContract:
       TargetGoal: String
-      ScopeHint: String
+      ScopeHint: String | Array<String>
       ExplorationRequest: Array<String>
+      SearchMode: TARGETED_SYMBOL | IMPACT_ANALYSIS | VERIFICATION_CONTEXT | PATTERN_MATCH | DIFF_INSPECTION
+      CallerContext: ORCHESTRATOR | ANALYZER | IMPLEMENTATION | REVIEW
+      ContextPayload: Object
+      ConstraintRules: Object
     OutputSchema:
       ExplorationSummary: String
       KeyFindings: Array<{Location, Role, Snippet}>
@@ -81,56 +85,64 @@ SubagentContracts:
   Review:
     InputContract:
       TaskDescription: String
-      ExecutionContract: AnalyzerOutput
-      ModifiedFilesList: FilesModified
+      ExecutionContract: Optional<AnalyzerOutput>
+      ModifiedFilesList: Array<{Path, Action}> | Array<String>
+      ReviewScope: FULL_VERIFICATION | QUICK_LINT | SECURITY_CHECK | REGRESSION_CHECK
+      CustomInvariants: Optional<Array<String>>
     OutputSchema:
       Result: PASS | FIX_REQUIRED | REQUEST_EXPLORER
       ExplorationRequest: Array<String>
       Issues: Array<{Severity, Location, Description}>
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: EXPLORE
-  1. Spawn great-builder/explorer with TargetGoal and ScopeHint
-  2. Run independent explorations in parallel if multiple areas exist
-  3. Collect ExplorationResult DTO
+  1. Partition exploration scope into independent target domains, paths, or query topics
+  2. Spawn parallel great-builder/explorer subagents concurrently for each target scope
+  3. Aggregate parallel ExplorationResult DTOs into a unified ExplorerContext
 
 STATE: ANALYZE
-  1. Pass ExplorerContext and EntryPoint to great-builder/analyzer
-  2. Receive ExecutionContract from analyzer
-  3. If Status = REQUEST_EXPLORER: extract ExplorationRequest → spawn explorer → feed ExplorerContext back
-  4. If Status = BLOCKED: extract BlockingQuestions → halt → ask user
-  5. If Status = READY: proceed to IMPLEMENT
+  1. Partition problem space, entry points, or decoupled modules into distinct analytical tasks
+  2. Spawn parallel great-builder/analyzer subagents concurrently for each entry point or module
+  3. Merge parallel analyzer outputs into a consolidated master ExecutionContract
+  4. If any Status = REQUEST_EXPLORER: extract ExplorationRequest → spawn parallel explorers → feed back
+  5. If any Status = BLOCKED: extract BlockingQuestions → halt → ask user
+  6. If master Status = READY: proceed to IMPLEMENT
 
 STATE: IMPLEMENT
-  1. Pass ExecutionContract (Status=READY) to great-builder/implementation
-  2. If ExitStatus = REQUEST_EXPLORER: extract ExplorationRequest → spawn explorer → feed back
-  3. If ExitStatus = REQUEST_ANALYZER: forward Reason and code state → re-run analyzer
-  4. If ExitStatus = SUCCESS: proceed to REVIEW
+  1. Partition RequiredChanges into non-overlapping file sets and independent components
+  2. Spawn parallel great-builder/implementation subagents concurrently for independent changes
+  3. Collect and merge ImplementationResult DTOs
+  4. If any ExitStatus = REQUEST_EXPLORER: extract ExplorationRequest → spawn parallel explorers → feed back
+  5. If any ExitStatus = REQUEST_ANALYZER: forward Reason and code state → re-run analyzer
+  6. If all ExitStatus = SUCCESS: proceed to REVIEW
 
 STATE: REVIEW
-  1. Pass ExecutionContract + FilesModified to great-builder/review
-  2. If Result = REQUEST_EXPLORER: extract ExplorationRequest → spawn explorer → feed back
-  3. If Result = FIX_REQUIRED: extract Issues → forward to great-builder/implementation
-  4. If Result = PASS: proceed to FINAL_REPORT
+  1. Pass ExecutionContract + ModifiedFilesList to great-builder/review (spawning parallel review tasks for independent modules)
+  2. Allow Review to directly manage context verification or spawn parallel great-builder/explorer instances
+  3. If Result = REQUEST_EXPLORER: extract ExplorationRequest → spawn parallel explorers → feed back to Review
+  4. If Result = FIX_REQUIRED: extract Issues → forward to great-builder/implementation
+  5. If Result = PASS: proceed to FINAL_REPORT
 
 STATE: FINAL_REPORT
   1. Summarize completed task to user
   2. List FilesModified with actions
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:
   - UserTask received
 
 Must:
-  - Pass structured YAML input contracts to subagents as defined in SubagentContracts
+  - Pass structured DTO input contracts to subagents as defined in SubagentContracts
   - Interpret subagent outputs strictly by parsing enum statuses
-  - Run independent exploration or implementation tasks as parallel subagents
+  - Spawn parallel subagents concurrently for independent tasks across EXPLORE, ANALYZE, and IMPLEMENT states
+  - Execute STATE: REVIEW after IMPLEMENT succeeds without exception
   - Execute FINAL_REPORT only when great-builder/review returns Result = PASS
 
 Never:
   - Modify codebase directly (all edits delegated to great-builder/implementation)
+  - Bypass STATE: REVIEW after implementation
   - Proceed to IMPLEMENT without ExecutionContract Status = READY
   - Mark task complete without Result = PASS from great-builder/review
   - Expose internal orchestration topology or subagent chat logs to user

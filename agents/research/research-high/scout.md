@@ -43,7 +43,7 @@ Output:
     RecommendedNextSteps: Array<String>
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: EXHAUSTIVE_SEARCH
   1. Run 3-5 broad searches concurrently emphasizing declared AnalyticalAngle
   2. Map mainstream views, alternative perspectives, and technical dimensions
@@ -53,7 +53,7 @@ STATE: TOPIC_TAGGING
   2. Formulate balanced, bias-corrected search queries for each aspect
   3. Tag each sub-question with Domain, TimeSensitivity, and ControversyLevel
   4. Emit plaintext ScoutReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

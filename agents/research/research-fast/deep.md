@@ -37,7 +37,7 @@ Output:
     Confidence: High | Medium | Low
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: TARGETED_SEARCH
   1. Execute single search pass using 2-3 targeted web search queries covering sub-question aspects
   2. Extract direct facts from search results without multi-page crawling unless snippet is insufficient
@@ -47,7 +47,7 @@ STATE: ANSWER_SYNTHESIS
   2. Tag each extracted fact with source URL
   3. Assign Confidence (Low if 1 source, Medium if 2+ independent sources)
   4. Emit plaintext DeepReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

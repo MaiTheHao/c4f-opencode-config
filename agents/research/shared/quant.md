@@ -44,7 +44,7 @@ Output:
     Confidence: High | Low
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: LOCATE_ORIGINAL_SOURCE
   1. Locate original primary source of numeric data using Parallel Web Search (do not cite secondary news summaries)
   2. Extract raw numbers and precise measurement definitions
@@ -54,7 +54,7 @@ STATE: SCRUTINIZE_METHODOLOGY
   2. Compare methodologies if conflicting numbers exist to explain discrepancy
   3. Assign Confidence (High if methodology transparent and recent, Low if methodology untraceable)
   4. Emit plaintext QuantReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

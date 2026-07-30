@@ -38,13 +38,13 @@ Output:
     Reason: String
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: TRANSCRIBE
   1. Validate presence of ready-to-write PlanContent in input
   2. Write exact PlanContent to TargetFile using edit tool
   3. Verify file write operation completion
   4. Emit PlanWriterOutput DTO with Status = SUCCESS
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

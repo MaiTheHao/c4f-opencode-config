@@ -57,7 +57,7 @@ Use concise XML tags as contextual fences. Mandatory tags:
 |---|---|---|
 | `<identity>` | TOP | `Role`, `Owns` declarations |
 | `<core_directives>` | MIDDLE | `Inputs`, `Read`, `Output` schemas |
-| `<execution_modes>` | MIDDLE | State machine, workflows, DTOs |
+| `<execution_define>` | MIDDLE | State machine, workflows, DTOs |
 | `<critical_constraints>` | BOTTOM | `Preconditions`, `Must`, `Never`, `Exit` |
 
 Tags isolate configuration directives from model internal reasoning (e.g., DeepSeek `<think>` blocks).
@@ -67,7 +67,7 @@ Tags isolate configuration directives from model internal reasoning (e.g., DeepS
 ```
 TOP    → <identity>              (Primacy Effect — highest recall)
 MIDDLE → <core_directives>
-         <execution_modes>       (Logic & DTO definitions)
+         <execution_define>       (Logic & DTO definitions)
 BOTTOM → <critical_constraints>  (Recency Bias — halt conditions)
 ```
 
@@ -79,12 +79,12 @@ Owns: CodeModification
 </identity>
 
 <!-- MIDDLE (Technical Details & Workflow) -->
-<execution_modes>
+<execution_define>
 STATE: CLASSIFY
   - Validate contract
 STATE: IMPLEMENT
   - Execute AffectedFiles
-</execution_modes>
+</execution_define>
 
 <!-- BOTTOM (Recency Bias) — MUST be last block -->
 <critical_constraints>
@@ -279,7 +279,7 @@ Output:
     RequiredChanges: String
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: CLASSIFY
   1. Identify task boundary
   2. Validate scope
@@ -287,7 +287,7 @@ STATE: CLASSIFY
 STATE: ANALYZE
   1. Map dependencies
   2. Identify edge cases
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:
@@ -327,7 +327,7 @@ DeepSeek R-series generates an internal `<think>...</think>` reasoning block bef
 
 <!-- ✅ Safe — distinct config tag namespace -->
 <identity>...</identity>
-<execution_modes>...</execution_modes>
+<execution_define>...</execution_define>
 <critical_constraints>...</critical_constraints>
 ```
 
@@ -383,7 +383,7 @@ Exit:
 DeepSeek R1/V3 has strong alignment with explicit numbered steps within state blocks. Always number steps inside `STATE:` declarations:
 
 ```xml
-<execution_modes>
+<execution_define>
 STATE: CLASSIFY
   1. Validate TaskSpec fields
   2. Check AffectedFiles boundary
@@ -392,7 +392,7 @@ STATE: ANALYZE
   1. Read EntryPoint
   2. Map direct dependencies
   3. If unmapped symbols: set Status = REQUEST_EXPLORER
-</execution_modes>
+</execution_define>
 ```
 
 Numbered steps reduce ambiguity during internal think-block generation.

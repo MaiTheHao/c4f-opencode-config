@@ -63,7 +63,7 @@ Output:
     Status: READY | BLOCKED | REQUEST_CLARIFICATION
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: VERIFY_SCOPE
   1. Extract declared target scope from input
   2. Confirm target file paths exist in workspace
@@ -84,7 +84,7 @@ STATE: GENERATE_PLAN
   2. Build sequential step list with target file paths, modifications, and acceptance criteria
   3. Set Status = READY
   4. Emit ResearchOutput DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

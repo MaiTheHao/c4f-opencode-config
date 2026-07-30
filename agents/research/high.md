@@ -73,7 +73,7 @@ SubagentContracts:
       Status: SUCCESS | BLOCKED
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: DISCOVERY
   1. Launch 3 concurrent instances of research/research-high/scout with distinct analytical angles
   2. Collect Scout outputs
@@ -115,7 +115,7 @@ STATE: SAVE_OUTPUT
 
 STATE: FINAL_REPORT
   1. Output final high-depth research document
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

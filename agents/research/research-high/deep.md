@@ -49,7 +49,7 @@ Output:
     Confidence: High | Medium | Low
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: TIER_ALIGNMENT
   1. Identify Domain Tier 1 requirements (science, law, corporate, technical, medical, economic, news)
   2. Formulate primary Tier 1 search queries
@@ -65,7 +65,7 @@ STATE: SCRUTINY_AND_RATING
   3. Assign explicit SourceTier (T1/T2/T3) to every claim
   4. Assign Confidence rating (High requires convergent T1 sources)
   5. Emit plaintext DeepReport DTO
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:

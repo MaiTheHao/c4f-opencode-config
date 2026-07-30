@@ -49,7 +49,7 @@ Output:
     BlockingQuestions: Array<String>
 </core_directives>
 
-<execution_modes>
+<execution_define>
 STATE: INSPECT
   1. Parse ExplorerContext and EntryPoint
   2. Identify direct component boundaries
@@ -63,7 +63,7 @@ STATE: VALIDATE
   1. If unmapped symbols or insufficient context: set Status = REQUEST_EXPLORER
   2. If ambiguous task requirements: set Status = BLOCKED
   3. If all scope is clear: set Status = READY
-</execution_modes>
+</execution_define>
 
 <critical_constraints>
 Preconditions:
