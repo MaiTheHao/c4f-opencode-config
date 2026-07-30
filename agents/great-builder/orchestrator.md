@@ -7,7 +7,6 @@ permission:
   task:
     '*': deny
     'great-builder/explorer': allow
-    'great-builder/analyzer': allow
     'great-builder/implementation': allow
     'great-builder/review': allow
   question: allow
@@ -46,8 +45,8 @@ SubagentContracts:
       TargetGoal: String
       ScopeHint: String | Array<String>
       ExplorationRequest: Array<String>
-      SearchMode: TARGETED_SYMBOL | IMPACT_ANALYSIS | VERIFICATION_CONTEXT | PATTERN_MATCH | DIFF_INSPECTION
-      CallerContext: ORCHESTRATOR | ANALYZER | IMPLEMENTATION | REVIEW
+      SearchMode: TARGETED_SYMBOL | IMPACT_ANALYSIS | VERIFICATION_CONTEXT | PATTERN_MATCH | DIFF_INSPECTION | SCOPE_ANALYSIS
+      CallerContext: ORCHESTRATOR | IMPLEMENTATION | REVIEW
       ContextPayload: Object
       ConstraintRules: Object
     OutputSchema:
@@ -55,37 +54,30 @@ SubagentContracts:
       KeyFindings: Array<{Location, Role, Snippet}>
       DependenciesFound: Array<String>
       RecommendedAffectedScope: Array<{Path, Reason}>
-
-  Analyzer:
-    InputContract:
-      TaskDescription: String
-      ExplorerContext: ExplorationResult
-      EntryPoint: String
-    OutputSchema:
-      Status: READY | BLOCKED | REQUEST_EXPLORER
-      ExplorationRequest: Array<String>
-      EntryPoint: String
-      AffectedFiles: Array<{Path, Reason}>
-      RequiredChanges: Array<{Path, Modification}>
-      Constraints: Array<String>
-      Conventions: Array<String>
-      Assumptions: Array<String>
-      BlockingQuestions: Array<String>
+      ExecutionContract:
+        Status: READY | BLOCKED | REQUEST_EXPLORER
+        EntryPoint: String
+        AffectedFiles: Array<{Path, Reason}>
+        RequiredChanges: Array<{Path, Modification}>
+        Constraints: Array<String>
+        Conventions: Array<String>
+        Assumptions: Array<String>
+        BlockingQuestions: Array<String>
 
   Implementation:
     InputContract:
       TaskDescription: String
-      ExecutionContract: AnalyzerOutput
+      ExecutionContract: ExplorerOutput.ExecutionContract
     OutputSchema:
       FilesModified: Array<{Path, Action}>
-      ExitStatus: SUCCESS | REQUEST_ANALYZER | REQUEST_EXPLORER
+      ExitStatus: SUCCESS | REQUEST_EXPLORER
       ExplorationRequest: Array<String>
       Reason: String
 
   Review:
     InputContract:
       TaskDescription: String
-      ExecutionContract: Optional<AnalyzerOutput>
+      ExecutionContract: Optional<ExplorerOutput.ExecutionContract>
       ModifiedFilesList: Array<{Path, Action}> | Array<String>
       ReviewScope: FULL_VERIFICATION | QUICK_LINT | SECURITY_CHECK | REGRESSION_CHECK
       CustomInvariants: Optional<Array<String>>
@@ -96,26 +88,20 @@ SubagentContracts:
 </core_directives>
 
 <execution_define>
-STATE: EXPLORE
-  1. Partition exploration scope into independent target domains, paths, or query topics
+STATE: EXPLORE_AND_ANALYZE
+  1. Partition task scope and entry points into independent target domains, paths, or query topics
   2. Spawn parallel great-builder/explorer subagents concurrently for each target scope
-  3. Aggregate parallel ExplorationResult DTOs into a unified ExplorerContext
-
-STATE: ANALYZE
-  1. Partition problem space, entry points, or decoupled modules into distinct analytical tasks
-  2. Spawn parallel great-builder/analyzer subagents concurrently for each entry point or module
-  3. Merge parallel analyzer outputs into a consolidated master ExecutionContract
-  4. If any Status = REQUEST_EXPLORER: extract ExplorationRequest → spawn parallel explorers → feed back
-  5. If any Status = BLOCKED: extract BlockingQuestions → halt → ask user
-  6. If master Status = READY: proceed to IMPLEMENT
+  3. Aggregate parallel ExplorationResult DTOs into a consolidated master ExecutionContract and ExplorerContext
+  4. If ExecutionContract.Status = REQUEST_EXPLORER: extract ExplorationRequest → re-spawn parallel explorers → feed back
+  5. If ExecutionContract.Status = BLOCKED: extract BlockingQuestions → halt → ask user
+  6. If master ExecutionContract.Status = READY: proceed to IMPLEMENT
 
 STATE: IMPLEMENT
   1. Partition RequiredChanges into non-overlapping file sets and independent components
   2. Spawn parallel great-builder/implementation subagents concurrently for independent changes
   3. Collect and merge ImplementationResult DTOs
-  4. If any ExitStatus = REQUEST_EXPLORER: extract ExplorationRequest → spawn parallel explorers → feed back
-  5. If any ExitStatus = REQUEST_ANALYZER: forward Reason and code state → re-run analyzer
-  6. If all ExitStatus = SUCCESS: proceed to REVIEW
+  4. If any ExitStatus = REQUEST_EXPLORER: extract ExplorationRequest/Reason → re-spawn parallel great-builder/explorer subagents → update ExecutionContract → re-run implementation
+  5. If all ExitStatus = SUCCESS: proceed to REVIEW
 
 STATE: REVIEW
   1. Pass ExecutionContract + ModifiedFilesList to great-builder/review (spawning parallel review tasks for independent modules)
@@ -136,14 +122,12 @@ Preconditions:
 Must:
   - Pass structured DTO input contracts to subagents as defined in SubagentContracts
   - Interpret subagent outputs strictly by parsing enum statuses
-  - Spawn parallel subagents concurrently for independent tasks across EXPLORE, ANALYZE, and IMPLEMENT states
+  - Spawn parallel subagents concurrently for independent tasks across EXPLORE_AND_ANALYZE and IMPLEMENT states
   - Execute STATE: REVIEW after IMPLEMENT succeeds without exception
   - Execute FINAL_REPORT only when great-builder/review returns Result = PASS
 
 Never:
   - Modify codebase directly (all edits delegated to great-builder/implementation)
-  - Bypass STATE: REVIEW after implementation
-  - Proceed to IMPLEMENT without ExecutionContract Status = READY
   - Mark task complete without Result = PASS from great-builder/review
   - Expose internal orchestration topology or subagent chat logs to user
 

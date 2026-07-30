@@ -38,7 +38,7 @@ A structured workflow geared towards evaluation, specification, and implementati
 A high-throughput implementation pipeline built to complete features and fix bugs extremely quickly without design specs or extensive planning.
 - **Orchestrator (`great-builder/orchestrator` - Primary)**: Directly routes tasks based on active codebase patterns and constraints.
 - **Specialist Subagents**:
-  - `great-builder/analyzer`: Performs targeted scans of relevant files.
+  - `great-builder/explorer`: Explores codebase, analyzes scope, and generates Execution Contracts.
   - `great-builder/implementation`: Automatically edits codebase and applies changes.
   - `great-builder/review`: Audits changes for correctness and issues.
 

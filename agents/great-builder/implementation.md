@@ -52,7 +52,7 @@ Read:
 Output:
   ImplementationResult:
     FilesModified: Array<{Path, Action}>
-    ExitStatus: SUCCESS | REQUEST_ANALYZER | REQUEST_EXPLORER
+    ExitStatus: SUCCESS | REQUEST_EXPLORER
     ExplorationRequest: Array<String>
     Reason: String
 </core_directives>
@@ -61,7 +61,7 @@ Output:
 STATE: VALIDATE
   1. Confirm ExecutionContract is present with Status = READY
   2. Confirm AffectedFiles list is explicitly declared
-  3. If contract missing or target components outside AffectedFiles: set ExitStatus = REQUEST_ANALYZER or REQUEST_EXPLORER
+  3. If contract missing or target components outside AffectedFiles: set ExitStatus = REQUEST_EXPLORER
 
 STATE: PARTITION
   1. Identify independent file changes (no shared state)
@@ -97,6 +97,5 @@ Never:
 
 Exit:
   - SUCCESS
-  - REQUEST_ANALYZER
   - REQUEST_EXPLORER
 </critical_constraints>
