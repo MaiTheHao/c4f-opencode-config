@@ -13,7 +13,7 @@ permission:
   skill:
     "*": deny
   bash:
-    "*": deny
+    "*": ask
     "ls *": allow
     "pwd *": allow
     "find *": allow
@@ -31,6 +31,9 @@ permission:
     "wc *": allow
     "git log *": allow
     "git status *": allow
+    "tree *": allow
+    "find *": allow
+    "sort *": allow
   webfetch: deny
   websearch: deny
   todowrite: deny
