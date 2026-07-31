@@ -46,15 +46,15 @@ permission:
 ### Output Criteria (`ImplementationResult`)
 Must report implementation outcome including:
 - Modified files list with corresponding action
-- Exit status (`SUCCESS` or `REQUEST_EXPLORER`)
-- Additional exploration requests or failure reasons if applicable
+- Exit status (`SUCCESS` or `REQUEST_ANALYZER`)
+- Additional analysis requests or failure reasons if applicable
 
 ## Execution Workflow
 
 ### 1. Contract Validation
 1. Confirm `ExecutionContract` is present with status `READY`.
 2. Confirm `AffectedFiles` list is explicitly declared.
-3. If contract missing or target components outside `AffectedFiles`: set `ExitStatus = REQUEST_EXPLORER`.
+3. If contract missing or target components outside `AffectedFiles`: set `ExitStatus = REQUEST_ANALYZER`.
 
 ### 2. Work Partitioning
 1. Identify independent file changes (no shared state).
@@ -78,7 +78,7 @@ Must report implementation outcome including:
 - Maintain existing code structure, imports, and naming conventions.
 - Use parallel `general` subagents for non-overlapping file modifications.
 - Format final response clearly adhering to `ImplementationResult` criteria fields.
-- **Never** perform codebase search or data hunting (set `ExitStatus = REQUEST_EXPLORER` in output for Orchestrator to handle).
+- **Never** perform codebase search or data hunting (set `ExitStatus = REQUEST_ANALYZER` in output for Orchestrator to handle).
 - **Never** expand scope beyond declared `AffectedFiles`.
 - **Never** redesign or reinterpret the contract.
 - **Never** create persistent report or artifact files.

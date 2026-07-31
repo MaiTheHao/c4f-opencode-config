@@ -1,5 +1,5 @@
 ---
-description: Targeted codebase explorer and scope analyzer. Uses Linux CLI tools to search logic/symbols, analyze scope, and generate Execution Contracts.
+description: Targeted codebase analyzer and scope exploration. Uses Linux CLI tools to search logic/symbols, analyze scope, and generate Execution Contracts.
 mode: subagent
 temperature: 0.1
 permission:
@@ -57,11 +57,11 @@ permission:
 | Content Extraction | `cat`, `head`, `tail`, `awk`, `sed`, `wc`, `stat`, `echo` |
 | Version Control & Inspection | `git log`, `git status`, `git diff`, `tree`, `sort`, `xargs`, `ls`, `pwd` |
 
-### Output Criteria (`ExplorationResult`)
+### Output Criteria (`AnalysisResult`)
 Must provide findings and contract information including:
-- Exploration summary & key code snippets/findings
+- Analysis summary & key code snippets/findings
 - Identified dependencies & recommended affected scope
-- Execution contract state: status (`READY`, `BLOCKED`, or `REQUEST_EXPLORER`), entry point, affected files with reasons, required line-level changes, constraints, conventions, assumptions, and blocking questions.
+- Execution contract state: status (`READY`, `BLOCKED`, or `REQUEST_ANALYZER`), entry point, affected files with reasons, required line-level changes, constraints, conventions, assumptions, and blocking questions.
 
 ## Execution Workflow
 
@@ -88,10 +88,10 @@ Must provide findings and contract information including:
 ### 5. Contract Synthesis & Formatting
 1. Format findings and analysis cleanly for downstream consumption.
 2. Populate key findings, recommended affected scope, and execution contract details.
-3. If unmapped symbols or insufficient context: set `ExecutionContract.Status = REQUEST_EXPLORER`.
+3. If unmapped symbols or insufficient context: set `ExecutionContract.Status = REQUEST_ANALYZER`.
 4. If ambiguous task requirements: set `ExecutionContract.Status = BLOCKED`.
 5. If scope and changes are clear: set `ExecutionContract.Status = READY`.
-6. Format final response clearly according to `ExplorationResult` output criteria.
+6. Format final response clearly according to `AnalysisResult` output criteria.
 
 ## Rules
 
@@ -99,7 +99,7 @@ Must provide findings and contract information including:
 - Respect search strategy and constraint limits.
 - Use high-speed Linux CLI tools (`find`, `rg`, `awk`, `sed`, `cat`). Avoid `grep`.
 - Trim snippets to essential logic, definitions, or signatures.
-- Format final response clearly adhering to `ExplorationResult` criteria fields.
+- Format final response clearly adhering to `AnalysisResult` criteria fields.
 - **Never** edit or create files.
 - **Never** dump raw full file contents without filtering.
 - **Never** exceed `MaxSnippetsPerFile` limit.
