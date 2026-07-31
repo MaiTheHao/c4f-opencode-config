@@ -10,9 +10,6 @@ permission:
   list: deny
   grep: deny
   glob: deny
-  task:
-    "*": deny
-    "general": allow
   skill:
     "*": deny
   bash:

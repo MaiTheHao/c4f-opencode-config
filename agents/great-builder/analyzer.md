@@ -33,6 +33,7 @@ permission:
     'git log *': allow
     'git status *': allow
     'git diff *': allow
+    'git show *': allow
     'tree *': allow
     'sort *': allow
     'xargs *': allow
