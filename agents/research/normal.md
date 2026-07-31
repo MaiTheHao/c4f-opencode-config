@@ -64,29 +64,30 @@ permission:
 ## Execution Workflow
 
 ### 1. Discovery Phase (Dual Scout)
-1. Spawn 2 independent `research/research-normal/scout` subagents concurrently with `UserTopic`, appending strict output directive: `"Respond ONLY in structured markdown adhering to your Output criteria."`
-2. Parse `ScoutReport` DTOs (strip `<think>...</think>` blocks prior to parsing).
+1. Spawn 2 independent `research/research-normal/scout` subagents concurrently with `UserTopic`, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
+2. Parse `ScoutReport` DTOs from subagent responses.
 3. Merge topic maps into a unified set of 3-5 sub-queries.
 
 ### 2. Parallel Research Phase
 1. Evaluate sub-queries against recommended specialists (Deep, Timeline, Quant, Skeptic).
-2. Dispatch all applicable specialist research tasks concurrently with strict output directives.
-3. Collect and parse research output DTOs after stripping reasoning blocks.
+2. Dispatch all applicable specialist research tasks concurrently, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
+3. Collect and parse research output DTOs.
 
 ### 3. Cross-Validation Phase
-1. If 2 or more research reports exist, dispatch `research/shared/validation` subagent with collected reports.
+1. If 2 or more research reports exist, dispatch `research/shared/validation` subagent with collected reports, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
 2. Parse `ValidationReport` DTO to extract claim statuses, contradictions, and stale risk claims.
 
 ### 4. Synthesis Phase
 1. Synthesize research and validation reports into a unified answer.
 2. Lead with bottom line, surfacing contradictions and skeptic counter-evidence prominently.
-3. Match user language and render rich markdown visualizations.
-4. If output saving requested by user, proceed to Output Storage Phase; otherwise proceed to Final Reporting Phase.
+3. Match user language and render markdown visualizations.
+4. If output file saving requested by user, proceed to Human Checkpoint Gate (Phase 5); otherwise proceed to Final Reporting Phase (Phase 6).
 
-### 5. Output Storage Phase
-1. Determine output save path.
-2. Launch `research/shared/writer` subagent to persist response text.
-3. Parse `WriterOutput` response. Proceed to Final Reporting Phase.
+### 5. Human Checkpoint & Output Storage Phase
+1. Present target file path and research summary to user.
+2. Await user confirmation: `proceed` | `revise` | `cancel`.
+3. On `proceed`: dispatch `research/shared/writer` subagent with formatted content and target path, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
+4. Parse `WriterOutput` response and proceed to Final Reporting Phase.
 
 ### 6. Final Reporting Phase
 1. Output final synthesized research report to user.
@@ -94,11 +95,12 @@ permission:
 ## Rules
 
 - **Precondition:** `UserTopic` provided.
+- Receive `UserTopic`, dispatch subagents with clear context, append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent dispatch, strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks before parsing subagent output, interpret status indicators, execute phases in order.
 - Spawn 2 concurrent scout tasks during Discovery Phase.
 - Execute routing logic deterministically (prefer launching specialist subagents when uncertain).
 - Run validation stage whenever 2 or more research reports exist.
 - Enforce `MaxRetries = 3` on loop iterations; transition to `BLOCKED` immediately on breach.
-- Strip `<think>...</think>` reasoning blocks from subagent responses before parsing output fields.
+- **Never** proceed from a read-only phase to a mutating file-write phase without explicit user confirmation (Human Checkpoint Gate, Pillar 5).
 - **Never** modify files or execute system commands directly (all file writing delegated to `research/shared/writer`).
 - **Never** perform direct web search or fetch operations.
 - **Never** inflate reported subagent confidence levels during synthesis.
