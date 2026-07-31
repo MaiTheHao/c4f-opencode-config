@@ -63,12 +63,6 @@ permission:
 
 ## Core Definition
 
-### Inputs
-- `TaskDescription` (String)
-- `ExecutionContract` (DTO context)
-- `ModifiedFilesList` (List of paths & actions)
-- `ReviewScope` (Optional String)
-
 ### Allowed Commands Mapping
 | Target | Allowed Commands |
 |---|---|

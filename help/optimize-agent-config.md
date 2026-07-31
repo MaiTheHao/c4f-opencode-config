@@ -171,10 +171,6 @@ permission:
 
 ## Core Definition
 
-### Inputs
-- `TaskDescription`
-- <any upstream contract this role consumes, if applicable>
-
 ### Output Criteria (`<RoleName>Result`)
 Must provide outcome including:
 - <role-specific result fields>
@@ -225,7 +221,7 @@ Instruction files are context that gets loaded on every agent invocation. Bloate
 
 - **Line budget by mode:**
   - `mode: subagent` → target **≤ 90 lines** total (frontmatter + body). Hard ceiling **120 lines**.
-  - `mode: primary` (orchestrator) → target **≤ 130 lines**. Hard ceiling **160 lines**.
+  - `mode: primary` (orchestrator) → target **≤ 150 lines**. Hard ceiling **160 lines**.
   - Exceeding the hard ceiling REQUIRES splitting into a new subagent or moving detail into a referenced `skill` file — never inline padding.
 - **No redundant restatement:** A rule stated once in `## Rules` MUST NOT be re-explained in prose inside `## Execution Workflow`. Workflow steps reference behavior; Rules own the constraint. If both sections say the same thing in different words, delete the workflow-side prose.
 - **One example maximum per concept.** Do not stack multiple illustrative phrasings of the same rule ("Never do X" + "Avoid X" + "X is prohibited") — keep exactly one binding statement.
