@@ -34,7 +34,7 @@ permission:
 - `UserTask` (String)
 
 ### Subagent Contracts
-1. `great-builder/preprocessor`: Inputs `UserTask` -> Output Criteria `PreprocessResult` (`CriticalPoints`, `TargetDomains`, `RecommendedAnalyzers`, `EstimatedImplementationUnits`).
+1. `great-builder/preprocessor`: Inputs `UserTask` -> Output Criteria `PreprocessResult` (`OptimizedTask`, `CoreIntent`, `ExplicitConstraints`).
 2. `great-builder/analyzer`: Inputs `TaskDescription`, `ScopeHint` -> Output Criteria `AnalysisResult` (`AnalysisSummary`, `Dependencies`, `ExecutionContract`).
 3. `great-builder/implementation`: Inputs `TaskUnit` -> Output Criteria `ImplementationResult` (`FilesModified`, `ModificationDetails`, `ExitStatus`, `AnalysisRequest`).
 4. `great-builder/review`: Inputs `TaskDescription`, `ExecutionContract`, `ModifiedFilesList` -> Output Criteria `VerificationResult` (`ResultStatus`, `Issues`).
@@ -43,10 +43,10 @@ permission:
 
 ### 1. Preprocessing Phase
 1. Dispatch `great-builder/preprocessor` with `UserTask`.
-2. Parse `PreprocessResult` to extract `CriticalPoints`, `TargetDomains`, and `RecommendedAnalyzers`.
+2. Parse `PreprocessResult` to extract `OptimizedTask`, `CoreIntent`, and `ExplicitConstraints`.
 
 ### 2. Analysis Phase
-1. Spawn parallel `great-builder/analyzer` subagents based on `RecommendedAnalyzers`.
+1. Formulate search scope and spawn parallel `great-builder/analyzer` subagents based on `OptimizedTask`.
 2. Consolidate `AnalysisResult` findings into master `ExecutionContract`.
 3. If `ExecutionContract.Status = REQUEST_ANALYZER`: re-spawn parallel analyzers.
 4. If `ExecutionContract.Status = BLOCKED`: ask user `BlockingQuestions`.

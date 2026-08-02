@@ -12,8 +12,8 @@ permission:
   edit: deny
   write: deny
   skill:
-    'clean-code': allow
     '*': deny
+    'clean-code': allow
   bash:
     '*': ask
     'ls *': allow
