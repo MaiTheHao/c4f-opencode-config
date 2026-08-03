@@ -105,23 +105,33 @@ Do not use color alone to convey meaning. Always combine with shape/label.
 
 ## Styling & Auto-Theme Optimization (VS Code & GitHub)
 
-### VS Code & GitHub Auto-Theme Optimization Rules
-All complex logic processes or structures should be illustrated with Mermaid charts for visual clarity. To ensure diagrams automatically adapt seamlessly to both Light and Dark themes:
+### Default Rule: Strictly No Theme or Custom Color/Styling
+By default, to ensure diagrams render cleanly and adapt perfectly to all themes (Light/Dark) in VS Code, GitHub, and markdown renderers:
 
-- **NEVER hardcode themes** in code blocks (e.g., `%%{init: {'theme': 'dark'}}%%` or YAML `theme:`). Allow the IDE or browser to render according to the active theme dynamically.
-- **Adaptive Colors:** Use neutral, pastel color codes with high contrast on both light and dark backgrounds.
-- **Do NOT override font color (`color`):** Avoid using `style` or `classDef` to hardcode text colors (`color`). Allow text color to inherit naturally so text never becomes invisible when users toggle themes.
-- **Use Styling Correctly:** Only use `style` or `classDef` to adjust border stroke (`stroke`), thickness (`stroke-width`), or light background highlights on critical nodes.
-- **Prevent Syntax Errors:** ALWAYS wrap node labels containing special characters in double quotes.
-- **Reserved keywords MUST NOT be used as classDef names:** class, graph, end, default, flowchart, sequenceDiagram, stateDiagram, erDiagram, gantt, pie, gitGraph
+- **STRICTLY NO THEMES:** Never hardcode theme directives (e.g., `%%{init: {'theme': 'dark'}}%%` or YAML `theme:`).
+- **STRICTLY NO CUSTOM COLORS & STYLING:** Do NOT use `style`, `classDef`, `linkStyle`, or inline fill/stroke/text colors. 
+- Keep Mermaid code standard, clean, and plain so that the renderer/IDE handles all styling naturally.
+
+Example of expected plain syntax:
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
+
+### Exception: When User Explicitly Requests Colorful / Modern / Vibrant Styles
+If the user explicitly asks for **vibrant, colorful, modern, or visually customized colors** ("màu sắc sặc sỡ", "màu rõ ràng", "màu đẹp", "màu hiện đại"):
+- **MUST ASK THE USER FIRST:** Clarify whether their target environment/IDE theme is **Light Theme** or **Dark Theme** before designing the color scheme.
+- **Reason:** This ensures text and node contrast are correctly calculated so text remains legible and does not clash with the background.
 
 ## Common Pitfalls
 
 | Pitfall | Problem | Solution |
 |---|---|---|
 | Unquoted special chars | `A[AreaCalculator (Bad Design)]` breaks | Use quotes: `A["AreaCalculator (Bad Design)"]` |
-| Hardcoded theme | `%%{init: {'theme': 'dark'}}%%` breaks light theme | DO NOT hardcode theme; let IDE/browser handle auto-theme |
-| Hardcoded text color | `color: #fff` in style makes text invisible in light/dark theme | Do not set `color` in `style` or `classDef`; inherit theme text color |
+| Hardcoded theme | `%%{init: {'theme': 'dark'}}%%` breaks light theme | DO NOT hardcode theme |
 | `end` as node ID | Reserved word conflict | Use `A["end"]` |
 | Node ID starts with o/x | `oNode` -> circle edge | Use `orderNode` |
 | `\n` in labels | Renders literal \n | Use `<br/>` |
@@ -145,8 +155,9 @@ When user asks to visualize something:
 - [ ] Correct diagram type for the data
 - [ ] First line is a valid type declaration
 - [ ] All labels (especially those with special characters) wrapped in double quotes
-- [ ] NO hardcoded themes in code blocks
-- [ ] NO hardcoded text `color` in `style` or `classDef`
+- [ ] NO hardcoded themes in code blocks (`%%{init: ...}%%`)
+- [ ] NO custom styling or colors (`style`, `classDef`, `linkStyle`, `fill`, `stroke`)
+- [ ] Diagram code is plain and standard
 - [ ] "end" is not used as a node ID
 - [ ] Line breaks use `<br/>`, not `\n`
 - [ ] Comments use `%%`
@@ -156,9 +167,7 @@ When user asks to visualize something:
 - [ ] Labels are 2-5 words, under 40 characters
 - [ ] Flow direction is clear (TD or LR)
 - [ ] Subgraphs used for grouping (maximum 2-3 levels)
-- [ ] classDef names do not clash with reserved keywords
 - [ ] Code fence is triple backticks, not tildes
-- [ ] Adaptive stroke/fill colors used consistently without forcing text colors
 
 ## References
 - https://mermaid.js.org/
