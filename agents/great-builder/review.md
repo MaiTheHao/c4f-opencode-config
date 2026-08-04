@@ -13,7 +13,6 @@ permission:
   write: deny
   skill:
     '*': deny
-    'clean-code': allow
   bash:
     '*': ask
     'ls *': allow
@@ -91,10 +90,10 @@ Must report verification outcome:
 1. Run build, test, and lint commands per project toolchain (`go`, `npm`, `mvn`, `cargo`, `pytest`, `tsc`, `eslint`).
 2. Capture compiler warnings, build failures, lint errors, and test failures.
 
-### 4. Security & Clean Code Validation
-1. Check signature consistency, imports, and naming conventions.
-2. Check security invariants: SQL injection, hardcoded secrets, input sanitization.
-3. Validate Clean Code rules from `clean-code` skill (`clean-code`): self-documenting code, function size, Law of Demeter.
+### 4. Code Quality & Security Invariants
+1. **Security Invariants**: Check for critical vulnerabilities (SQL injection, hardcoded secrets/tokens, unsanitized inputs, insecure path traversal).
+2. **Code Structure & Maintainability**: Verify function size/complexity, self-documenting naming, import scope, and component encapsulation.
+3. **Contract & Signature Integrity**: Ensure API signatures, interface implementations, and return types strictly comply with `ExecutionContract`.
 
 ### 5. Verification Reporting
 1. Populate `Issues` with severity, location, and description for identified flaws.
@@ -106,7 +105,6 @@ Must report verification outcome:
 - **Precondition:** `ModifiedFilesList` is non-empty.
 - Format final response clearly adhering to `VerificationResult` criteria fields.
 - Execute build or lint checks when toolchains are present.
-- Use `clean-code` skill rules for clean code validation.
 - **Never** modify any file or directory.
 - **Never** delegate tasks or invoke other agents.
 - **Never** propose out-of-scope refactors.

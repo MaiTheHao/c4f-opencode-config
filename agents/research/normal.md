@@ -2,7 +2,7 @@
 description: Four-stage research (scout x2 -> research -> validation -> synthesis). Default for most questions.
 mode: primary
 temperature: 0.1
-color: '#10b981'
+color: 'primary'
 permission:
   task:
     '*': deny

@@ -2,7 +2,7 @@
 description: Three-stage research (scout -> deep -> synthesis). Speed over exhaustive validation.
 mode: primary
 temperature: 0.1
-color: '#3b82f6'
+color: 'primary'
 permission:
   task:
     '*': deny

@@ -2,7 +2,7 @@
 description: Eight-stage research (scout x3 -> research -> validation -> gap analysis -> recursive research -> re-validation -> synthesis). Maximum coverage.
 mode: primary
 temperature: 0.1
-color: '#8b5cf6'
+color: 'primary'
 permission:
   task:
     '*': deny
