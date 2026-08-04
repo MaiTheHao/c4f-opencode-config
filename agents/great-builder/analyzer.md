@@ -7,7 +7,7 @@ permission:
     '*': deny
   read: allow
   list: allow
-  grep: deny
+  grep: allow
   glob: allow
   edit: deny
   write: deny

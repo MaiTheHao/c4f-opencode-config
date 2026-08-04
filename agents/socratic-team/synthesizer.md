@@ -5,13 +5,37 @@ temperature: 0.1
 permission:
   task:
     '*': deny
-  edit: deny
-  write: deny
   read: allow
+  list: allow
   grep: allow
   glob: allow
+  edit: deny
+  write: deny
+  skill:
+    '*': deny
+  bash:
+    '*': ask
+    'ls *': allow
+    'pwd *': allow
+    'find *': allow
+    'locate *': allow
+    'which *': allow
+    'stat *': allow
+    'cat *': allow
+    'head *': allow
+    'tail *': allow
+    'grep *': deny
+    'rg *': allow
+    'awk *': allow
+    'sed *': allow
+    'wc *': allow
+    'echo *': allow
+    'tree *': allow
+    'sort *': allow
+    'xargs *': allow
   webfetch: deny
   websearch: deny
+  todowrite: deny
 ---
 
 ## Core Definition
