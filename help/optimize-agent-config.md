@@ -40,6 +40,11 @@ This spec defines **HOW** to write any agent config file — structure, tone, co
 ## Pillar 4: Criteria Contracts & Subagent Enforcement
 - **Keys & Enums:** Space-free keys (`AffectedFiles`, `RequiredChanges`). Closed enums (`READY`, `BLOCKED`, `REQUEST_EXPLORER`, `SUCCESS`, `PASS`, `FIX_REQUIRED`).
 - **Subagent Contract Definition:** Define target subagent string (`namespace/agent`), Inputs DTO, and Output Criteria DTO with Enums under `## Core Definition`.
+- **Slot Allocation & Instance Resume Protocol (when bounding subagent execution):**
+  1. **Contract Slot Declaration:** Subagent Contracts declare explicit Slot bounds (e.g. `Slot: role-1`, `Slots: role-1..role-N`, or `Slot: role-<scope>`).
+  2. **Workflow Partitioning:** Execution Workflow MUST partition tasks into at most $N$ non-overlapping units matching declared slot limits.
+  3. **Instance Resume Optimization:** Re-dispatches, retries, or recursive phases MUST reuse existing subagent instances (`resume <slot_id>`) instead of spawning redundant subagents.
+  4. **Rules Enforcement:** Orchestrator Rules MUST explicitly require dispatching subagents with assigned Slot IDs and enforcing instance reuse.
 - **Response Enforcement Protocol:**
   1. No conflicting inline response text directives in `## Rules`.
   2. Subagent Rules MUST state: `Format final response clearly adhering to <CriteriaName> criteria fields`.
@@ -248,6 +253,7 @@ Instruction files are context that gets loaded on every agent invocation. Bloate
 [ ] Subagent contains literal rule: "Never delegate tasks or invoke other agents."
 [ ] Subagent permission block contains explicit task: deny.
 [ ] Anti-Loop Guardrail (MaxRetries = 3 -> BLOCKED) enforced, distinct from Human Checkpoint Gate.
+[ ] Subagent Slot Partitioning (when bounding execution): Explicit Slot IDs declared in Contracts, task units capped at slot limits, and instance resume (`resume <slot_id>`) enforced for re-dispatches.
 [ ] Temperature matches Pillar 8 role class exactly.
 [ ] File line count within Pillar 9 budget for its mode; self-audit performed if over.
 [ ] No duplicate rule stated in both Workflow and Rules sections.
