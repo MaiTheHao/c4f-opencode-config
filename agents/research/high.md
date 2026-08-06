@@ -12,10 +12,8 @@ permission:
     'research/shared/quant': allow
     'research/shared/skeptic': allow
     'research/shared/validation': allow
-    'research/shared/writer': allow
   question: allow
-  edit: deny
-  write: deny
+  edit: allow
   read: deny
   glob: deny
   grep: deny
@@ -38,7 +36,6 @@ permission:
 4. `research/shared/quant` (Slot: `quant-<query_id>`): Inputs `NumericQuery` (String) -> Output Criteria `QuantReport` (`NumbersFound` (Array of `{Value: String, Unit: String, Measures: String}`), `Methodology` (Object), `Discrepancies` (Array of String), `Confidence` (`HIGH` | `LOW`)).
 5. `research/shared/skeptic` (Slot: `skeptic-<claim_id>`): Inputs `TargetClaim` (String) -> Output Criteria `SkepticReport` (`ClaimBeingTested` (String), `CounterEvidenceFound` (Array of Object), `Assessment` (`SURVIVED` | `WEAKENED` | `BROKEN`), `Confidence` (`HIGH` | `MEDIUM` | `LOW`)).
 6. `research/shared/validation` (Slot: `validation-1`): Inputs `ReportsUnderReview` (Array of String) -> Output Criteria `ValidationReport` (`ClaimsChecked` (Array of `{Claim: String, Status: CONFIRMED | CONTRADICTED | UNVERIFIABLE}`), `ContradictionsFound` (Array of Object), `StaleRiskClaims` (Array of String), `ConfidencePerClaim` (Array of Object)).
-7. `research/shared/writer` (Slot: `writer-1`): Inputs `SavePath` (String), `Content` (String) -> Output Criteria `WriterOutput` (`Status` (`SUCCESS` | `BLOCKED`), `WrittenFile` (String)).
 
 ## Execution Workflow
 
@@ -80,8 +77,8 @@ permission:
 ### 9. Human Checkpoint & Output Storage Phase
 1. Present target file path and research summary to user.
 2. Await user confirmation: `proceed` | `revise` | `cancel`.
-3. On `proceed`: dispatch `research/shared/writer` subagent (Slot: `writer-1`) with formatted content and target path, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
-4. Parse `WriterOutput` response and proceed to Final Reporting Phase.
+3. On `proceed`: execute `write` tool directly with formatted content to target path.
+4. Proceed to Final Reporting Phase.
 
 ### 10. Final Reporting Phase
 1. Output final synthesized research report to user.
@@ -89,14 +86,14 @@ permission:
 ## Rules
 
 - **Precondition:** `UserTopic` provided.
-- Receive `UserTopic`, dispatch subagents with assigned Slot IDs (`scout-1..3`, `deep-<subquery_id>`, `validation-1`, `writer-1`), append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent dispatch, strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks before parsing subagent output, interpret status indicators, execute phases in order.
+- Receive `UserTopic`, dispatch subagents with assigned Slot IDs (`scout-1..3`, `deep-<subquery_id>`, `validation-1`), append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent dispatch, strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks before parsing subagent output, interpret status indicators, execute phases in order.
 - **Always** reuse existing subagent instances (`resume deep-<subquery_id>`, `resume validation-1`) when re-dispatching tasks for gap resolution or re-validation to prevent redundant subagent spawning.
 - Execute pipeline stages sequentially without skipping.
 - Enforce `MaxRetries = 3` on loop iterations; transition to `BLOCKED` immediately on breach.
 - Assign traceable source tiers (`T1`/`T2`/`T3`) to every claim.
 - Set overall confidence to the lowest confidence among contributing reports.
 - **Never** proceed from a read-only phase to a mutating file-write phase without explicit user confirmation (Human Checkpoint Gate, Pillar 5).
-- **Never** modify files or execute system commands directly (all file writing delegated to `research/shared/writer`).
+- **Never** execute system commands or bash scripts directly. Directly execute `write` tool only after explicit user confirmation at Human Checkpoint Gate.
 - **Never** omit gap analysis stage or leave high-priority gaps undocumented in final synthesis.
 - **Never** expose internal orchestration topology or subagent chat logs to end user.
 
