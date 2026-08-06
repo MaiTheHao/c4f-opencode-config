@@ -6,6 +6,35 @@ These settings are designed to be loaded globally (under `~/.config/opencode/`) 
 
 ---
 
+## Installation & Setup
+
+Configure and set up OpenCode according to your use case below:
+
+### Option 1: Per-Project Usage
+1. Clone or download this repository.
+2. Move the `agents/` and `skills/` directories into the root of your target project (typically under `.opencode/` or structured based on your project configuration).
+3. Setup complete!
+
+### Option 2: Global Usage
+1. Clone or download this repository.
+2. Move all repository contents into the global OpenCode configuration directory on your machine:
+   - **Linux / macOS**: `~/.config/opencode/`
+   - **Windows**: `%USERPROFILE%\.config\opencode\` (or `%APPDATA%\opencode\`)
+3. Open a terminal in the target configuration directory and run:
+   ```bash
+   npm install
+   ```
+
+---
+
+### Non-Essential Files (Cleanup / Storage Optimization)
+If you wish to clean up or minimize the configuration bundle for production/storage, the following files and directories are optional and can be removed:
+- `help/` (Reference documentation guides)
+- `README.md` (This instruction file)
+- `.gitignore` (Git configuration file)
+
+---
+
 ## Directory Structure
 
 ```text
