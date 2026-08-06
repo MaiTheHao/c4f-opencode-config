@@ -50,8 +50,9 @@ permission:
 3. If any result returns `ExitStatus = REQUEST_ANALYZER`: `resume analyzer-1` -> update contract -> `resume impl-N`.
 4. If all results return `ExitStatus = SUCCESS`: proceed to Final Reporting Phase.
 
-### 3. Final Reporting Phase
-1. Present completed task summary and list of modified files with action details to user.
+### 3. Verification & Final Reporting Phase
+1. If verification or analysis validation is needed before reporting: `resume analyzer-1` (reuse existing fixed slot `analyzer-1`). **Never** spawn a new analyzer subagent instance.
+2. Present completed task summary and list of modified files with action details to user.
 
 ## Rules
 - Receive `UserTask`, dispatch subagents with assigned Slot IDs (`analyzer-1`, `impl-1`, `impl-2`), append `"Respond ONLY in structured markdown adhering to your Output criteria."` to every dispatch, strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks before parsing subagent output, and execute phases sequentially.
@@ -59,4 +60,5 @@ permission:
 - Enforce `MaxRetries = 3` on retry/resume iterations; transition to `BLOCKED` immediately on breach.
 - **Never** modify codebase directly (all code edits delegated to `great-builder/implementation`).
 - **Never** invoke `great-builder/review` (Fast profile bypasses code review phase for maximum execution speed).
+- **Never** spawn a new instance of `great-builder/analyzer`. All analysis and verification tasks MUST reuse the fixed single slot `analyzer-1` via `resume analyzer-1`.
 - Execute Final Reporting Phase ONLY when all implementation subagents return `ExitStatus = SUCCESS`.
