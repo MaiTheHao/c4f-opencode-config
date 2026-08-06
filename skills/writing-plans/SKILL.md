@@ -3,58 +3,57 @@ name: writing-plans
 description: "Use when you have a spec or requirements for a multi-step task, before touching code."
 ---
 
-# Writing Implementation Plans
+# Mission
 
-Transform design specifications or user requirements into a structured, step-by-step technical implementation plan before touching code.
-
-<HARD-GATE>
-Do NOT write code or execute code changes during plan creation. Present the completed plan to the user and wait for explicit approval.
-</HARD-GATE>
+Transform design specifications or user requirements into structured technical implementation plans prior to writing code.
 
 ---
 
-## Process Overview
+# Workflow
 
 ```mermaid
 graph TD
-    A[1. Analyze Requirements & Scope] --> B[2. Define File Structure & Interfaces]
-    B --> C[3. Create Task Breakdown & Mermaid Diagram]
-    C --> D[4. Inline Self-Review]
+    A[1. Analyze Scope & Context] --> B[2. Define File Structure & Interfaces]
+    B --> C[3. Build Task Breakdown & Mermaid Diagram]
+    C --> D[4. Perform Self-Review]
     D --> E[5. Save Plan Artifact]
     E --> F[6. Obtain User Approval]
 ```
 
 ---
 
-## Plan Artifact Location
+# Mandatory Rules (P0)
 
-- **Primary Path:** `<appDataDir>/brain/<conversation-id>/implementation_plan.md`
-- **Project-Level Path:** `docs/brainstorming/plans/YYYY-MM-DD-<feature-name>.md` *(if project-level persistence is requested)*
-
----
-
-## Core Guidelines
-
-### 1. Task Right-Sizing & Granularity
-- Break work into bite-sized, independently testable tasks (2–5 minutes per step).
-- Specify exact file paths, method signatures, parameter types, and explicit verification commands.
-
-### 2. No Placeholders (Strict Policy)
-- Never write `TODO`, `TBD`, "add validation later", or vague descriptions.
-- Include complete code snippets and exact test/build commands for every step.
-
-### 3. Mandatory Mermaid Diagram Integration
-- **REQUIRED SUB-SKILL:** Use the `mermaid` skill to embed valid Mermaid diagrams (architecture, sequence, flowcharts, or component diagrams) inside every implementation plan.
+<HARD-GATE>
+- NEVER write or execute code changes during plan creation.
+- STOP and wait for explicit user approval before executing the plan.
+- NO placeholders (`TODO`, `TBD`, "add validation later"). Every step MUST contain explicit logic/commands.
+- MANDATORY Mermaid Diagram: Embedded valid Mermaid architecture/flow diagram required in every plan.
+</HARD-GATE>
 
 ---
 
-## Plan Template Structure
+# Plan Locations
+
+- **Default:** `<appDataDir>/brain/<conversation-id>/implementation_plan.md`
+- **Project Persistent:** `docs/brainstorming/plans/YYYY-MM-DD-<feature-name>.md` *(if requested)*
+
+---
+
+# Task Granularity Rules
+
+- Task size: 2–5 minutes per step, independently testable.
+- Specs required per task: exact file paths, method signatures, parameter types, explicit verification commands.
+
+---
+
+# Template Structure
 
 ```markdown
 # [Feature Name] Implementation Plan
 
-**Goal:** [One sentence describing what this feature builds]
-**Architecture:** [Short summary of the approach]
+**Goal:** [One sentence overview]
+**Architecture:** [Approach summary]
 
 ## System Architecture Diagram
 ```mermaid
@@ -64,34 +63,37 @@ graph TD
 
 ## User Review Required
 > [!IMPORTANT]
-> [Highlight breaking changes, key design choices, or risks requiring explicit user sign-off.]
+> [Breaking changes, key design decisions, risks requiring user approval]
 
 ## Open Questions
-- [Any clarifying questions that impact implementation.]
+- [Questions impacting implementation]
 
 ## Proposed Changes
 
 ### [Component Name]
-
 #### [NEW/MODIFY/DELETE] [file_basename](file:///absolute/path/to/file)
-- Specific modifications and responsibilities.
+- Modifications and responsibilities.
 
 ---
 
 ## Detailed Tasks
 
-### Task 1: [Component/Module Name]
-- **Files:** `exact/path/to/file.py`
-- **Verification:** `pytest tests/path/to/test.py`
+### Task 1: [Component Name]
+- **Files:** `path/to/file`
+- **Verification:** `verification command`
 
-- [ ] **Step 1: Write failing test / test case**
-- [ ] **Step 2: Implement minimal code logic**
-- [ ] **Step 3: Run verification and verify PASS**
+- [ ] **Step 1: Write failing test**
+- [ ] **Step 2: Implement minimal logic**
+- [ ] **Step 3: Run verification & ensure PASS**
 ```
 
 ---
 
-## Self-Review & Handoff
+# Decision Rules
 
-1. **Self-Review:** Scan plan inline for missing spec requirements, placeholders, syntax errors in Mermaid diagrams, or type mismatches. Fix inline immediately.
-2. **Handoff:** Present the plan artifact path to the user. Once approved, invoke the `executing-plans` skill to execute.
+| Condition | Action |
+| :--- | :--- |
+| Self-review finds ambiguity / placeholders | Fix inline immediately before saving artifact |
+| User approves plan | Invoke `executing-plans` skill |
+| User requests changes | Update plan artifact → Request approval again |
+

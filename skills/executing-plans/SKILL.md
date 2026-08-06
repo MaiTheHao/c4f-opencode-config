@@ -3,17 +3,13 @@ name: executing-plans
 description: "Use when you have a written implementation plan to execute in a separate session with review checkpoints."
 ---
 
-# Executing Plans
+# Mission
 
-Execute an approved implementation plan task-by-task with strict verification, empirical log checking, and walkthrough documentation.
-
-<HARD-GATE>
-Do NOT mark a task as complete without gathering concrete, empirical runtime verification (passing tests, clean logs, or working build).
-</HARD-GATE>
+Execute approved implementation plan task-by-task with strict TDD, empirical log validation, and walkthrough documentation.
 
 ---
 
-## Process Overview
+# Execution Workflow
 
 ```mermaid
 graph TD
@@ -29,29 +25,44 @@ graph TD
 
 ---
 
-## Execution Protocol
+# Mandatory Rules (P0)
 
-### Step 1: Load Plan & Validate Prerequisites
-- Load `implementation_plan.md` or the target plan file.
-- Verify target files exist and environment prerequisites are met before starting.
+<HARD-GATE>
+- NEVER mark a task completed without concrete runtime verification (passing tests/build/clean logs).
+- NEVER mask errors via dummy fallbacks, swallow exceptions, or comment out failing assertions. Trace and fix root cause.
+</HARD-GATE>
 
-### Step 2: Task Execution & TDD
-For each task in the plan:
-1. Mark task status to `in_progress`.
-2. Follow steps precisely: write test -> verify failure -> implement minimal logic -> verify pass.
-3. Keep edits scoped strictly to the task requirements to prevent unintended side effects.
+---
 
-### Step 3: Empirical Verification & Error Handling
-- **Inspect Logs on Failure:** If a test or build fails, fetch and inspect the full un-truncated error log immediately.
-- **No Masking:** Never resolve errors by returning dummy fallbacks, commenting out broken assertions, or swallowing exceptions. Trace and fix the root cause.
+# Execution Protocol
 
-### Step 4: Update Plan Progress
-- Mark completed checkboxes (`- [x]`) in the plan artifact upon verifying each task.
+## Step 1: Load & Validate
+- Load `implementation_plan.md` or target plan artifact.
+- Verify target files exist and environment prerequisites are met before execution.
 
-### Step 5: Walkthrough Artifact & Completion
-Upon completing all tasks:
-- Generate or update `<appDataDir>/brain/<conversation-id>/walkthrough.md`.
-- Include:
-  - Concise summary of completed changes
-  - Empirical verification results (test suite output, build success logs)
-  - Markdown links to modified files
+## Step 2: Task Execution & TDD Cycle
+- Set task status to `in_progress`.
+- Follow strict TDD loop:
+  1. Write failing test
+  2. Verify failure via test command
+  3. Implement minimal logic
+  4. Verify test pass
+- Keep edits strictly scoped to task requirements to prevent unintended side effects.
+
+## Step 3: Progress & Walkthrough Updates
+- Update plan artifact: check completed task boxes (`- [x]`).
+- Upon completion of ALL tasks, generate/update `<appDataDir>/brain/<conversation-id>/walkthrough.md`:
+  - Summary of completed changes
+  - Empirical verification evidence (test suite outputs, build logs)
+  - Markdown links to modified/created files
+
+---
+
+# Decision Rules
+
+| Condition | Action |
+| :--- | :--- |
+| Task verification fails | Inspect full un-truncated logs → Fix root cause → Re-verify |
+| All tasks verified PASS | Mark plan finished → Generate `walkthrough.md` |
+| Scope deviation required | Pause execution → Update plan artifact → Request approval |
+

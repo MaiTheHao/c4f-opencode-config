@@ -1,174 +1,92 @@
 ---
 name: mermaid
-description: "Help users create clear, accessible, and correct Mermaid diagrams embedded in markdown documents."
+description: Help users create clear, accessible, and correct Mermaid diagrams embedded in markdown documents.
 ---
 
-# Visualize with Mermaid in Markdown
+# Mission
 
-## Purpose
-Help users create clear, accessible, and correct Mermaid diagrams embedded in markdown documents.
+Generate syntax-valid, theme-adaptive, accessible Mermaid diagrams in markdown.
 
-## When to Use Mermaid
-- Logic with conditional branching
-- Critical step order
-- Multiple actors/systems involved (multi-system coordination)
-- Defining error handling / retry behavior
-- Data structure relationships that need to be communicated
+---
 
-## Available Chart Types
-- Flowchart
-- Swimlanes Diagram
-- Sequence Diagram
-- Class Diagram
-- State Diagram
-- Entity Relationship Diagram
-- User Journey
-- Gantt
-- Pie Chart
-- Quadrant Chart
-- Requirement Diagram
-- GitGraph (Git) Diagram
-- C4 Diagram
-- Mindmaps
-- Timeline
-- ZenUML
-- Sankey
-- XY Chart
-- Block Diagram
-- Packet
-- Kanban
-- Architecture
-- Radar
-- Event Modeling
-- Treemap
-- Venn
-- Ishikawa
-- Wardley
-- Cynefin
-- TreeView
+# Priority Rules
 
-## Node Shape Semantics (Flowchart)
+## P0 Mandatory Constraints
 
-| Shape | Syntax | Meaning |
+- **Code Block Syntax:** MUST use ` ```mermaid `. Never use tildes (`~~~`).
+- **Label Quoting:** ALWAYS wrap labels in double quotes `A["Label (Details)"]` to prevent parser breaks on special characters or spaces.
+- **Line Breaks:** MUST use `<br/>`. Never use `\n`.
+- **Node IDs:** 
+  - MUST use camelCase without spaces.
+  - MUST NOT start with `o` or `x` (triggers unintended edge renderers).
+  - MUST NOT use reserved word `end` as node ID (use `End` or `A["end"]`).
+- **Subgraphs:** Max nesting depth ≤ 2-3 levels.
+- **Theme & Colors:**
+  - **DEFAULT:** STRICTLY NO hardcoded themes (`%%{init: ...}%%`), `style`, `classDef`, `linkStyle`, or inline colors. Keep raw standard syntax for IDE dark/light theme auto-adaptation.
+  - **IF USER REQUESTS VIBRANT/CUSTOM COLORS:** ASK user for target IDE theme (Light vs Dark) BEFORE adding styles to ensure contrast.
+
+## P1 Preferred Constraints
+
+- **Node Count:** Keep 5-15 nodes per diagram. If >25 nodes, split into multiple diagrams.
+- **Label Length:** 2-5 words, <40 chars.
+- **Direction:** Explicitly set `TD` (top-down) for hierarchy/process or `LR` (left-to-right) for sequence/timeline.
+- **Color Independence:** Combine color/style with shape + label (accessibility).
+- **Comments:** Use `%%`. Avoid `{}` inside comments.
+
+---
+
+# Flowchart Node Shapes
+
+| Shape | Syntax | Semantics |
 |---|---|---|
-| Rectangle | A[Label] | Process step, action |
-| Rounded rectangle | A(Label) | Start/End |
-| Stadium (pill) | A([Label]) | Terminal point |
-| Subroutine | A[[Label]] | Subprocess |
-| Cylinder | A[(Label)] | Database, data store |
-| Circle | A((Label)) | Event, connector |
-| Diamond | A{Label} | Decision, branching |
-| Parallelogram | A[/Label/] | Input |
-| Parallelogram alt | A[\Label\] | Output |
-| Hexagon | A{{Label}} | Prepare / Setup |
-| Double circle | A(((Label))) | Stop point |
+| Process / Action | `A["Label"]` | Rectangle |
+| Start / End | `A("Label")` | Rounded rectangle |
+| Terminal | `A(["Label"])` | Stadium / Pill |
+| Subprocess | `A[["Label"]]` | Subroutine |
+| Database / Store | `A[("Label")]` | Cylinder |
+| Event / Connector | `A(("Label"))` | Circle |
+| Decision / Branch | `A{"Label"}` | Diamond |
+| Input | `A[/"Label"/]` | Parallelogram |
+| Output | `A[\"Label"\]` | Parallelogram alt |
+| Setup / Prepare | `A{{"Label"}}` | Hexagon |
+| Stop | `A((("Label")))` | Double circle |
 
-Rule: Use shapes consistently for the same concept throughout the diagram.
+Rule: Maintain 1:1 shape semantic consistency across single diagram.
 
-## Syntax Rules (MANDATORY)
+---
 
-### Label Quoting & Special Characters
-ALWAYS wrap labels in double quotes, especially when labels contain spaces or special characters (e.g., parentheses):
-- Correct: `A["AreaCalculator (Bad Design)"]`
-- Incorrect: `A[AreaCalculator (Bad Design)]`
+# Execution Workflow
 
-### Code Fence
-- Use triple backticks: ```mermaid
-- Do not use tildes: ~~~mermaid
-
-### Line Breaks
-- Use `<br/>`: `A["Line 1<br/>Line 2"]`
-- Do not use `\n`: `A["Line 1\nLine 2"]`
-
-### Node IDs
-- Use camelCase, no spaces
-- Do not start with "o" or "x" (causes special edge rendering issues)
-- Do not use the reserved word "end" as a node ID
-- If "end" is needed -> use `A["end"]` or `End`
-
-### Comments
-- Use `%%` at the beginning of the line
-- Avoid `{}` in comments
-
-### Direction (Flowchart)
-- `TD` / `TB`: Top -> Bottom (process, hierarchy)
-- `LR`: Left -> Right (timeline, horizontal flow)
-- Choose 1 direction consistently
-
-## Accessibility (MANDATORY)
-
-Every diagram MUST have:
-- `accTitle: Concise title`
-- `accDescr: Detailed description of content for screen readers`
-
-Do not use color alone to convey meaning. Always combine with shape/label.
-
-## Styling & Auto-Theme Optimization (VS Code & GitHub)
-
-### Default Rule: Strictly No Theme or Custom Color/Styling
-By default, to ensure diagrams render cleanly and adapt perfectly to all themes (Light/Dark) in VS Code, GitHub, and markdown renderers:
-
-- **STRICTLY NO THEMES:** Never hardcode theme directives (e.g., `%%{init: {'theme': 'dark'}}%%` or YAML `theme:`).
-- **STRICTLY NO CUSTOM COLORS & STYLING:** Do NOT use `style`, `classDef`, `linkStyle`, or inline fill/stroke/text colors. 
-- Keep Mermaid code standard, clean, and plain so that the renderer/IDE handles all styling naturally.
-
-Example of expected plain syntax:
-```mermaid
-graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;
+```
+1. Select Chart Type (Flowchart | Sequence | Class | State | ERD | Gantt | Mindmap | Architecture | etc.)
+2. Determine Flow Direction (TD | LR)
+3. Draft Nodes & Edges (Enforce P0 Node ID & Quoting rules)
+4. Audit P0 Checklist (No themes/styles, valid IDs, proper escaping)
+5. Output raw ```mermaid block
 ```
 
-### Exception: When User Explicitly Requests Colorful / Modern / Vibrant Styles
-If the user explicitly asks for **vibrant, colorful, modern, or visually customized colors** ("màu sắc sặc sỡ", "màu rõ ràng", "màu đẹp", "màu hiện đại"):
-- **MUST ASK THE USER FIRST:** Clarify whether their target environment/IDE theme is **Light Theme** or **Dark Theme** before designing the color scheme.
-- **Reason:** This ensures text and node contrast are correctly calculated so text remains legible and does not clash with the background.
+---
 
-## Common Pitfalls
+# Decision Rules
 
-| Pitfall | Problem | Solution |
-|---|---|---|
-| Unquoted special chars | `A[AreaCalculator (Bad Design)]` breaks | Use quotes: `A["AreaCalculator (Bad Design)"]` |
-| Hardcoded theme | `%%{init: {'theme': 'dark'}}%%` breaks light theme | DO NOT hardcode theme |
-| `end` as node ID | Reserved word conflict | Use `A["end"]` |
-| Node ID starts with o/x | `oNode` -> circle edge | Use `orderNode` |
-| `\n` in labels | Renders literal \n | Use `<br/>` |
-| Color-only meaning | Inaccessible | Combine shape + label |
-| Diagram > 25 nodes | Layout degraded, slow | Split into multiple diagrams |
-| Forgot direction | Flowchart defaults to TD | Declare explicitly TD/LR |
-| Subgraph nesting too deep | Hard to read | Maximum 2-3 levels |
+- **IF** logic has conditional branching → Use Flowchart (`graph TD` / `graph LR`)
+- **IF** multi-actor dynamic interactions → Use Sequence Diagram (`sequenceDiagram`)
+- **IF** object structure / inheritance → Use Class Diagram (`classDiagram`)
+- **IF** state transitions & events → Use State Diagram (`stateDiagram-v2`)
+- **IF** database schemas → Use ER Diagram (`erDiagram`)
+- **IF** user explicit request color/vibrant → **THEN** prompt user for IDE theme (Light/Dark) before generating styles
+- **IF** diagram node count > 25 → **THEN** split into modular sub-diagrams
 
-## Workflow for Agent
+---
 
-When user asks to visualize something:
+# Forbidden Patterns
 
-1. **Analyze** — Determine the appropriate diagram type
-2. **Generate code** — Create Mermaid syntax following the rules
-3. **Validate** — Check against the syntax rules checklist
-4. **Render** — Output as a mermaid code block in markdown
-5. **Review** — Verify: labels quoted, accTitle/accDescr, node count, shape consistency
+- ✗ `~~~mermaid` (Use ` ```mermaid `)
+- ✗ `A[Text (Detail)]` (Unquoted special characters)
+- ✗ `A["Line1\nLine2"]` (Use `<br/>`)
+- ✗ `end` as Node ID
+- ✗ `oNode` / `xNode` as Node ID
+- ✗ `%%{init: {'theme': 'dark'}}%%` (Hardcoded themes)
+- ✗ Inline `style`, `classDef`, `linkStyle` without explicit user prompt & theme confirmation
+- ✗ Relying on colors alone to convey semantics
 
-## Quality Checklist (Final Gate)
-
-- [ ] Correct diagram type for the data
-- [ ] First line is a valid type declaration
-- [ ] All labels (especially those with special characters) wrapped in double quotes
-- [ ] NO hardcoded themes in code blocks (`%%{init: ...}%%`)
-- [ ] NO custom styling or colors (`style`, `classDef`, `linkStyle`, `fill`, `stroke`)
-- [ ] Diagram code is plain and standard
-- [ ] "end" is not used as a node ID
-- [ ] Line breaks use `<br/>`, not `\n`
-- [ ] Comments use `%%`
-- [ ] `accTitle` + `accDescr` are included
-- [ ] Node shapes are consistent
-- [ ] Node count is 5-15 (split if >25)
-- [ ] Labels are 2-5 words, under 40 characters
-- [ ] Flow direction is clear (TD or LR)
-- [ ] Subgraphs used for grouping (maximum 2-3 levels)
-- [ ] Code fence is triple backticks, not tildes
-
-## References
-- https://mermaid.js.org/
-- https://mermaid.live/

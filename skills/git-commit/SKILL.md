@@ -1,130 +1,78 @@
 ---
 name: git-commit
-description: 'Execute git commit with conventional commit message analysis, intelligent staging, and message generation. Use when user asks to commit changes, create a git commit, or mentions "/commit". Supports: (1) Auto-detecting type and scope from changes, (2) Generating conventional commit messages from diff, (3) Interactive commit with optional type/scope/description overrides, (4) Intelligent file staging for logical grouping'
+description: Execute git commit with conventional commit message analysis, intelligent staging, and message generation. Use when user asks to commit changes, create a git commit, or mentions "/commit". Supports auto-detecting type/scope, generating commit messages from diff, interactive staging, and secret validation.
 license: MIT
 allowed-tools: Bash
 ---
 
-# Git Commit with Conventional Commits
+# Mission
 
-## Overview
+Generate semantic, standardized conventional git commits via automated diff analysis and secure staging.
 
-Create standardized, semantic git commits using the Conventional Commits specification. Analyze the actual diff to determine appropriate type, scope, and message.
+---
 
-## Conventional Commit Format
+# Priority Rules
+
+## P0 Mandatory Safety Constraints
+
+- **Secrets Guard:** NEVER commit secrets (`.env`, `*.pem`, `credentials.json`, API tokens, private keys).
+- **Destructive Commands:** NEVER execute destructive commands (`--force`, `git reset --hard`) unless user explicitly requests.
+- **Config & Hooks:** NEVER alter `git config`. NEVER skip pre-commit hooks (`--no-verify`) unless explicitly asked.
+- **Protected Branches:** NEVER force-push to `main` / `master`.
+- **Hook Failure Handling:** IF commit fails due to pre-commit hooks, fix issues and create a NEW commit. Do NOT amend.
+
+## P1 Preferred Formatting Constraints
+
+- **Format:** `<type>[optional scope]: <description>` (Header <72 chars, present tense, imperative mood, lowercase, no trailing period).
+- **Breaking Changes:** Append `!` to type/scope (e.g. `feat!: ...`) OR include `BREAKING CHANGE: <details>` in footer.
+- **Atomicity:** One logical change per commit.
+
+---
+
+# Commit Type Matrix
+
+| Type | Semantics |
+|---|---|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation changes only |
+| `style` | Formatting / whitespace (no logic change) |
+| `refactor` | Code refactor (no feature or fix) |
+| `perf` | Performance improvement |
+| `test` | Adding or updating tests |
+| `build` | Build system or dependency changes |
+| `ci` | CI configuration / script changes |
+| `chore` | Maintenance / minor tasks |
+| `revert` | Reverting previous commit |
+
+---
+
+# Execution Workflow
 
 ```
-<type>[optional scope]: <description>
-
-[optional body]
-
-[optional footer(s)]
+1. Inspect Status → Run `git status`, `git diff --staged` (or `git diff`), `git log --oneline -n 5`.
+2. Audit Secrets → Scan staged & modified files for credentials / keys / tokens.
+3. Stage Changes → Run `git add <files>` or `git add .` (selective / logical grouping).
+4. Analyze Diff   → Determine Type, Scope, Description, Breaking Changes, and Issue refs (`Closes #123`).
+5. Execute Commit → Run `git commit -m "<message>"` or multiline `git commit -m "$(cat <<'EOF' ... EOF)"`.
 ```
 
-## Commit Types
+---
 
-| Type       | Purpose                        |
-| ---------- | ------------------------------ |
-| `feat`     | New feature                    |
-| `fix`      | Bug fix                        |
-| `docs`     | Documentation only             |
-| `style`    | Formatting/style (no logic)    |
-| `refactor` | Code refactor (no feature/fix) |
-| `perf`     | Performance improvement        |
-| `test`     | Add/update tests               |
-| `build`    | Build system/dependencies      |
-| `ci`       | CI/config changes              |
-| `chore`    | Maintenance/misc               |
-| `revert`   | Revert commit                  |
+# Decision Rules
 
-## Breaking Changes
+- **IF** new capability added → **THEN** type = `feat`
+- **IF** bug corrected → **THEN** type = `fix`
+- **IF** breaking API change introduced → **THEN** append `!` to type/scope (`feat!:`) or add `BREAKING CHANGE:` footer
+- **IF** commit fails on hook error → **THEN** fix root cause and execute fresh `git commit` (Do NOT `--amend`)
+- **IF** staged file matches `.env` or credential patterns → **THEN** abort commit and alert user
 
-```
-# Exclamation mark after type/scope
-feat!: remove deprecated endpoint
+---
 
-# BREAKING CHANGE footer
-feat: allow config to extend other configs
+# Forbidden Patterns
 
-BREAKING CHANGE: `extends` key behavior changed
-```
-
-## Workflow
-
-### 1. Check Status & Review Diffs
-
-```bash
-# Check status of modified and untracked files
-git status
-
-# If files are staged, inspect staged changes
-git diff --staged
-
-# If nothing staged, inspect working tree changes
-git diff
-
-# View recent commit history
-git log --oneline -n 5
-```
-
-### 2. Stage Changes
-
-```bash
-# Stage specific files
-git add path/to/file1 path/to/file2
-
-# Stage current directory recursively
-git add .
-
-# Interactive staging (hunk by hunk)
-git add -p
-
-# Unstage a file (keep local changes)
-git restore --staged path/to/file
-```
-
-**Never commit secrets** (`.env`, credentials.json, private keys, API tokens).
-
-### 3. Generate Commit Message
-
-Analyze the diff to determine:
-
-- **Type**: What kind of change is this (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`)?
-- **Scope**: What specific module/component is affected (optional)?
-- **Description**: Concise summary in present tense, imperative mood, lowercase, under 72 chars, no trailing period.
-
-### 4. Execute Commit
-
-```bash
-# Standard commit
-git commit -m "<type>[scope]: <description>"
-
-# Amend previous commit (add staged changes without changing message)
-git commit --amend --no-edit
-
-# Multi-line commit with body/footer
-git commit -m "$(cat <<'EOF'
-<type>[scope]: <description>
-
-<optional body>
-
-<optional footer>
-EOF
-)"
-```
-
-## Best Practices
-
-- One logical change per commit
-- Present tense: "add" not "added"
-- Imperative mood: "fix bug" not "fixes bug"
-- Reference issues: `Closes #123`, `Refs #456`
-- Keep description under 72 characters
-
-## Git Safety Protocol
-
-- NEVER update git config
-- NEVER run destructive commands (--force, hard reset) without explicit request
-- NEVER skip hooks (--no-verify) unless user asks
-- NEVER force push to main/master
-- If commit fails due to hooks, fix and create NEW commit (don't amend)
+- ✗ `git commit --no-verify` (unless requested)
+- ✗ `git push --force` or `git reset --hard` (unless requested)
+- ✗ Past tense commit messages (`fixed bug`, `added feature`)
+- ✗ Capitalized subject lines or trailing periods (`Fix bug.`)
+- ✗ Committing `.env` or secret key files

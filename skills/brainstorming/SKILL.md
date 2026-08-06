@@ -1,55 +1,56 @@
 ---
 name: brainstorming
-description: "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
+description: You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation.
 ---
 
-# Brainstorming & Design
+# Mission
 
-Explore user intent, define system architecture, and finalize design specifications through iterative, collaborative dialogue before writing any implementation code.
-
-<HARD-GATE>
-Do NOT write code, scaffold projects, or execute implementation skills until the design proposal is presented and explicitly approved by the user.
-</HARD-GATE>
+Explore user intent, system architecture, and design specifications through interactive validation before writing code.
 
 ---
 
-## Process Overview
+# Priority Rules
 
-```mermaid
-graph TD
-    A[1. Explore Context & Scope] --> B[2. Ask Clarifying Questions]
-    B --> C[3. Propose 2-3 Approaches]
-    C --> D[4. Present Design Sections]
-    D -->|Approved| E[5. Write Design Spec]
-    D -->|Feedback| C
-    E --> F[6. Self-Review & Final User Approval]
-    F -->|Approved| G[Invoke writing-plans]
+## P0 Mandatory Constraints
+
+- **HARD GATE:** MUST NOT write code, scaffold projects, or execute implementation skills until design proposal is presented and explicitly approved by user.
+- **Hand-off:** MUST invoke `writing-plans` skill immediately after final design spec approval.
+
+## P1 Preferred Constraints
+
+- **Decomposition:** If request spans multiple independent subsystems, decompose into sub-projects and brainstorm sub-project #1 first.
+- **Clarification:** Ask 1 targeted question at a time (prefer multiple-choice options).
+- **Proposals:** Present 2-3 technical options with trade-offs; explicitly highlight recommended option.
+- **Spec Path:** Write design specs to `docs/brainstorming/specs/YYYY-MM-DD-<topic>-design.md`.
+
+---
+
+# Execution Workflow
+
+```
+1. Inspect Context    → Analyze workspace, existing docs, and code dependencies.
+2. Ask Clarifications → Ask 1 targeted multiple-choice question at a time.
+3. Propose Options    → Present 2-3 approaches (Pros/Cons + Recommended).
+4. Incremental Design → Validate Architecture, Component Boundaries, Data Flow, Error Handling.
+5. Spec & Self-Audit  → Save spec to docs/brainstorming/specs/YYYY-MM-DD-<topic>-design.md. Audit for TODO/TBD or contradictions.
+6. Hand-off           → Upon user sign-off, trigger writing-plans skill.
 ```
 
 ---
 
-## Execution Steps
+# Decision Rules
 
-### 1. Explore Context & Scope
-- Inspect workspace files, existing docs, and project structure to align with existing architecture.
-- **Decompose if needed:** If the request spans multiple independent subsystems, decompose it into smaller sub-projects and brainstorm the first one.
+- **IF** creative work / feature modification requested → **THEN** enforce `<HARD-GATE>` (no code edit until sign-off)
+- **IF** multi-subsystem request → **THEN** split into sub-projects & brainstorm sequentially
+- **IF** spec contains `TODO` or `TBD` → **THEN** resolve inline before presenting to user
+- **IF** user approves final design spec → **THEN** immediately invoke `writing-plans` skill
 
-### 2. Ask Clarifying Questions
-- Ask **one targeted question at a time** (preferably multiple-choice).
-- Clarify core goals, technical constraints, success criteria, and edge cases.
+---
 
-### 3. Propose 2-3 Approaches
-- Present 2 to 3 technical solutions detailing pros, cons, and trade-offs.
-- Highlight the **recommended option** with clear technical justification.
+# Forbidden Patterns
 
-### 4. Present & Validate Design
-- Present design incrementally across key areas (Architecture, Component Boundaries, Data Flow, Error Handling, Testing).
-- Validate design sections with the user before finalizing.
-
-### 5. Document Spec & Self-Review
-- Write final design spec to `docs/brainstorming/specs/YYYY-MM-DD-<topic>-design.md`.
-- **Inline Self-Review:** Check for placeholders (`TODO`/`TBD`), internal contradictions, ambiguous requirements, or YAGNI scope creep. Fix inline immediately.
-- Present spec path to user for final review and sign-off.
-
-### 6. Hand-off
-- Upon final user approval, invoke the `writing-plans` skill to generate the implementation plan.
+- ✗ Writing code or creating files before design approval
+- ✗ Asking multiple open-ended un-structured questions simultaneously
+- ✗ Producing single-option take-it-or-leave-it proposals
+- ✗ Leaving `TODO`, `TBD`, or ambiguous placeholders in design specs
+- ✗ Skipping the `writing-plans` hand-off step
