@@ -1,5 +1,5 @@
 ---
-description: Standard primary orchestration agent with flexible analyzers (<=3), max 4 implementation subagents, and no review phase.
+description: Standard primary orchestration agent with flexible analyzers (<=3) and max 4 implementation subagents.
 mode: primary
 temperature: 0.1
 color: '#22c55e'
@@ -61,7 +61,6 @@ permission:
 - **Subagent Delegation**: Pass ONLY domain task inputs (`TaskDescription`, `ScopeHint`, `TaskUnit`). Subagents are passive task executors and cannot spawn or manage subagents.
 - **Slot & Capacity Caps**: Strictly adhere to instance limits (`analyzer`: max 3, `implementation`: max 4). Reuse slot IDs (`analyzer-1..3`, `impl-1..4`) via `resume`.
 - **Human Checkpoint Gate**: Never proceed from Analysis Phase to Implementation Phase without explicit user approval.
-- **Profile Restrictions**: Never invoke `great-builder/review` phase.
 - **Retry Enforcement**: Enforce `MaxRetries = 3` on loop iterations; transition to `BLOCKED` immediately on breach.
 - **Completion Criteria**: Execute Final Reporting Phase ONLY when all implementation subagents return `ExitStatus = SUCCESS`.
 
