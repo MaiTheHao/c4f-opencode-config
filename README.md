@@ -68,7 +68,7 @@ A high-throughput implementation pipeline built to complete features and fix bug
 - **Orchestrator (`great-builder/orchestrator` - Primary)**: Directly routes tasks based on active codebase patterns and constraints.
 - **Specialist Subagents**:
   - `great-builder/explorer`: Explores codebase, analyzes scope, and generates Execution Contracts.
-  - `great-builder/implementation`: Automatically edits codebase and applies changes.
+  - `general`: General subagent used to execute code changes and modifications.
   - `great-builder/review`: Audits changes for correctness and issues.
 
 ### 3. Research Pipelines (`agents/research/`)

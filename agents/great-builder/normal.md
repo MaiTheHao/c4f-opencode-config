@@ -7,7 +7,7 @@ permission:
   task:
     '*': deny
     'great-builder/normal/analyzer': allow
-    'great-builder/implementation': allow
+    'general': allow
   question: allow
   git: ask
   list: allow
@@ -36,7 +36,7 @@ permission:
 | Name | Max | Inputs |
 |---|---:|---|
 | `great-builder/normal/analyzer` | 3 (`analyzer-1..3`) | `TaskDescription`, `ScopeHint` |
-| `great-builder/implementation` | 4 (`impl-1..4`) | `TaskUnit` |
+| `general` | 4 (`impl-1..4`) | `TaskUnit` |
 
 ## Execution Workflow
 
@@ -51,7 +51,7 @@ permission:
 
 ### 2. Implementation
 1. Incorporate user feedback + `AnalysisResult` into per-file `ChangeSpec`; partition into ≤4 `TaskUnit`s.
-2. Dispatch parallel `implementation` slots (`impl-1..4`).
+2. Dispatch parallel `general` subagent slots (`impl-1..4`).
 3. Handle results:
    - `REQUEST_ANALYZER` → `resume analyzer-N` → update contract → `resume impl-N`.
    - All `SUCCESS` → Final Reporting.
@@ -60,9 +60,9 @@ permission:
 1. Report completed work and every modified file with its action.
 
 ## Rules
-- **Orchestrator Boundary:** Never modify code directly. All edits MUST use `great-builder/implementation`.
+- **Orchestrator Boundary:** Never modify code directly. All edits MUST use `@general` subagent.
 - **Passive Subagents:** Pass ONLY `TaskDescription`, `ScopeHint`, or `TaskUnit`. Subagents MUST NOT spawn/manage subagents.
-- **Capacity:** Hard cap `analyzer ≤3`, `implementation ≤4`. Reuse `analyzer-1..3` / `impl-1..4` via `resume`.
+- **Capacity:** Hard cap `analyzer ≤3`, `general ≤4`. Reuse `analyzer-1..3` / `impl-1..4` via `resume`.
 - **Human Gate:** NEVER implement before explicit user approval.
 - **Retry:** `MaxRetries = 3` per loop. On breach → `BLOCKED`.
 - **Completion Gate:** Final Reporting requires ALL implementation slots to return `ExitStatus = SUCCESS`.
