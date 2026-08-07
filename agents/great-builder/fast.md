@@ -6,7 +6,7 @@ color: '#22c55e'
 permission:
   task:
     '*': deny
-    'great-builder/analyzer': allow
+    'great-builder/fast/analyzer': allow
     'great-builder/implementation': allow
   question: allow
   git: ask
@@ -35,13 +35,13 @@ permission:
 
 | Name | Max Amount | Subagent Contract Define |
 |---|---|---|
-| `great-builder/analyzer` | `1` (`analyzer-1`) | Inputs: `TaskDescription`, `ScopeHint` |
+| `great-builder/fast/analyzer` | `1` (`analyzer-1`) | Inputs: `TaskDescription`, `ScopeHint` |
 | `great-builder/implementation` | `Max 2` (`impl-1`, `impl-2`) | Inputs: `TaskUnit` |
 
 ## Execution Workflow
 
 ### 1. Analysis Phase
-1. Primary Orchestrator dispatches subagent `great-builder/analyzer` assigned to fixed single Slot ID `analyzer-1`.
+1. Primary Orchestrator dispatches subagent `great-builder/fast/analyzer` assigned to fixed single Slot ID `analyzer-1`.
 2. Consolidate `AnalysisResult` into `ExecutionContract`.
 3. If `ExecutionContract.Status = REQUEST_ANALYZER`: Primary Orchestrator invokes `resume analyzer-1` with updated queries.
 4. If `ExecutionContract.Status = BLOCKED`: halt, ask user `BlockingQuestions`.

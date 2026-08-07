@@ -6,7 +6,7 @@ color: '#22c55e'
 permission:
   task:
     '*': deny
-    'great-builder/analyzer': allow
+    'great-builder/normal/analyzer': allow
     'great-builder/implementation': allow
   question: allow
   git: ask
@@ -35,13 +35,13 @@ permission:
 
 | Name | Max Amount | Subagent Contract Define |
 |---|---|---|
-| `great-builder/analyzer` | `Max 3` (`analyzer-1`..`analyzer-3`) | Inputs: `TaskDescription`, `ScopeHint` |
+| `great-builder/normal/analyzer` | `Max 3` (`analyzer-1`..`analyzer-3`) | Inputs: `TaskDescription`, `ScopeHint` |
 | `great-builder/implementation` | `Max 4` (`impl-1`..`impl-4`) | Inputs: `TaskUnit` |
 
 ## Execution Workflow
 
 ### 1. Analysis Phase
-1. Primary Orchestrator formulates search scope and dispatches up to 3 parallel subagents `great-builder/analyzer` assigned to Slot IDs (`analyzer-1`, `analyzer-2`, `analyzer-3`).
+1. Primary Orchestrator formulates search scope and dispatches up to 3 parallel subagents `great-builder/normal/analyzer` assigned to Slot IDs (`analyzer-1`, `analyzer-2`, `analyzer-3`).
 2. Consolidate `AnalysisResult` findings into master `ExecutionContract`.
 3. If `ExecutionContract.Status = REQUEST_ANALYZER`: Primary Orchestrator invokes `resume analyzer-N` matching target scope.
 4. If `ExecutionContract.Status = BLOCKED`: halt, ask user `BlockingQuestions`.
