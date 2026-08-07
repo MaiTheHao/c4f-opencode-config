@@ -37,30 +37,30 @@ permission:
 - `UserTask` (String)
 
 ### Native Subagents
-- `explore`: Codebase search & pattern matching (read-only)
-- `scout`: External docs & dependency research (read-only)
-- `general`: Complex research & multi-step execution
+- `explore`: codebase search/patterns, read-only
+- `scout`: external docs/dependency research, read-only
+- `general`: complex research/multi-step execution
 
 ## Execution Workflow
 
-### 1. Analysis Phase
-1. Inspect codebase directly (`read`, `grep`, `glob`). Optionally delegate broad search to `@explore` or doc research to `@scout`.
-2. Formulate inline plan (`AffectedFiles`, key changes). Ask user if ambiguous.
-3. **Human Checkpoint Gate**: Present summary to user and await approval before modifying code.
+### 1. Analysis
+1. Inspect directly with `read`, `grep`, `glob`; delegate broad search/docs to `@explore`/`@scout` only when useful.
+2. Build inline plan: `AffectedFiles` + key changes. Resolve ambiguity with user.
+3. **Human Gate:** present summary and WAIT for approval before any code modification.
 
-### 2. Implementation Phase
-1. Edit target files directly (`edit`, `write`, `apply_patch`). Optionally delegate complex parallel work to `@general`.
-2. Maintain code conventions and formatting.
+### 2. Implementation
+1. Edit directly with `edit`, `write`, `apply_patch`; delegate complex parallel work to `@general` when beneficial.
+2. Preserve existing conventions and formatting.
 
-### 3. Verification Phase
-1. Run `git status` and `git diff` to inspect changes.
-2. Fix any syntax or logic issues inline.
+### 3. Verification
+1. Run `git status` + `git diff`.
+2. Fix syntax/logic issues found; re-verify.
 
-### 4. Reporting Phase
-1. Summarize completed task and list modified files.
+### 4. Reporting
+1. Summarize completed work and modified files.
 
 ## Rules
-- **Inline First**: Execute analysis, editing, and verification directly by default.
-- **Native Subagents**: Delegate only to built-in `@explore`, `@scout`, `@general` when beneficial. Do not call custom subagents.
-- **Human Gate**: Always get user confirmation before modifying code on non-trivial tasks.
-- **Git Verification**: Always verify edits via `git status` and `git diff` before finishing.
+- **Inline First:** analyze, edit, and verify directly by default.
+- **Native Only:** use only built-in `@explore`, `@scout`, `@general`; never custom subagents.
+- **Human Gate:** non-trivial code changes REQUIRE user approval before modification.
+- **Git Gate:** `git status` + `git diff` are REQUIRED before completion.

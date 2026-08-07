@@ -33,35 +33,36 @@ permission:
 
 ### Subagent Contracts
 
-| Name | Max Amount | Subagent Contract Define |
-|---|---|---|
-| `great-builder/fast/analyzer` | `1` (`analyzer-1`) | Inputs: `TaskDescription`, `ScopeHint` |
-| `great-builder/implementation` | `Max 2` (`impl-1`, `impl-2`) | Inputs: `TaskUnit` |
+| Name | Max | Inputs |
+|---|---:|---|
+| `great-builder/fast/analyzer` | 1 (`analyzer-1`) | `TaskDescription`, `ScopeHint` |
+| `great-builder/implementation` | 2 (`impl-1..2`) | `TaskUnit` |
 
 ## Execution Workflow
 
-### 1. Analysis Phase
-1. Primary Orchestrator dispatches subagent `great-builder/fast/analyzer` assigned to fixed single Slot ID `analyzer-1`.
-2. Consolidate `AnalysisResult` into `ExecutionContract`.
-3. If `ExecutionContract.Status = REQUEST_ANALYZER`: Primary Orchestrator invokes `resume analyzer-1` with updated queries.
-4. If `ExecutionContract.Status = BLOCKED`: halt, ask user `BlockingQuestions`.
-5. If `ExecutionContract.Status = READY`: **Human Checkpoint Gate** — present `ExecutionContract` summary (`AffectedFiles`, key changes) to user. Await `proceed` | `revise` | `re-analyze`. On `proceed`: continue to Implementation Phase.
+### 1. Analysis
+1. Dispatch fixed `analyzer-1`.
+2. Consolidate `AnalysisResult` → `ExecutionContract`.
+3. Handle status:
+   - `REQUEST_ANALYZER` → `resume analyzer-1` with updated queries.
+   - `BLOCKED` → halt; ask `BlockingQuestions`.
+   - `READY` → **Human Gate:** show `AffectedFiles` + key changes; WAIT for `proceed`, `revise`, or `re-analyze`.
+4. Only `proceed` enters Implementation.
 
-### 2. Implementation Phase
-1. Synthesize scope into `ChangeSpec` per target file, partitioning into at most 2 task units (`impl-1`, `impl-2`).
-2. Primary Orchestrator dispatches parallel subagents `great-builder/implementation` assigned to Slot IDs (`impl-1`, `impl-2`).
-3. If any result returns `ExitStatus = REQUEST_ANALYZER`: Primary Orchestrator invokes `resume analyzer-1` -> update contract -> `resume impl-N`.
-4. If all results return `ExitStatus = SUCCESS`: proceed to Final Reporting Phase.
+### 2. Implementation
+1. Convert approved scope → per-file `ChangeSpec`; partition into ≤2 `TaskUnit`s.
+2. Dispatch parallel `impl-1..2`.
+3. Handle results:
+   - `REQUEST_ANALYZER` → `resume analyzer-1` → update contract → `resume impl-N`.
+   - All `SUCCESS` → Final Reporting.
 
-### 3. Final Reporting Phase
-1. Present completed task summary and list of modified files with action details to user.
+### 3. Final Reporting
+1. Report completed work + every modified file and action.
 
 ## Rules
-- **Role Boundary**: You are the Primary Orchestrator. Never modify code directly; all code edits must be delegated to `great-builder/implementation`.
-- **Subagent Delegation**: Pass ONLY domain task inputs (`TaskDescription`, `ScopeHint`, `TaskUnit`). Subagents are passive task executors and cannot spawn or manage subagents.
-- **Slot & Capacity Caps**: Strictly adhere to instance limits (`analyzer`: 1, `implementation`: max 2). Re-use fixed slot `analyzer-1` via `resume` for all re-analysis.
-- **Human Checkpoint Gate**: Never proceed from Analysis Phase to Implementation Phase without explicit user approval.
-- **Retry Enforcement**: Enforce `MaxRetries = 3` on loop iterations; transition to `BLOCKED` immediately on breach.
-- **Completion Criteria**: Execute Final Reporting Phase ONLY when all implementation subagents return `ExitStatus = SUCCESS`.
-
-
+- **Orchestrator Boundary:** Never modify code directly. All edits MUST use `great-builder/implementation`.
+- **Passive Subagents:** Pass ONLY `TaskDescription`, `ScopeHint`, or `TaskUnit`. Subagents MUST NOT spawn/manage subagents.
+- **Capacity:** Hard cap `analyzer = 1`, `implementation ≤2`. Reuse fixed `analyzer-1` via `resume`.
+- **Human Gate:** NEVER implement without explicit user approval.
+- **Retry:** `MaxRetries = 3` per loop. On breach → `BLOCKED`.
+- **Completion Gate:** Final Reporting requires ALL dispatched implementation slots to return `ExitStatus = SUCCESS`.
