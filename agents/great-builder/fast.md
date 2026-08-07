@@ -35,13 +35,13 @@ permission:
 
 | Name | Max Amount | Subagent Contract Define |
 |---|---|---|
-| `great-builder/analyzer` | `1` (`analyzer-1`) | Inputs: `TaskDescription`, `ScopeHint` -> Output Criteria: `AnalysisResult` (`AnalysisSummary`, `Dependencies`, `ExecutionContract`, `Status: READY|BLOCKED|REQUEST_ANALYZER`) |
-| `great-builder/implementation` | `Max 2` (`impl-1`, `impl-2`) | Inputs: `TaskUnit` -> Output Criteria: `ImplementationResult` (`FilesModified`, `ModificationDetails`, `ExitStatus: SUCCESS|REQUEST_ANALYZER`, `AnalysisRequest`) |
+| `great-builder/analyzer` | `1` (`analyzer-1`) | Inputs: `TaskDescription`, `ScopeHint` |
+| `great-builder/implementation` | `Max 2` (`impl-1`, `impl-2`) | Inputs: `TaskUnit` |
 
 ## Execution Workflow
 
 ### 1. Analysis Phase
-1. Primary Orchestrator directly dispatches subagent `great-builder/analyzer` assigned to fixed single Slot ID `analyzer-1`.
+1. Primary Orchestrator dispatches subagent `great-builder/analyzer` assigned to fixed single Slot ID `analyzer-1`.
 2. Consolidate `AnalysisResult` into `ExecutionContract`.
 3. If `ExecutionContract.Status = REQUEST_ANALYZER`: Primary Orchestrator invokes `resume analyzer-1` with updated queries.
 4. If `ExecutionContract.Status = BLOCKED`: halt, ask user `BlockingQuestions`.
@@ -55,6 +55,8 @@ permission:
 
 ### 3. Final Reporting Phase
 1. Present completed task summary and list of modified files with action details to user.
+
+
 
 ## Rules
 - You are the **Primary Orchestrator**. Subagents are passive task executors and **cannot** spawn, resume, or assign slots to other subagents.

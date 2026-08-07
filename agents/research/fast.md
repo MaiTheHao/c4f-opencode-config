@@ -29,13 +29,13 @@ permission:
 
 | Name | Max Amount | Subagent Contract Define |
 |---|---|---|
-| `research/research-fast/scout` | `1` (`scout-1`) | Inputs: `UserTopic` (String) -> Output Criteria: `ScoutReport` (`TopicMap`, `KeyTerms`, `TimeSensitiveFlags`) |
-| `research/research-fast/deep` | `Max 3` (`deep-1`..`deep-3`) | Inputs: `SubQuestion`, `Aspects`, `SuggestedQueries` -> Output Criteria: `DeepReport` (`Answer`, `Evidence`, `Confidence: HIGH|MEDIUM|LOW`) |
+| `research/research-fast/scout` | `1` (`scout-1`) | Inputs: `UserTopic` (String) |
+| `research/research-fast/deep` | `Max 3` (`deep-1`..`deep-3`) | Inputs: `SubQuestion`, `Aspects`, `SuggestedQueries` |
 
 ## Execution Workflow
 
 ### 1. Reconnaissance Phase (Scout)
-1. Primary Orchestrator directly dispatches subagent `research/research-fast/scout` assigned to fixed single Slot ID `scout-1` with `UserTopic`, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
+1. Primary Orchestrator dispatches subagent `research/research-fast/scout` assigned to fixed single Slot ID `scout-1` with `UserTopic`, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
 2. Parse `ScoutReport` from subagent response.
 3. Extract 2-3 sub-queries from `TopicMap`.
 
@@ -43,6 +43,8 @@ permission:
 1. Partition extracted sub-queries into at most 3 task units (`deep-1`..`deep-3`).
 2. Primary Orchestrator dispatches parallel subagents `research/research-fast/deep` concurrently for assigned Slot IDs (`deep-1`..`deep-3`), passing `SubQuestion`, `Aspects`, and `SuggestedQueries`, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
 3. Collect and parse `DeepReport` responses from all deep subagents.
+
+
 
 ### 3. Synthesis Phase
 1. Extract `Answer`, `Evidence`, and `Confidence` from each `DeepReport`.

@@ -33,12 +33,12 @@ permission:
 
 | Name | Max Amount | Subagent Contract Define |
 |---|---|---|
-| `research/research-high/scout` | `Max 3` (`scout-1`..`scout-3`) | Inputs: `UserTopic`, `AnalyticalAngle` -> Output Criteria: `ScoutReport` (`TopicMap`, `Tags`, `KeyTerms`) |
-| `research/research-high/deep` | `Max N` (`deep-<subquery_id>`) | Inputs: `SubQuestion`, `Aspects`, `TaggedProperties` -> Output Criteria: `DeepReport` (`Answer`, `Evidence`, `SourceGaps`, `DisagreementsFound`, `Confidence: HIGH|MEDIUM|LOW`) |
-| `research/shared/timeline` | `Max N` (`timeline-<query_id>`) | Inputs: `EvolutionQuery` -> Output Criteria: `TimelineReport` (`Timeline`, `CurrentState`, `StalenessRisk`, `Confidence: HIGH|MEDIUM|LOW`) |
-| `research/shared/quant` | `Max N` (`quant-<query_id>`) | Inputs: `NumericQuery` -> Output Criteria: `QuantReport` (`NumbersFound`, `Methodology`, `Discrepancies`, `Confidence: HIGH|LOW`) |
-| `research/shared/skeptic` | `Max N` (`skeptic-<claim_id>`) | Inputs: `TargetClaim` -> Output Criteria: `SkepticReport` (`ClaimBeingTested`, `CounterEvidenceFound`, `Assessment: SURVIVED|WEAKENED|BROKEN`, `Confidence: HIGH|MEDIUM|LOW`) |
-| `research/shared/validation` | `1` (`validation-1`) | Inputs: `ReportsUnderReview` -> Output Criteria: `ValidationReport` (`ClaimsChecked`, `ContradictionsFound`, `StaleRiskClaims`, `ConfidencePerClaim`) |
+| `research/research-high/scout` | `Max 3` (`scout-1`..`scout-3`) | Inputs: `UserTopic`, `AnalyticalAngle` |
+| `research/research-high/deep` | `Max N` (`deep-<subquery_id>`) | Inputs: `SubQuestion`, `Aspects`, `TaggedProperties` |
+| `research/shared/timeline` | `Max N` (`timeline-<query_id>`) | Inputs: `EvolutionQuery` |
+| `research/shared/quant` | `Max N` (`quant-<query_id>`) | Inputs: `NumericQuery` |
+| `research/shared/skeptic` | `Max N` (`skeptic-<claim_id>`) | Inputs: `TargetClaim` |
+| `research/shared/validation` | `1` (`validation-1`) | Inputs: `ReportsUnderReview` |
 
 ## Execution Workflow
 
@@ -70,6 +70,8 @@ permission:
 ### 7. Re-Validation Phase
 1. Primary Orchestrator invokes `resume validation-1` on recursive research reports, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
 2. Verify resolution status of identified gaps.
+
+
 
 ### 8. Synthesis Phase
 1. Synthesize all research, validation, gap, and re-validation reports into cohesive final answer.

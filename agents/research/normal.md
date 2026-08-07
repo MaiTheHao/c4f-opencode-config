@@ -33,12 +33,12 @@ permission:
 
 | Name | Max Amount | Subagent Contract Define |
 |---|---|---|
-| `research/research-normal/scout` | `Max 2` (`scout-1`, `scout-2`) | Inputs: `UserTopic` (String) -> Output Criteria: `ScoutReport` (`TopicMap`, `KeyTerms`, `ContestedVsSettled`, `RecommendedNextSteps`) |
-| `research/research-normal/deep` | `Max 5` (`deep-1`..`deep-5`) | Inputs: `SubQuestion`, `Aspects` -> Output Criteria: `DeepReport` (`Answer`, `Evidence`, `SourceGaps`, `DisagreementsFound`, `Confidence: HIGH|MEDIUM|LOW`) |
-| `research/shared/timeline` | `1` (`timeline-1`) | Inputs: `EvolutionQuery` -> Output Criteria: `TimelineReport` (`Timeline`, `CurrentState`, `StalenessRisk`, `Confidence: HIGH|MEDIUM|LOW`) |
-| `research/shared/quant` | `1` (`quant-1`) | Inputs: `NumericQuery` -> Output Criteria: `QuantReport` (`NumbersFound`, `Methodology`, `Discrepancies`, `Confidence: HIGH|LOW`) |
-| `research/shared/skeptic` | `1` (`skeptic-1`) | Inputs: `TargetClaim` -> Output Criteria: `SkepticReport` (`ClaimBeingTested`, `CounterEvidenceFound`, `Assessment: SURVIVED|WEAKENED|BROKEN`, `Confidence: HIGH|MEDIUM|LOW`) |
-| `research/shared/validation` | `1` (`validation-1`) | Inputs: `ReportsUnderReview` -> Output Criteria: `ValidationReport` (`ClaimsChecked`, `ContradictionsFound`, `StaleRiskClaims`, `ConfidencePerClaim`) |
+| `research/research-normal/scout` | `Max 2` (`scout-1`, `scout-2`) | Inputs: `UserTopic` (String) |
+| `research/research-normal/deep` | `Max 5` (`deep-1`..`deep-5`) | Inputs: `SubQuestion`, `Aspects` |
+| `research/shared/timeline` | `1` (`timeline-1`) | Inputs: `EvolutionQuery` |
+| `research/shared/quant` | `1` (`quant-1`) | Inputs: `NumericQuery` |
+| `research/shared/skeptic` | `1` (`skeptic-1`) | Inputs: `TargetClaim` |
+| `research/shared/validation` | `1` (`validation-1`) | Inputs: `ReportsUnderReview` |
 
 ## Execution Workflow
 
@@ -55,6 +55,8 @@ permission:
 ### 3. Cross-Validation Phase
 1. If 2 or more research reports exist, Primary Orchestrator dispatches subagent `research/shared/validation` assigned to Slot ID `validation-1` with collected reports, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
 2. Parse `ValidationReport` DTO to extract claim statuses, contradictions, and stale risk claims.
+
+
 
 ### 4. Synthesis Phase
 1. Synthesize research and validation reports into a unified answer.

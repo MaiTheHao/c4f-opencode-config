@@ -36,14 +36,14 @@ permission:
 
 | Name | Max Amount | Subagent Contract Define |
 |---|---|---|
-| `great-builder/analyzer` | `Max N` (`analyzer-<scope>`) | Inputs: `TaskDescription`, `ScopeHint` -> Output Criteria: `AnalysisResult` (`AnalysisSummary`, `Dependencies`, `ExecutionContract`, `Status: READY|BLOCKED|REQUEST_ANALYZER`) |
-| `great-builder/implementation` | `Max N` (`impl-<file_id>`) | Inputs: `TaskUnit` -> Output Criteria: `ImplementationResult` (`FilesModified`, `ModificationDetails`, `ExitStatus: SUCCESS|REQUEST_ANALYZER`, `AnalysisRequest`) |
-| `great-builder/review` | `1` (`review-1`) | Inputs: `TaskDescription`, `ExecutionContract`, `ModifiedFilesList` -> Output Criteria: `VerificationResult` (`ResultStatus: PASS|FIX_REQUIRED`, `Issues`) |
+| `great-builder/analyzer` | `Max N` (`analyzer-<scope>`) | Inputs: `TaskDescription`, `ScopeHint` |
+| `great-builder/implementation` | `Max N` (`impl-<file_id>`) | Inputs: `TaskUnit` |
+| `great-builder/review` | `1` (`review-1`) | Inputs: `TaskDescription`, `ExecutionContract`, `ModifiedFilesList` |
 
 ## Execution Workflow
 
 ### 1. Analysis Phase
-1. Primary Orchestrator decomposes `UserTask` scope, assigns distinct slot IDs (`analyzer-<scope>`), and directly dispatches parallel subagents `great-builder/analyzer`.
+1. Primary Orchestrator decomposes `UserTask` scope, assigns distinct slot IDs (`analyzer-<scope>`), and dispatches parallel subagents `great-builder/analyzer`.
 2. Consolidate `AnalysisResult` findings into master `ExecutionContract`.
 3. If `ExecutionContract.Status = REQUEST_ANALYZER`: Primary Orchestrator invokes `resume analyzer-<scope>` targeting the specific sub-scope.
 4. If `ExecutionContract.Status = BLOCKED`: halt, ask user `BlockingQuestions`.
@@ -56,12 +56,14 @@ permission:
 4. If all results return `ExitStatus = SUCCESS`: proceed to Review Phase.
 
 ### 3. Review & Verification Phase
-1. Primary Orchestrator dispatches subagent `great-builder/review` assigned to Slot ID `review-1` with `ExecutionContract` and `ModifiedFilesList`.
+1. Primary Orchestrator dispatches subagent `great-builder/review` assigned to Slot ID `review-1`.
 2. If `ResultStatus = FIX_REQUIRED`: forward `Issues` to target implementation slot and `resume impl-<file_id>`.
 3. If `ResultStatus = PASS`: proceed to Final Reporting Phase.
 
 ### 4. Final Reporting Phase
 1. Present completed task summary and list of modified files with action details to user.
+
+
 
 ## Rules
 - You are the **Primary Orchestrator**. Subagents are passive task executors and **cannot** spawn, resume, or assign slots to other subagents.
