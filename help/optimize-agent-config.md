@@ -1,196 +1,73 @@
 # Agent Config Protocol Spec (LLM Read-Only)
 
-> **Models:** Primary: DeepSeek MoE (R-series). Secondary: Claude, GPT-4o, Gemini.
-> **Paradigm:** Protocol over Prompt — Deterministic API contracts over conversational instructions.
-> **Version:** 2.1 — adds Human Checkpoint Gate, Temperature Matrix, Context Budget enforcement, Topology-Agnostic scope.
+> **Paradigm:** Protocol over Prompt — Deterministic API contracts over conversational instructions (v2.1).
 
-## Scope Note (Read First)
-
-This spec defines **HOW** to write any agent config file — structure, tone, contract shape, temperature, checkpoint placement, token budget. It does NOT define **WHAT** roles a team must have.
-
-- Team topology (how many subagents, their names, their responsibilities) is decided per-project. One team may have 4 subagents (explorer/analyzer/implementation/review), another may have 2 (`researcher`, `writer`), another may have 6.
-- The only structural constant across ALL teams: **exactly one `mode: primary` orchestrator**, zero or more `mode: subagent` workers, and the orchestrator never edits/writes directly.
-- Anywhere this doc uses example role names (`explorer`, `analyzer`, `implementation`, `review`), treat them as **illustrative placeholders**, not a required roster. Apply the same Pillars to whatever roles the actual team has.
-- When optimizing an existing team's files: infer their existing roles from `description` + `permission` fields, preserve those roles/names, and apply Pillars 1–9 as style/structure fixes — never inject the 4-role pipeline onto a team that doesn't have it.
+## Scope Note
+Defines **HOW** to structure agent configs (not **WHAT** roles a team must have).
+- Exactly 1 `mode: primary` orchestrator (never edits files directly); zero or more `mode: subagent` workers.
+- Preserve existing team roles — do not force fixed role pipelines onto existing teams.
 
 ---
 
-## Pillar 1: Markdown Sandwich Attention Layout
-- **PRE-TOP:** YAML Frontmatter (`description`, `mode`: `primary`|`subagent`, `temperature`, `permission` matrix).
-- **TOP (Primacy):** `## Core Definition` (`Inputs`, `Subagent Contracts` or `Output Criteria`).
-- **MIDDLE:** `## Execution Workflow` (Explicit phases `### N. Phase Name` with numbered steps & parallel dispatch).
-- **BOTTOM (Recency):** `## Rules` (Flat bullet list: constraints, `MaxRetries`, prohibitions). **MUST be the last section.**
+## Directives & Constraints
 
----
+### 1. File Structure (Sandwich Layout)
+- **MUST** follow strict top-to-bottom order:
+  1. **YAML Frontmatter:** (`description`, `mode`, `temperature`, `permission`).
+  2. `## Core Definition`: (`Inputs` + `Subagent Contracts` table for primary; `### Output Criteria` DTO for subagent).
+  3. `## Execution Workflow`: (Numbered phases `### N. Phase Name`, status routing, slot dispatches).
+  4. `## Rules`: (Flat bullet list — **MUST be the final section**).
 
-## Pillar 2: Declarative Interface & Single Responsibility
-- **Noun over Verb:** Declare interfaces/specifications, not manual instructions (`ScopeDiscovery` vs `Analyze codebase`).
-- **Exclusive Boundaries (topology-agnostic):** Whatever roles a team has, each subagent owns exactly one domain of responsibility, defined by its `description` + permission matrix. No two subagents in the same team may hold overlapping write scope or duplicate mandate. If two subagents' `description` fields could both plausibly handle the same task, the team has a boundary violation — merge or re-split them, don't force them into a fixed generic-role list.
-- **Role count is unconstrained:** A team is valid with 1 subagent or 10. This pillar governs boundary clarity between whatever roles exist, not a required minimum/maximum.
-
----
-
-## Pillar 3: Affirmative & Deterministic Directives
-- **Affirmative First:** Use `Must: Output complete code` instead of `Never produce placeholder code`.
-- **Binding Keywords:** `Must` | `Only` | `Never` | `Preconditions` | `Exit`. (Eliminate: `should`, `prefer`, `try to`, `carefully`, `thoroughly`).
-- **Zero Fluff:** No qualitative adjectives. No design motivations ("Do X because Y").
-
----
-
-## Pillar 4: Criteria Contracts & Subagent Enforcement
-- **Keys & Enums:** Space-free keys (`AffectedFiles`, `RequiredChanges`). Closed enums (`READY`, `BLOCKED`, `REQUEST_EXPLORER`, `SUCCESS`, `PASS`, `FIX_REQUIRED`).
-- **Dynamic Orchestrator Output Policy:** Primary Orchestrators keep outputs dynamic and do NOT define a fixed `### Outputs` section under `## Core Definition`. Subagents MUST define explicit `### Output Criteria` in their `## Core Definition`.
-- **Subagent Contract Definition (Markdown Table Format):** Define Subagent Contracts under `## Core Definition` using a Markdown Table with exact columns `Name | Max Amount | Subagent Contract Define`:
-  - `Name`: Target subagent string (`namespace/agent`).
-  - `Max Amount`: Strict numerical upper bound ceiling on active instances allowed (e.g. `1` for fixed single instance, `Max 3`, `Max 4`). Acts as a hard cap preventing orchestrator from spawning extra instances.
-  - `Subagent Contract Define`: Declares subagent `Inputs` DTO list only (e.g. `Inputs: TaskDescription, ScopeHint`). Subagent output criteria are declared exclusively inside the subagent config files.
-- **Slot Allocation & Instance Resume Protocol:**
-  1. **Contract Max Amount & Slot Declaration:** Subagent Contracts Table declares explicit `Max Amount` instance caps and Slot IDs (e.g. `1` (`slot-1`), `Max 4` (`slot-1`..`slot-4`)).
-  2. **Workflow Partitioning:** Execution Workflow MUST partition tasks into at most $N$ non-overlapping units, capped strictly by `Max Amount`.
-  3. **Instance Resume Optimization:** Re-dispatches, retries, or recursive phases MUST reuse existing subagent instances (`resume <slot_id>`) instead of spawning redundant subagents.
-  4. **Rules Enforcement:** Orchestrator Rules MUST explicitly require enforcing `Max Amount` caps, dispatching with assigned Slot IDs, and enforcing instance reuse.
-- **Orchestrator Subject Clarity & Subagent Payload Isolation:**
-  1. Primary Orchestrator is the sole execution caller. Workflow dispatches MUST use explicit phrasing: `Primary Orchestrator dispatches subagent <name> assigned to Slot ID <slot_id>.`
-  2. Subagents are passive task executors and CANNOT spawn, resume, or manage slots.
-  3. Orchestrators MUST NEVER pass slot assignment keywords, `spawn`, or `resume` instructions inside the task payload (`TaskDescription`) sent to subagents.
-- **Response Enforcement Protocol:**
-  1. No conflicting inline response text directives in `## Rules`.
-  2. Subagent Rules MUST state: `Format final response clearly adhering to <CriteriaName> criteria fields`.
-  3. Final Workflow Phase MUST step: `Format final response clearly conforming to <CriteriaName> criteria`.
-  4. Subagent Rules MUST contain the literal line: `- Never delegate tasks or invoke other agents.`
-  5. Every subagent frontmatter permission block MUST contain an explicit `task: deny` (or full task-map deny) — absence of the key is a violation, not an implicit deny.
-
----
-
-## Pillar 5: Workflows, Human Checkpoints & Anti-Loop Guardrails
-- **Execution Graph:** Direct state transitions mapped via explicit numbered steps per phase.
-- **Preconditions:** Enforce state constraints before execution (`Precondition: ExecutionContract.Status = READY`).
-- **Human Checkpoint Gate (mandatory, topology-agnostic):** A `READY`/`SUCCESS`-equivalent status is NOT a license to auto-proceed. Identify in the team's own workflow where control crosses from **read-only/proposal work** (any phase that only produces a plan, contract, or report — no matter what it's named) into **mutating/irreversible work** (any phase that writes files, calls external APIs, sends messages, or otherwise changes state outside the conversation). That specific crossing MUST insert an explicit gate step:
+### 2. Primary Orchestrator Rules
+- **MUST** specify dynamic outputs (NO fixed `### Outputs` section in Core Definition).
+- **MUST** define `### Subagent Contracts` Markdown Table (`Name | Max Amount | Subagent Contract Define`).
+- **MUST** include exactly 1 **Human Checkpoint Gate** at the read-only $\rightarrow$ mutating boundary:
   ```
-  N. If <ReadOnlyPhaseOutput>.Status = READY:
-     - Present <ReadOnlyPhaseOutput> summary to user (scope/impact only — no raw subagent logs).
-     - Await one of: `proceed` | `revise` | `re-run`.
-     - On `proceed`: continue to next phase.
-     - On `revise` / `re-run`: return to current phase with updated scope.
+  N. If <ReadOnlyOutput>.Status = READY:
+     - Present summary to user (scope/impact only).
+     - Await: `proceed` | `revise` | `re-run`.
+     - On `proceed`: next phase; on `revise`/`re-run`: return to phase.
   ```
-  Exactly one such gate is REQUIRED per team, placed at the read-only→mutating boundary — regardless of how many phases exist before or after it. Transitions that stay entirely within read-only phases, or entirely within mutating phases, do NOT need a gate.
-- **Anti-Loop Limits:** Enforce `MaxRetries = 3` on cyclical loops (`Review -> FIX_REQUIRED`, `Explorer -> REQUEST_EXPLORER`). Immediately transition to `BLOCKED` on breach.
-- **Loop vs Gate distinction:** Anti-loop limits bound retries on *failure* paths (BLOCKED/REQUEST_*). The Human Checkpoint Gate bounds *forward progress* on the success path (READY). Both MUST exist independently; one does not substitute for the other.
+- **NEVER** edit or write source code directly.
+- **NEVER** pass slot assignment keywords (`slot-1`), `spawn`, or `resume` inside subagent task payloads (`TaskDescription`).
+
+### 3. Subagent Rules
+- **MUST** define `### Output Criteria` with closed enums (`READY`, `BLOCKED`, `SUCCESS`, `FAIL`, etc.).
+- **MUST** state literal rule in `## Rules`: `- Never delegate tasks or invoke other agents.`
+- **MUST** include explicit `task: deny` in frontmatter permission block.
+
+### 4. Directives & Execution Limits
+- **MUST** use binding keywords (`Must`, `Only`, `Never`, `Preconditions`, `Exit`).
+- **MUST** set `MaxRetries = 3` on failure loops (`Review -> FIX_REQUIRED`), defaulting to `BLOCKED` on breach.
+- **NEVER** use soft keywords (`should`, `prefer`, `try to`, `carefully`).
+- **NEVER** include qualitative fluff, design rationale, or motivational padding.
+- **NEVER** duplicate constraints across Workflow and Rules sections (Rules section owns constraints).
 
 ---
 
-## Pillar 6: Standardized Vocabulary & Section Isolation
-- **Global Vocabulary:** `Inputs` | `Outputs` | `Read` | `Must` | `Never` | `Exit` | `Status` | `Preconditions` | `ExplorationRequest`.
-- **Single Abstraction Level:** Keep data (`Inputs`), operations (`Workflow`), and constraints (`Rules`) completely separated. Do not embed constraints in data fields.
+## Temperature Matrix & Line Budget
 
-
----
-
-## Pillar 7: Structural Section Specifications
-
-Instead of rigid templates that bloat context, agent config files MUST follow a lean 4-part structure defined below.
-
-### 7.1 Primary Orchestrator Configuration Specification
-
-1. **YAML Frontmatter**:
-   - `description`: 1-line concise summary of end-to-end task objective.
-   - `mode`: `primary`
-   - `temperature`: `0.1` (per Pillar 8 Matrix).
-   - `permission`: Strict whitelist/blacklist mapping. `task` block MUST explicitly list allowed subagent IDs and set `*: deny`.
-
-2. **`## Core Definition`**:
-   - `### Inputs`: List required string/DTO inputs (e.g. `UserTask`). Dynamic outputs only (NO fixed output section).
-   - `### Subagent Contracts`: Markdown table (`Name | Max Amount | Subagent Contract Define`) defining slot caps and input DTOs.
-
-3. **`## Execution Workflow`**:
-   - Sequential numbered phases (`### 1. Analysis Phase`, `### 2. Implementation Phase`, etc.).
-   - Explicit dispatch steps specifying Slot IDs and status routing logic (`READY`, `BLOCKED`, `REQUEST_*`, `SUCCESS`).
-   - Includes **Human Checkpoint Gate** at the boundary between read-only and mutating phases.
-
-4. **`## Rules` (MUST be the final section)**:
-   - Concise bullet list of hard constraints and governance policies using binding keywords (`NEVER`, `MUST`).
-   - Define role boundaries (never edit code directly), slot/capacity caps, checkpoint gate enforcement, max retries (`MaxRetries = 3`), and completion criteria.
-
----
-
-### 7.2 Subagent Configuration Specification
-
-1. **YAML Frontmatter**:
-   - `description`: 1-line statement of the subagent's single responsibility domain.
-   - `mode`: `subagent`
-   - `temperature`: Determined strictly by role class in Pillar 8 Matrix (`0.0` for code/verifier, `0.1` for analyzer).
-   - `permission`: Strict tool permissions. `task` block MUST contain `*: deny`.
-
-2. **`## Core Definition`**:
-   - `### Output Criteria (<RoleName>Result)`: Closed DTO specification defining output fields, status enums, and issue arrays.
-
-3. **`## Execution Workflow`**:
-   - Compact numbered steps covering input validation, task execution, and result formatting.
-
-4. **`## Rules` (MUST be the final section)**:
-   - Concise bullet list of boundary constraints using binding keywords (`NEVER`, `MUST`).
-   - Define scope boundaries, read-only/mutation guarantees, and autonomy boundaries (`Never delegate tasks or invoke other agents`).
-
-
----
-
-## Pillar 8: Temperature Matrix (Mandatory Reference)
-
-Every agent's frontmatter `temperature` MUST match its role class below. Any deviation is a spec violation, not a style choice.
-
-| Role Class | Agent Examples | Temperature | Rationale (compressed) |
+| Role Class | Examples | Temp | Rationale |
 |---|---|---|---|
-| Executor (mutating) | `implementation`, `apply_patch`, `migration` | `0.0` | Zero variance on code writes; deterministic diff required for review reproducibility. |
-| Verifier / Security | `review`, `security-audit`, `lint-gate` | `0.0` | Pass/fail judgments must be reproducible across re-runs. |
-| Analyzer / Explorer | `analyzer`, `explorer`, `scope-mapper` | `0.1` | Near-deterministic contract synthesis; tiny variance tolerated for phrasing only. |
-| Orchestrator | `orchestrator`, `great-builder` | `0.1` | Routing/state-machine logic must stay deterministic; no creative drift in phase transitions. |
-| Structured Extraction | `symbol-indexer`, `dependency-mapper` | `0.0 – 0.1` | Output is a data contract, not prose. |
-| Documentation / Report | `changelog-writer`, `summary-reporter` | `0.2 – 0.3` | Minor lexical variety acceptable; structure still fixed. |
-| Planning / Decomposition | `task-partitioner`, `roadmap-builder` | `0.3` | Requires weighing tradeoffs; upper bound before compliance drift. |
-| Creative / Ideation | `brainstorm`, `naming`, `copy-draft` | `0.4 – 0.5` | Only class where divergent output is desired. **Never exceeds 0.5** in this protocol. |
-| **Hard ceiling** | — | `> 0.5` forbidden | Any agent producing `Status`/`Exit`/enum fields must never exceed `0.3`; risk of enum hallucination rises sharply above this. |
+| Mutating Executor / Verifier | `implementation`, `review` | `0.0` | Zero variance / reproducible judgments. |
+| Analyzer / Orchestrator | `analyzer`, `orchestrator` | `0.1` | Near-deterministic contract & routing logic. |
+| Report / Planning | `summary-reporter`, `task-partitioner` | `0.2–0.3` | Minor lexical variety / tradeoff evaluation. |
+| Creative | `brainstorm`, `naming` | `0.4–0.5` | Max 0.5 ceiling for divergent generation. |
+| **Hard Ceiling** | Closed enums used | `> 0.5` forbidden | Temp $\le 0.1$ if closed enum used; `> 0.5` prohibited. |
 
-**Rule of thumb:** if the agent's Output Criteria contains a closed enum (`READY`/`PASS`/`SUCCESS`/etc.), cap `temperature ≤ 0.1`. If it contains only free-text prose with no enum, `0.2–0.3` is permitted. Creative-only agents (no contract, no enum, `mode: subagent` used purely for generation) may go to `0.5`.
+- **Line Budget:** `mode: subagent` $\le 90$ lines (ceiling 120); `mode: primary` $\le 150$ lines (ceiling 160).
+- **Tables over Prose:** Use markdown tables for any mapping of 3+ items.
 
 ---
 
-## Pillar 9: Context Engineering & Brevity Budget (Mandatory)
-
-Instruction files are context that gets loaded on every agent invocation. Bloated files degrade routing accuracy and burn token budget. Every generated/optimized agent file MUST satisfy:
-
-- **Line budget by mode:**
-  - `mode: subagent` → target **≤ 90 lines** total (frontmatter + body). Hard ceiling **120 lines**.
-  - `mode: primary` (orchestrator) → target **≤ 150 lines**. Hard ceiling **160 lines**.
-  - Exceeding the hard ceiling REQUIRES splitting into a new subagent or moving detail into a referenced `skill` file — never inline padding.
-- **No redundant restatement:** A rule stated once in `## Rules` MUST NOT be re-explained in prose inside `## Execution Workflow`. Workflow steps reference behavior; Rules own the constraint. If both sections say the same thing in different words, delete the workflow-side prose.
-- **One example maximum per concept.** Do not stack multiple illustrative phrasings of the same rule ("Never do X" + "Avoid X" + "X is prohibited") — keep exactly one binding statement.
-- **Table over prose:** Any mapping of 3+ items (allowed commands, permission scopes, enum meanings) MUST be a markdown table, never a bulleted paragraph — tables compress better per token and parse more reliably.
-- **No motivational padding:** Every sentence must be either a data declaration, a workflow step, or a rule. Sentences that only explain *why* (design rationale, background) are deleted unless the rationale changes agent behavior (e.g., `MaxRetries=3` needs no "why").
-- **Frontmatter permission compression:** Use wildcard patterns (`'git log *': allow`) instead of enumerating every subcommand variant. Collapse identical-permission tools onto one line where the runtime syntax allows.
-- **Self-audit step before finalizing any agent file:** count lines; if over budget, cut in this priority order: (1) duplicate prose, (2) qualitative adjectives, (3) verbose examples, (4) non-behavior-changing rationale. Never cut: enum definitions, precondition lines, `Never`-prefixed rules, permission matrix.
-
----
-
-## Protocol Compliance Checklist
+## Compliance Checklist
 
 ```text
-[ ] Frontmatter: mode, temperature (per Pillar 8 matrix), permission matrix incl. explicit task deny.
-[ ] Top: ## Core Definition (Primacy). Primary Orchestrator keeps outputs dynamic (no fixed ### Outputs).
-[ ] Middle: ## Execution Workflow (Numbered steps, status routing, parallel dispatch). Dispatches explicitly state Primary Orchestrator caller, slot ID, and passed Inputs.
-[ ] Bottom: ## Rules (Recency, flat bullet list, MUST be last).
-[ ] Human Checkpoint Gate present at the team's read-only -> mutating-phase transition (Pillar 5) — exactly one, wherever that boundary actually sits for this team.
-[ ] Team topology (role count/names) matches what this project actually needs — not forced onto a fixed 4-role template (Scope Note).
-[ ] Enums used for statuses (READY, BLOCKED, REQUEST_EXPLORER, SUCCESS, PASS, FIX_REQUIRED).
-[ ] Zero qualitative fluff / zero design motivations.
-[ ] Orchestrator Subject Clarity & Payload Isolation: Rules explicitly state Orchestrator ownership, prohibit passing slot instructions/"spawn"/"resume" in task payloads.
-[ ] Orchestrator hides internal topology, delegates all direct edits, and enforces slot limits.
-[ ] Subagent contains literal rule: "Never delegate tasks or invoke other agents."
-[ ] Subagent permission block contains explicit task: deny.
-[ ] Anti-Loop Guardrail (MaxRetries = 3 -> BLOCKED) enforced, distinct from Human Checkpoint Gate.
-[ ] Subagent Contracts Table: Defined as Markdown Table with columns (`Name | Max Amount | Subagent Contract Define`), enforcing strict Max Amount caps on active instances and reusing assigned Slot IDs.
-[ ] Temperature matches Pillar 8 role class exactly.
-[ ] File line count within Pillar 9 budget for its mode; self-audit performed if over.
-[ ] No duplicate rule stated in both Workflow and Rules sections.
-[ ] All 3+ item mappings rendered as tables, not prose.
-
+[ ] Frontmatter: mode, temp (matrix), permission matrix with explicit task deny.
+[ ] Core Definition: Contracts table (Primary) OR Output Criteria DTO (Subagent).
+[ ] Workflow: Numbered steps, slot dispatches, status routing, Human Checkpoint Gate (Primary).
+[ ] Rules (FINAL): Flat bullet list. Includes "Never delegate tasks or invoke other agents" (Subagent).
+[ ] Payload Isolation: No slot keywords/spawn/resume in task payloads.
+[ ] Enums & Retries: Closed enums used; MaxRetries = 3 -> BLOCKED.
+[ ] Line budget & No Duplication: Rules own constraints; no fluff/rationale.
 ```
