@@ -4,7 +4,11 @@ mode: primary
 temperature: 0.1
 color: '#22c55e'
 permission:
-  task: allow
+  task:
+    '*': deny
+    explore: allow
+    general: allow
+    scout: allow
   question: allow
   git: ask
   list: allow
