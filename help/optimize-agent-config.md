@@ -39,12 +39,15 @@ This spec defines **HOW** to write any agent config file — structure, tone, co
 
 ## Pillar 4: Criteria Contracts & Subagent Enforcement
 - **Keys & Enums:** Space-free keys (`AffectedFiles`, `RequiredChanges`). Closed enums (`READY`, `BLOCKED`, `REQUEST_EXPLORER`, `SUCCESS`, `PASS`, `FIX_REQUIRED`).
-- **Subagent Contract Definition:** Define target subagent string (`namespace/agent`), Inputs DTO, and Output Criteria DTO with Enums under `## Core Definition`.
+- **Subagent Contract Definition (Markdown Table Format):** Define Subagent Contracts under `## Core Definition` using a Markdown Table with exact columns `Name | Max Amount | Subagent Contract Define`:
+  - `Name`: Target subagent string (`namespace/agent`).
+  - `Max Amount`: Strict numerical upper bound ceiling on active instances allowed (e.g. `1` for fixed single instance, `Max 3`, `Max 4`). Acts as a hard cap preventing orchestrator from spawning extra instances.
+  - `Subagent Contract Define`: Clear signature of Inputs DTO -> Output Criteria DTO with Enums.
 - **Slot Allocation & Instance Resume Protocol (when bounding subagent execution):**
-  1. **Contract Slot Declaration:** Subagent Contracts declare explicit Slot bounds (e.g. `Slot: role-1`, `Slots: role-1..role-N`, or `Slot: role-<scope>`).
-  2. **Workflow Partitioning:** Execution Workflow MUST partition tasks into at most $N$ non-overlapping units matching declared slot limits.
+  1. **Contract Max Amount & Slot Declaration:** Subagent Contracts Table declares explicit `Max Amount` instance caps and Slot IDs (e.g. `1` (`slot-1`), `Max 4` (`slot-1`..`slot-4`)).
+  2. **Workflow Partitioning:** Execution Workflow MUST partition tasks into at most $N$ non-overlapping units, capped strictly by `Max Amount`.
   3. **Instance Resume Optimization:** Re-dispatches, retries, or recursive phases MUST reuse existing subagent instances (`resume <slot_id>`) instead of spawning redundant subagents.
-  4. **Rules Enforcement:** Orchestrator Rules MUST explicitly require dispatching subagents with assigned Slot IDs and enforcing instance reuse.
+  4. **Rules Enforcement:** Orchestrator Rules MUST explicitly require enforcing `Max Amount` caps, dispatching with assigned Slot IDs, and enforcing instance reuse.
 - **Response Enforcement Protocol:**
   1. No conflicting inline response text directives in `## Rules`.
   2. Subagent Rules MUST state: `Format final response clearly adhering to <CriteriaName> criteria fields`.
@@ -112,17 +115,11 @@ permission:
 - `UserTask` (String)
 
 ### Subagent Contracts
-<!-- One entry per ACTUAL subagent in the team. Add/remove entries freely; the count below is illustrative only. -->
 
-#### 1. `namespace/role-1`
-- **Inputs:** <what this role reads from caller>
-- **Output Criteria (`Role1Result`):** <summary fields>, `Status` (closed enum, team-specific — e.g. `READY` | `BLOCKED` | `REQUEST_ROLE1`).
-
-#### 2. `namespace/role-2`
-- **Inputs:** <what this role reads from caller, incl. prior phase output if any>
-- **Output Criteria (`Role2Result`):** <summary fields>, `ExitStatus` (closed enum — e.g. `SUCCESS` | `REQUEST_ROLE1`).
-
-<!-- repeat for however many roles the team actually has -->
+| Name | Max Amount | Subagent Contract Define |
+|---|---|---|
+| `namespace/role-1` | `1` (`role-1`) | Inputs: `TaskDescription`, `ScopeHint` -> Output Criteria: `Role1Result` (`Summary`, `Status: READY|BLOCKED|REQUEST_ROLE1`) |
+| `namespace/role-2` | `Max 4` (`role-1`..`role-4`) | Inputs: `TaskUnit` -> Output Criteria: `Role2Result` (`FilesModified`, `ExitStatus: SUCCESS|REQUEST_ROLE1`) |
 
 ## Execution Workflow
 <!-- One phase per distinct stage of work. Merge or split phases to match the real pipeline — do not pad to a fixed count. -->
@@ -150,6 +147,7 @@ permission:
 
 ## Rules
 - Receive `UserTask`, dispatch subagents with clear context, append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent dispatch, strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks, interpret status indicators, execute phases in order.
+- **Must** strictly adhere to instance caps declared in the Subagent Contracts table (`Max Amount`); **Never** spawn subagents exceeding declared limits.
 - **Never** proceed from a read-only phase to a mutating phase on a `READY`/`SUCCESS`-equivalent status without explicit user confirmation (Human Checkpoint Gate, Pillar 5).
 - Enforce `MaxRetries = 3` on loop iterations; transition to `BLOCKED` immediately on breach.
 - **Never** perform mutating work directly (always delegated to the team's mutating-role subagent(s)).
@@ -253,7 +251,7 @@ Instruction files are context that gets loaded on every agent invocation. Bloate
 [ ] Subagent contains literal rule: "Never delegate tasks or invoke other agents."
 [ ] Subagent permission block contains explicit task: deny.
 [ ] Anti-Loop Guardrail (MaxRetries = 3 -> BLOCKED) enforced, distinct from Human Checkpoint Gate.
-[ ] Subagent Slot Partitioning (when bounding execution): Explicit Slot IDs declared in Contracts, task units capped at slot limits, and instance resume (`resume <slot_id>`) enforced for re-dispatches.
+[ ] Subagent Contracts Table: Defined as Markdown Table with columns (`Name | Max Amount | Subagent Contract Define`), enforcing strict Max Amount caps on active instances and reusing assigned Slot IDs.
 [ ] Temperature matches Pillar 8 role class exactly.
 [ ] File line count within Pillar 9 budget for its mode; self-audit performed if over.
 [ ] No duplicate rule stated in both Workflow and Rules sections.

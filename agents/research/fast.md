@@ -26,8 +26,11 @@ permission:
 - `UserTopic` (String)
 
 ### Subagent Contracts
-1. `research/research-fast/scout` (Slot: `scout-1`): Inputs `UserTopic` (String) -> Output Criteria `ScoutReport` (`TopicMap` (Array of `{SubQuestion: String, Aspects: Array<String>, SearchQueries: Array<String>}`), `KeyTerms` (Array of String), `TimeSensitiveFlags` (Array of String)).
-2. `research/research-fast/deep` (Slots: `deep-1`..`deep-3`): Inputs `SubQuestion` (String), `Aspects` (Array of String), `SuggestedQueries` (Array of String) -> Output Criteria `DeepReport` (`Answer` (String), `Evidence` (Array of `{Fact: String, Source: String}`), `Confidence` (`HIGH` | `MEDIUM` | `LOW`)).
+
+| Name | Max Amount | Subagent Contract Define |
+|---|---|---|
+| `research/research-fast/scout` | `1` (`scout-1`) | Inputs: `UserTopic` (String) -> Output Criteria: `ScoutReport` (`TopicMap`, `KeyTerms`, `TimeSensitiveFlags`) |
+| `research/research-fast/deep` | `Max 3` (`deep-1`..`deep-3`) | Inputs: `SubQuestion`, `Aspects`, `SuggestedQueries` -> Output Criteria: `DeepReport` (`Answer`, `Evidence`, `Confidence: HIGH|MEDIUM|LOW`) |
 
 ## Execution Workflow
 
@@ -60,6 +63,7 @@ permission:
 
 - **Precondition:** `UserTopic` provided.
 - Receive `UserTopic`, dispatch subagents with assigned Slot IDs (`scout-1`, `deep-1..3`), append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent dispatch, strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks before parsing subagent output, interpret status indicators, execute phases in order.
+- **Must** strictly adhere to instance caps declared in the Subagent Contracts table (`Max Amount`); **Never** spawn subagents exceeding declared limits.
 - Execute workflow phases sequentially (Reconnaissance → Deep Research → Synthesis → Output Storage / Reporting).
 - Dispatch all deep research subagents concurrently in parallel.
 - Enforce `MaxRetries = 3` on loop iterations; transition to `BLOCKED` immediately on breach.

@@ -30,12 +30,15 @@ permission:
 - `UserTopic` (String)
 
 ### Subagent Contracts
-1. `research/research-normal/scout` (Slots: `scout-1`, `scout-2`): Inputs `UserTopic` (String) -> Output Criteria `ScoutReport` (`TopicMap` (Array of `{SubQuestion: String, Aspects: Array<String>, SearchQueries: Array<String>}`), `KeyTerms` (Array of String), `ContestedVsSettled` (Array of `{SubQuestion: String, Status: SETTLED | CONTESTED | TIME_SENSITIVE}`), `RecommendedNextSteps` (Array of `{SubQuestion: String, RecommendedSpecialist: String}`)).
-2. `research/research-normal/deep` (Slots: `deep-1`..`deep-5`): Inputs `SubQuestion` (String), `Aspects` (Array of String) -> Output Criteria `DeepReport` (`Answer` (String), `Evidence` (Array of `{Fact: String, Source: String, SourceTier: T1 | T2 | T3}`), `SourceGaps` (Array of String), `DisagreementsFound` (Array of String), `Confidence` (`HIGH` | `MEDIUM` | `LOW`)).
-3. `research/shared/timeline` (Slot: `timeline-1`): Inputs `EvolutionQuery` (String) -> Output Criteria `TimelineReport` (`Timeline` (Array of `{Date: String, Event: String, Source: String}`), `CurrentState` (`Fact`: String, `AsOfDate`: String, `Source`: String), `StalenessRisk` (`HIGH` | `MEDIUM` | `LOW`), `Confidence` (`HIGH` | `MEDIUM` | `LOW`)).
-4. `research/shared/quant` (Slot: `quant-1`): Inputs `NumericQuery` (String) -> Output Criteria `QuantReport` (`NumbersFound` (Array of `{Value: String, Unit: String, Measures: String}`), `Methodology` (Object), `Discrepancies` (Array of String), `Confidence` (`HIGH` | `LOW`)).
-5. `research/shared/skeptic` (Slot: `skeptic-1`): Inputs `TargetClaim` (String) -> Output Criteria `SkepticReport` (`ClaimBeingTested` (String), `CounterEvidenceFound` (Array of `{CredibleDissent: String, Source: String, SupportingEvidence: String}`), `Assessment` (`SURVIVED` | `WEAKENED` | `BROKEN`), `Confidence` (`HIGH` | `MEDIUM` | `LOW`)).
-6. `research/shared/validation` (Slot: `validation-1`): Inputs `ReportsUnderReview` (Array of String) -> Output Criteria `ValidationReport` (`ClaimsChecked` (Array of `{Claim: String, Status: CONFIRMED | CONTRADICTED | UNVERIFIABLE}`), `ContradictionsFound` (Array of `{ReportName: String, ClaimedFact: String, DiscoveredFact: String}`), `StaleRiskClaims` (Array of String), `ConfidencePerClaim` (Array of `{Claim: String, Rating: HIGH | MEDIUM | LOW}`)).
+
+| Name | Max Amount | Subagent Contract Define |
+|---|---|---|
+| `research/research-normal/scout` | `Max 2` (`scout-1`, `scout-2`) | Inputs: `UserTopic` (String) -> Output Criteria: `ScoutReport` (`TopicMap`, `KeyTerms`, `ContestedVsSettled`, `RecommendedNextSteps`) |
+| `research/research-normal/deep` | `Max 5` (`deep-1`..`deep-5`) | Inputs: `SubQuestion`, `Aspects` -> Output Criteria: `DeepReport` (`Answer`, `Evidence`, `SourceGaps`, `DisagreementsFound`, `Confidence: HIGH|MEDIUM|LOW`) |
+| `research/shared/timeline` | `1` (`timeline-1`) | Inputs: `EvolutionQuery` -> Output Criteria: `TimelineReport` (`Timeline`, `CurrentState`, `StalenessRisk`, `Confidence: HIGH|MEDIUM|LOW`) |
+| `research/shared/quant` | `1` (`quant-1`) | Inputs: `NumericQuery` -> Output Criteria: `QuantReport` (`NumbersFound`, `Methodology`, `Discrepancies`, `Confidence: HIGH|LOW`) |
+| `research/shared/skeptic` | `1` (`skeptic-1`) | Inputs: `TargetClaim` -> Output Criteria: `SkepticReport` (`ClaimBeingTested`, `CounterEvidenceFound`, `Assessment: SURVIVED|WEAKENED|BROKEN`, `Confidence: HIGH|MEDIUM|LOW`) |
+| `research/shared/validation` | `1` (`validation-1`) | Inputs: `ReportsUnderReview` -> Output Criteria: `ValidationReport` (`ClaimsChecked`, `ContradictionsFound`, `StaleRiskClaims`, `ConfidencePerClaim`) |
 
 ## Execution Workflow
 
@@ -72,6 +75,7 @@ permission:
 
 - **Precondition:** `UserTopic` provided.
 - Receive `UserTopic`, dispatch subagents with assigned Slot IDs (`scout-1..2`, `deep-1..5`, `timeline-1`, `quant-1`, `skeptic-1`, `validation-1`), append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent dispatch, strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks before parsing subagent output, interpret status indicators, execute phases in order.
+- **Must** strictly adhere to instance caps declared in the Subagent Contracts table (`Max Amount`); **Never** spawn subagents exceeding declared limits.
 - Spawn 2 concurrent scout tasks during Discovery Phase.
 - Execute routing logic deterministically (prefer launching specialist subagents when uncertain).
 - Run validation stage whenever 2 or more research reports exist.

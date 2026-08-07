@@ -30,12 +30,15 @@ permission:
 - `UserTopic` (String)
 
 ### Subagent Contracts
-1. `research/research-high/scout` (Slots: `scout-1`..`scout-3`): Inputs `UserTopic` (String), `AnalyticalAngle` (String) -> Output Criteria `ScoutReport` (`TopicMap` (Array of `{SubQuestion: String, Aspects: Array<String>, SearchQueries: Array<String>}`), `Tags` (Array of `{SubQuestion: String, Domain: String, TimeSensitivity: String, ControversyLevel: String}`), `KeyTerms` (Array of String)).
-2. `research/research-high/deep` (Slot: `deep-<subquery_id>`): Inputs `SubQuestion` (String), `Aspects` (Array of String), `TaggedProperties` (Object) -> Output Criteria `DeepReport` (`Answer` (String), `Evidence` (Array of `{Fact: String, Source: String, SourceTier: T1 | T2 | T3}`), `SourceGaps` (Array of String), `DisagreementsFound` (Array of String), `Confidence` (`HIGH` | `MEDIUM` | `LOW`)).
-3. `research/shared/timeline` (Slot: `timeline-<query_id>`): Inputs `EvolutionQuery` (String) -> Output Criteria `TimelineReport` (`Timeline` (Array of `{Date: String, Event: String, Source: String}`), `CurrentState` (Object), `StalenessRisk` (`HIGH` | `MEDIUM` | `LOW`), `Confidence` (`HIGH` | `MEDIUM` | `LOW`)).
-4. `research/shared/quant` (Slot: `quant-<query_id>`): Inputs `NumericQuery` (String) -> Output Criteria `QuantReport` (`NumbersFound` (Array of `{Value: String, Unit: String, Measures: String}`), `Methodology` (Object), `Discrepancies` (Array of String), `Confidence` (`HIGH` | `LOW`)).
-5. `research/shared/skeptic` (Slot: `skeptic-<claim_id>`): Inputs `TargetClaim` (String) -> Output Criteria `SkepticReport` (`ClaimBeingTested` (String), `CounterEvidenceFound` (Array of Object), `Assessment` (`SURVIVED` | `WEAKENED` | `BROKEN`), `Confidence` (`HIGH` | `MEDIUM` | `LOW`)).
-6. `research/shared/validation` (Slot: `validation-1`): Inputs `ReportsUnderReview` (Array of String) -> Output Criteria `ValidationReport` (`ClaimsChecked` (Array of `{Claim: String, Status: CONFIRMED | CONTRADICTED | UNVERIFIABLE}`), `ContradictionsFound` (Array of Object), `StaleRiskClaims` (Array of String), `ConfidencePerClaim` (Array of Object)).
+
+| Name | Max Amount | Subagent Contract Define |
+|---|---|---|
+| `research/research-high/scout` | `Max 3` (`scout-1`..`scout-3`) | Inputs: `UserTopic`, `AnalyticalAngle` -> Output Criteria: `ScoutReport` (`TopicMap`, `Tags`, `KeyTerms`) |
+| `research/research-high/deep` | `Max N` (`deep-<subquery_id>`) | Inputs: `SubQuestion`, `Aspects`, `TaggedProperties` -> Output Criteria: `DeepReport` (`Answer`, `Evidence`, `SourceGaps`, `DisagreementsFound`, `Confidence: HIGH|MEDIUM|LOW`) |
+| `research/shared/timeline` | `Max N` (`timeline-<query_id>`) | Inputs: `EvolutionQuery` -> Output Criteria: `TimelineReport` (`Timeline`, `CurrentState`, `StalenessRisk`, `Confidence: HIGH|MEDIUM|LOW`) |
+| `research/shared/quant` | `Max N` (`quant-<query_id>`) | Inputs: `NumericQuery` -> Output Criteria: `QuantReport` (`NumbersFound`, `Methodology`, `Discrepancies`, `Confidence: HIGH|LOW`) |
+| `research/shared/skeptic` | `Max N` (`skeptic-<claim_id>`) | Inputs: `TargetClaim` -> Output Criteria: `SkepticReport` (`ClaimBeingTested`, `CounterEvidenceFound`, `Assessment: SURVIVED|WEAKENED|BROKEN`, `Confidence: HIGH|MEDIUM|LOW`) |
+| `research/shared/validation` | `1` (`validation-1`) | Inputs: `ReportsUnderReview` -> Output Criteria: `ValidationReport` (`ClaimsChecked`, `ContradictionsFound`, `StaleRiskClaims`, `ConfidencePerClaim`) |
 
 ## Execution Workflow
 
@@ -87,6 +90,7 @@ permission:
 
 - **Precondition:** `UserTopic` provided.
 - Receive `UserTopic`, dispatch subagents with assigned Slot IDs (`scout-1..3`, `deep-<subquery_id>`, `validation-1`), append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent dispatch, strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks before parsing subagent output, interpret status indicators, execute phases in order.
+- **Must** strictly adhere to instance caps declared in the Subagent Contracts table (`Max Amount`); **Never** spawn subagents exceeding declared limits.
 - **Always** reuse existing subagent instances (`resume deep-<subquery_id>`, `resume validation-1`) when re-dispatching tasks for gap resolution or re-validation to prevent redundant subagent spawning.
 - Execute pipeline stages sequentially without skipping.
 - Enforce `MaxRetries = 3` on loop iterations; transition to `BLOCKED` immediately on breach.

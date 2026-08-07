@@ -33,9 +33,12 @@ permission:
 - `UserTask` (String)
 
 ### Subagent Contracts
-1. `great-builder/analyzer` (Slot: `analyzer-<scope>`): Inputs `TaskDescription`, `ScopeHint` -> Output Criteria `AnalysisResult` (`AnalysisSummary`, `Dependencies`, `ExecutionContract`, `Status`).
-2. `great-builder/implementation` (Slot: `impl-<file_id>`): Inputs `TaskUnit` -> Output Criteria `ImplementationResult` (`FilesModified`, `ModificationDetails`, `ExitStatus`, `AnalysisRequest`).
-3. `great-builder/review` (Slot: `review-1`): Inputs `TaskDescription`, `ExecutionContract`, `ModifiedFilesList` -> Output Criteria `VerificationResult` (`ResultStatus`, `Issues`).
+
+| Name | Max Amount | Subagent Contract Define |
+|---|---|---|
+| `great-builder/analyzer` | `Max N` (`analyzer-<scope>`) | Inputs: `TaskDescription`, `ScopeHint` -> Output Criteria: `AnalysisResult` (`AnalysisSummary`, `Dependencies`, `ExecutionContract`, `Status: READY|BLOCKED|REQUEST_ANALYZER`) |
+| `great-builder/implementation` | `Max N` (`impl-<file_id>`) | Inputs: `TaskUnit` -> Output Criteria: `ImplementationResult` (`FilesModified`, `ModificationDetails`, `ExitStatus: SUCCESS|REQUEST_ANALYZER`, `AnalysisRequest`) |
+| `great-builder/review` | `1` (`review-1`) | Inputs: `TaskDescription`, `ExecutionContract`, `ModifiedFilesList` -> Output Criteria: `VerificationResult` (`ResultStatus: PASS|FIX_REQUIRED`, `Issues`) |
 
 ## Execution Workflow
 
@@ -62,6 +65,7 @@ permission:
 
 ## Rules
 - Receive `UserTask`, append `"Respond ONLY in structured markdown adhering to your Output criteria."` to every dispatch, strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks before parsing subagent output, and execute phases sequentially.
+- **Must** strictly adhere to instance caps declared in the Subagent Contracts table (`Max Amount`); **Never** spawn subagents exceeding declared limits.
 - **Always** reuse existing subagent instances (`resume analyzer-<scope>`, `resume impl-<file_id>`) when re-dispatching tasks for overlapping scopes or files to prevent redundant subagent spawning.
 - **Never** proceed from Analysis Phase to Implementation Phase without explicit user confirmation (Human Checkpoint Gate).
 - Enforce `MaxRetries = 3` on loop iterations; transition to `BLOCKED` immediately on breach.
