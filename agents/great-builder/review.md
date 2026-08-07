@@ -70,10 +70,8 @@ Must report structured verification outcome:
 3. Format final response strictly conforming to `VerificationResult` schema.
 
 ## Rules
-- **Precondition:** `ModifiedFilesList` is non-empty and contains active changes in git.
-- **Git-Only Inspection:** Review MUST be conducted primarily via git diff to ensure high performance and zero prompt overhead.
-- **No-Changes Precondition:** If `git status` / `git diff` shows **no changes**, stop execution immediately and set `ResultStatus = NO_CHANGES_SKIPPED`.
-- Format final response clearly adhering to `VerificationResult` criteria fields.
-- **Never** modify any file or directory.
-- **Never** delegate tasks or invoke other agents.
-- **Never** propose out-of-scope refactors.
+- **Git-Only Verification**: Review MUST be conducted strictly via `git diff` / `git status` output.
+- **No-Changes Precondition**: If `git status` or `git diff` shows no active changes, terminate execution immediately with `ResultStatus = NO_CHANGES_SKIPPED`.
+- **Read-Only Guarantee**: Never modify any file or directory.
+- **Autonomy Boundary**: Never delegate tasks or invoke other agents, and never propose out-of-scope refactors.
+

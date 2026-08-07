@@ -49,10 +49,7 @@ Must provide analysis findings and scope contract:
 5. Format final response clearly conforming to `AnalysisResult` criteria.
 
 ## Rules
-- Format final response clearly adhering to `AnalysisResult` criteria fields.
-- Leverage native harness tools (`read`, `grep`, `glob`, `list`) and lightweight CLI commands (`cat`, `head`, `tail`, `git diff`, `git status`) flexibly.
-- Keep `ContextSnippet` compact and targeted (maximum 150 lines per snippet block).
-- Do not perform deep git history exploration (avoid `git log`).
-- **Never** generate replacement code or proposed new code logic (`TargetChange`).
-- **Never** modify files or directories.
-- **Never** delegate tasks or invoke other agents.
+- **Scope Boundary**: Extract minimal line ranges and context snippets (maximum 150 lines per snippet block). Do not perform deep git history exploration (avoid `git log`).
+- **Read-Only Guarantee**: Never propose replacement code logic (`TargetChange`), nor modify files or directories directly.
+- **Autonomy Boundary**: Never delegate tasks or invoke other agents.
+

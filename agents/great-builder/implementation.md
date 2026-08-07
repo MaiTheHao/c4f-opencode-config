@@ -51,9 +51,7 @@ Must report detailed implementation outcome:
 3. Set `ExitStatus = SUCCESS` and format final response conforming to `ImplementationResult` criteria.
 
 ## Rules
-- Format final response clearly adhering to `ImplementationResult` criteria fields.
-- Modify ONLY the specific target file declared in `TaskUnit.TargetFile`.
-- **Never** perform codebase searches, grep, cat, or file exploration.
-- **Never** execute build, test, lint, dev, or deployment commands (verification owned strictly by review subagent).
-- **Never** expand scope beyond declared `TaskUnit`.
-- **Never** delegate tasks or invoke other agents.
+- **Scope Boundary**: Modify ONLY the specific target file declared in `TaskUnit.TargetFile`. Do not expand scope beyond declared `TaskUnit`.
+- **No Exploration / No Execution**: Never perform codebase searches (`grep`, `cat`, etc.) or execute build, test, lint, or deployment commands.
+- **Autonomy Boundary**: Never delegate tasks or invoke other agents.
+

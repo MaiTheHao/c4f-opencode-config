@@ -57,9 +57,8 @@ This spec defines **HOW** to write any agent config file — structure, tone, co
   1. No conflicting inline response text directives in `## Rules`.
   2. Subagent Rules MUST state: `Format final response clearly adhering to <CriteriaName> criteria fields`.
   3. Final Workflow Phase MUST step: `Format final response clearly conforming to <CriteriaName> criteria`.
-  4. Orchestrators dispatch tasks with literal suffix appended to every subagent prompt: `"Respond ONLY in structured markdown adhering to your Output criteria."`
-  5. Subagent Rules MUST contain the literal line: `- Never delegate tasks or invoke other agents.`
-  6. Every subagent frontmatter permission block MUST contain an explicit `task: deny` (or full task-map deny) — absence of the key is a violation, not an implicit deny.
+  4. Subagent Rules MUST contain the literal line: `- Never delegate tasks or invoke other agents.`
+  5. Every subagent frontmatter permission block MUST contain an explicit `task: deny` (or full task-map deny) — absence of the key is a violation, not an implicit deny.
 
 ---
 
@@ -83,128 +82,55 @@ This spec defines **HOW** to write any agent config file — structure, tone, co
 ## Pillar 6: Standardized Vocabulary & Section Isolation
 - **Global Vocabulary:** `Inputs` | `Outputs` | `Read` | `Must` | `Never` | `Exit` | `Status` | `Preconditions` | `ExplorationRequest`.
 - **Single Abstraction Level:** Keep data (`Inputs`), operations (`Workflow`), and constraints (`Rules`) completely separated. Do not embed constraints in data fields.
-- **Reserved reasoning tags (exhaustive, MUST be listed literally in orchestrator Rules — not paraphrased as "reasoning blocks"):** `<think>`, `<reasoning>`, `<scratchpad>`, `<reflection>`, `<inner_monologue>`. Orchestrator Rules MUST contain: `- Strip <think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue> blocks before parsing subagent output.`
+
 
 ---
 
-## Pillar 7: Interface Skeleton Templates (Generic — adapt role names/count per team)
+## Pillar 7: Structural Section Specifications
 
-These are structural skeletons, not a required roster. `namespace/role-N` stands for whatever subagents the actual team has — could be 1, could be 8. Do not force a team into 3 phases if it only needs 2, and do not invent roles the team doesn't have.
+Instead of rigid templates that bloat context, agent config files MUST follow a lean 4-part structure defined below.
 
-### 7.1 Orchestrator Template
-```markdown
----
-description: <One-line: what this team accomplishes end-to-end.>
-mode: primary
-temperature: 0.1
-color: '#22c55e'
-permission:
-  task:
-    '*': deny
-    'namespace/role-1': allow
-    'namespace/role-2': allow
-    # ... one line per actual subagent in this team; no placeholders left unfilled
-  question: allow
-  git: ask
-  list: allow
-  bash: deny
-  edit: deny
-  write: deny
-  read: deny
-  grep: deny
----
+### 7.1 Primary Orchestrator Configuration Specification
 
-## Core Definition
+1. **YAML Frontmatter**:
+   - `description`: 1-line concise summary of end-to-end task objective.
+   - `mode`: `primary`
+   - `temperature`: `0.1` (per Pillar 8 Matrix).
+   - `permission`: Strict whitelist/blacklist mapping. `task` block MUST explicitly list allowed subagent IDs and set `*: deny`.
 
-### Inputs
-- `UserTask` (String)
+2. **`## Core Definition`**:
+   - `### Inputs`: List required string/DTO inputs (e.g. `UserTask`). Dynamic outputs only (NO fixed output section).
+   - `### Subagent Contracts`: Markdown table (`Name | Max Amount | Subagent Contract Define`) defining slot caps and input DTOs.
 
-### Subagent Contracts
+3. **`## Execution Workflow`**:
+   - Sequential numbered phases (`### 1. Analysis Phase`, `### 2. Implementation Phase`, etc.).
+   - Explicit dispatch steps specifying Slot IDs and status routing logic (`READY`, `BLOCKED`, `REQUEST_*`, `SUCCESS`).
+   - Includes **Human Checkpoint Gate** at the boundary between read-only and mutating phases.
 
-| Name | Max Amount | Subagent Contract Define |
-|---|---|---|
-| `namespace/role-1` | `1` (`role-1`) | Inputs: `TaskDescription`, `ScopeHint` |
-| `namespace/role-2` | `Max 4` (`role-1`..`role-4`) | Inputs: `TaskUnit` |
+4. **`## Rules` (MUST be the final section)**:
+   - Concise bullet list of hard constraints and governance policies using binding keywords (`NEVER`, `MUST`).
+   - Define role boundaries (never edit code directly), slot/capacity caps, checkpoint gate enforcement, max retries (`MaxRetries = 3`), and completion criteria.
 
-## Execution Workflow
-<!-- One phase per distinct stage of work. Merge or split phases to match the real pipeline — do not pad to a fixed count. -->
-
-### 1. <Read-Only / Proposal Phase Name>
-1. Primary Orchestrator partitions task scope into assigned slot IDs (`role-1`).
-2. Primary Orchestrator dispatches subagent `namespace/role-1` assigned to Slot ID `role-1`.
-3. Aggregate findings into master output contract.
-4. If contract `Status = REQUEST_*`: Primary Orchestrator invokes `resume role-1`.
-5. If contract `Status = BLOCKED`: halt, ask user.
-6. If contract `Status = READY`: **Human Checkpoint Gate (Pillar 5)** — present summary, await `proceed`/`revise`/`re-run`. On `proceed`, continue.
-
-### 2. <Mutating Phase Name>
-1. Primary Orchestrator partitions work into non-overlapping task units (`role-1`..`role-4`).
-2. Primary Orchestrator dispatches parallel subagents `namespace/role-2` assigned to Slot IDs (`role-1`..`role-4`).
-3. Collect results.
-4. If any result requests the read-only phase again: Primary Orchestrator invokes `resume role-1` -> update contract -> `resume role-N`.
-5. If all succeed: proceed to next phase (verification, if the team has one; otherwise Final Reporting).
-
-<!-- Add a Verification phase here ONLY if the team has a verifier role. Otherwise skip straight to Final Reporting. -->
-
-### N. Final Reporting Phase
-1. Present completed task summary and outcomes to user.
-
-## Rules
-- You are the **Primary Orchestrator**. Subagents are passive task executors and **cannot** spawn, resume, or assign slots to other subagents.
-- Dispatch subagents directly using your subagent execution capabilities with assigned Slot IDs.
-- Pass ONLY task input fields to subagents. **Never** include slot management instructions, "spawn", or "resume" keywords in the task payload sent to subagents.
-
-- Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent task payload.
-- Strip `<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>` blocks before parsing subagent output, and execute phases sequentially.
-- **Must** strictly adhere to instance caps declared in the Subagent Contracts table (`Max Amount`); **Never** spawn subagents exceeding declared limits.
-- **Never** proceed from a read-only phase to a mutating phase on a `READY`/`SUCCESS`-equivalent status without explicit user confirmation (Human Checkpoint Gate, Pillar 5).
-- Enforce `MaxRetries = 3` on loop iterations; transition to `BLOCKED` immediately on breach.
-- **Never** perform mutating work directly (always delegated to the team's mutating-role subagent(s)).
-- **Never** bypass a verifier role if the team has one.
-- **Never** mark task complete without a terminal-success status from the team's final gate role (verifier if present, else the mutating role's own `SUCCESS`).
-- **Never** expose internal orchestration topology or subagent chat logs to user.
-```
-
-
-### 7.2 Subagent Template
-```markdown
----
-description: <One-line: this subagent's single domain of responsibility.>
-mode: subagent
-temperature: <per Pillar 8 matrix, matched to this role's class>
-permission:
-  task:
-    '*': deny
-  edit: <allow|deny — per this role's actual need>
-  write: <allow|deny>
-  read: allow
-  grep: <allow|deny>
-  glob: <allow|deny>
 ---
 
-## Core Definition
+### 7.2 Subagent Configuration Specification
 
-### Output Criteria (`<RoleName>Result`)
-Must provide outcome including:
-- <role-specific result fields>
-- `ExitStatus` / `Status`: <closed enum for this role>
+1. **YAML Frontmatter**:
+   - `description`: 1-line statement of the subagent's single responsibility domain.
+   - `mode`: `subagent`
+   - `temperature`: Determined strictly by role class in Pillar 8 Matrix (`0.0` for code/verifier, `0.1` for analyzer).
+   - `permission`: Strict tool permissions. `task` block MUST contain `*: deny`.
 
-## Execution Workflow
+2. **`## Core Definition`**:
+   - `### Output Criteria (<RoleName>Result)`: Closed DTO specification defining output fields, status enums, and issue arrays.
 
-### 1. Input Validation & Scope Mapping
-1. Read input contract boundaries.
-2. Verify target components against declared scope.
+3. **`## Execution Workflow`**:
+   - Compact numbered steps covering input validation, task execution, and result formatting.
 
-### 2. Execution Phase
-1. Perform work strictly within declared scope.
-2. Format final response conforming to `<RoleName>Result` criteria.
+4. **`## Rules` (MUST be the final section)**:
+   - Concise bullet list of boundary constraints using binding keywords (`NEVER`, `MUST`).
+   - Define scope boundaries, read-only/mutation guarantees, and autonomy boundaries (`Never delegate tasks or invoke other agents`).
 
-## Rules
-- **Precondition:** <upstream status required, if any>
-- Format final response clearly adhering to `<RoleName>Result` criteria fields.
-- **Never** expand scope beyond declared input boundaries.
-- **Never** delegate tasks or invoke other agents.
-```
 
 ---
 
@@ -250,15 +176,14 @@ Instruction files are context that gets loaded on every agent invocation. Bloate
 ```text
 [ ] Frontmatter: mode, temperature (per Pillar 8 matrix), permission matrix incl. explicit task deny.
 [ ] Top: ## Core Definition (Primacy). Primary Orchestrator keeps outputs dynamic (no fixed ### Outputs).
-[ ] Middle: ## Execution Workflow (Numbered steps, status routing, parallel dispatch). Dispatches explicitly state Primary Orchestrator caller, slot ID, passed Inputs, and enforced Output Criteria.
+[ ] Middle: ## Execution Workflow (Numbered steps, status routing, parallel dispatch). Dispatches explicitly state Primary Orchestrator caller, slot ID, and passed Inputs.
 [ ] Bottom: ## Rules (Recency, flat bullet list, MUST be last).
 [ ] Human Checkpoint Gate present at the team's read-only -> mutating-phase transition (Pillar 5) — exactly one, wherever that boundary actually sits for this team.
 [ ] Team topology (role count/names) matches what this project actually needs — not forced onto a fixed 4-role template (Scope Note).
-[ ] Reserved tags (<think>, <reasoning>, <scratchpad>, <reflection>, <inner_monologue>) listed literally, not paraphrased.
 [ ] Enums used for statuses (READY, BLOCKED, REQUEST_EXPLORER, SUCCESS, PASS, FIX_REQUIRED).
 [ ] Zero qualitative fluff / zero design motivations.
 [ ] Orchestrator Subject Clarity & Payload Isolation: Rules explicitly state Orchestrator ownership, prohibit passing slot instructions/"spawn"/"resume" in task payloads.
-[ ] Orchestrator strips reserved tags, hides internal topology, delegates all direct edits, appends structured-response suffix to every dispatch.
+[ ] Orchestrator hides internal topology, delegates all direct edits, and enforces slot limits.
 [ ] Subagent contains literal rule: "Never delegate tasks or invoke other agents."
 [ ] Subagent permission block contains explicit task: deny.
 [ ] Anti-Loop Guardrail (MaxRetries = 3 -> BLOCKED) enforced, distinct from Human Checkpoint Gate.
@@ -267,4 +192,5 @@ Instruction files are context that gets loaded on every agent invocation. Bloate
 [ ] File line count within Pillar 9 budget for its mode; self-audit performed if over.
 [ ] No duplicate rule stated in both Workflow and Rules sections.
 [ ] All 3+ item mappings rendered as tables, not prose.
+
 ```
