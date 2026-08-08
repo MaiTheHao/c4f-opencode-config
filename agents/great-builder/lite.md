@@ -1,5 +1,5 @@
 ---
-description: Lightweight primary agent for direct inline analysis, editing, and git verification, with optional delegation to native subagents (explore, scout, general).
+description: Lightweight primary agent for direct inline analysis, editing, and git verification, with optional delegation to native subagents (explore, general).
 mode: primary
 temperature: 0.1
 color: '#22c55e'
