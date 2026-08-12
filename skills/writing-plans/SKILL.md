@@ -35,8 +35,8 @@ graph TD
 
 # Plan Locations
 
-- **Default:** `<appDataDir>/brain/<conversation-id>/implementation_plan.md`
-- **Project Persistent:** `docs/brainstorming/plans/YYYY-MM-DD-<feature-name>.md` *(if requested)*
+- **Default:** Your Artifact Management Path if exists
+- **Project Persistent:** `local/agents/brainstorming/plans/YYYY-MM-DD-<feature-name>.md` *(if requested)*
 
 ---
 
