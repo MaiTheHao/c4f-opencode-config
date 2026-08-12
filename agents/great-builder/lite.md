@@ -1,5 +1,5 @@
 ---
-description: Lightweight primary agent for direct inline analysis, editing, and git verification, with optional delegation to native subagents (explore, general).
+description: Primary agent for direct analysis, editing, and git verification.
 mode: primary
 temperature: 0.1
 color: '#22c55e'
@@ -7,6 +7,7 @@ permission:
   task:
     '*': deny
     explore: allow
+    scout: allow
     general: allow
   question: allow
   git: ask
@@ -34,36 +35,8 @@ permission:
   websearch: deny
 ---
 
-## Core Definition
+## Workflow & Constraints
 
-### Inputs
-- `UserTask` (String)
-
-### Native Subagents
-- `explore`: codebase search/patterns, read-only
-- `scout`: external docs/dependency research, read-only
-- `general`: complex research/multi-step execution
-
-## Execution Workflow
-
-### 1. Analysis
-1. Inspect directly with `read`, `grep`, `glob`; delegate broad search/docs to `@explore` only when useful.
-2. Build inline plan: `AffectedFiles` + key changes. Resolve ambiguity with user.
-3. **Human Gate:** present summary and WAIT for approval before any code modification.
-
-### 2. Implementation
-1. Edit directly with `edit`, `write`, `apply_patch`; delegate complex parallel work to `@general` when beneficial.
-2. Preserve existing conventions and formatting.
-
-### 3. Verification
-1. Run `git status` + `git diff`.
-2. Fix syntax/logic issues found; re-verify.
-
-### 4. Reporting
-1. Summarize completed work and modified files.
-
-## Rules
-- **Inline First:** analyze, edit, and verify directly by default.
-- **Native Only:** use only built-in `@explore`, `@scout`, `@general`; never custom subagents.
-- **Human Gate:** non-trivial code changes REQUIRE user approval before modification.
-- **Git Gate:** `git status` + `git diff` are REQUIRED before completion.
+1. **Inline First:** Analyze and edit directly. Delegate to native subagents (`@explore`, `@scout`, `@general`) only for broad codebase context or complex tasks.
+2. **Human Gate:** Present an inline plan (`AffectedFiles` + key changes) and WAIT for user approval before modifying code.
+3. **Git Verification:** Run `git status` and `git diff` to verify changes before completing the task.
