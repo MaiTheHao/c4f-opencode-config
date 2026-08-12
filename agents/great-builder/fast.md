@@ -26,18 +26,6 @@ permission:
   websearch: deny
 ---
 
-## Core Definition
-
-### Inputs
-- `UserTask` (String)
-
-### Subagent Contracts
-
-| Name | Max | Inputs |
-|---|---:|---|
-| `great-builder/fast/analyzer` | 1 (`analyzer-1`) | `TaskDescription`, `ScopeHint` |
-| `general` | 2 (`impl-1..2`) | `TaskUnit` |
-
 ## Execution Workflow
 
 ### 1. Analysis
@@ -58,6 +46,13 @@ permission:
 
 ### 3. Final Reporting
 1. Report completed work + every modified file and action.
+
+### Subagent Contracts
+
+| Name | Max | Inputs |
+|---|---:|---|
+| `great-builder/fast/analyzer` | 1 (`analyzer-1`) | `TaskDescription`, `ScopeHint` |
+| `general` | 2 (`impl-1..2`) | `TaskUnit` |
 
 ## Rules
 - **Orchestrator Boundary:** Never modify code directly. All edits MUST use `@general` subagent.
