@@ -9,9 +9,7 @@ Generate syntax-valid, theme-adaptive, accessible Mermaid diagrams in markdown.
 
 ---
 
-# Priority Rules
-
-## P0 Mandatory Constraints
+# Rules
 
 - **Code Block Syntax:** MUST use ` ```mermaid `. Never use tildes (`~~~`).
 - **Label Quoting:** ALWAYS wrap labels in double quotes `A["Label (Details)"]` to prevent parser breaks on special characters or spaces.
@@ -31,34 +29,6 @@ Generate syntax-valid, theme-adaptive, accessible Mermaid diagrams in markdown.
 - **Theme & Colors:**
   - **DEFAULT:** STRICTLY NO hardcoded themes (`%%{init: ...}%%`), `style`, `classDef`, `linkStyle`, or inline colors. Keep raw standard syntax for IDE dark/light theme auto-adaptation.
   - **IF USER REQUESTS VIBRANT/CUSTOM COLORS:** ASK user for target IDE theme (Light vs Dark) BEFORE adding styles to ensure contrast.
-
-## P1 Preferred Constraints
-
-- **Node Count:** Keep 5-15 nodes per diagram. If >25 nodes, split into multiple diagrams.
-- **Label Length:** 2-5 words, <40 chars.
-- **Direction:** Explicitly set `TD` (top-down) for hierarchy/process or `LR` (left-to-right) for sequence/timeline.
-- **Color Independence:** Combine color/style with shape + label (accessibility).
-- **Comments:** Use `%%`. Avoid `{}` inside comments.
-
----
-
-# Flowchart Node Shapes
-
-| Shape | Syntax | Semantics |
-|---|---|---|
-| Process / Action | `A["Label"]` | Rectangle |
-| Start / End | `A("Label")` | Rounded rectangle |
-| Terminal | `A(["Label"])` | Stadium / Pill |
-| Subprocess | `A[["Label"]]` | Subroutine |
-| Database / Store | `A[("Label")]` | Cylinder |
-| Event / Connector | `A(("Label"))` | Circle |
-| Decision / Branch | `A{"Label"}` | Diamond |
-| Input | `A[/"Label"/]` | Parallelogram |
-| Output | `A[\"Label"\]` | Parallelogram alt |
-| Setup / Prepare | `A{{"Label"}}` | Hexagon |
-| Stop | `A((("Label")))` | Double circle |
-
-Rule: Maintain 1:1 shape semantic consistency across single diagram.
 
 ---
 
@@ -82,22 +52,10 @@ Usage example: `nodeId["fa:fa-database Database Server"]` or `cloudNode["aws:s3 
 ```
 1. Select Chart Type (Flowchart | Sequence | Class | State | ERD | Gantt | Mindmap | Architecture | etc.)
 2. Determine Flow Direction (TD | LR)
-3. Draft Nodes & Edges (Enforce P0 Node ID, Edge Syntax & Quoting rules)
-4. Audit P0 Checklist (No themes/styles, valid IDs, standard edges, proper escaping)
+3. Draft Nodes & Edges (Enforce Node ID, Edge Syntax & Quoting rules)
+4. Audit Checklist (No themes/styles, valid IDs, standard edges, proper escaping)
 5. Output raw ```mermaid block
 ```
-
----
-
-# Decision Rules
-
-- **IF** logic has conditional branching → Use Flowchart (`graph TD` / `graph LR`)
-- **IF** multi-actor dynamic interactions → Use Sequence Diagram (`sequenceDiagram`)
-- **IF** object structure / inheritance → Use Class Diagram (`classDiagram`)
-- **IF** state transitions & events → Use State Diagram (`stateDiagram-v2`)
-- **IF** database schemas → Use ER Diagram (`erDiagram`)
-- **IF** user explicit request color/vibrant → **THEN** prompt user for IDE theme (Light/Dark) before generating styles
-- **IF** diagram node count > 25 → **THEN** split into modular sub-diagrams
 
 ---
 
