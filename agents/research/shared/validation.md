@@ -49,6 +49,7 @@ Must provide claim validation outcome containing:
 - Conduct searches independently without reusing original report sources.
 - Explicitly detail every contradiction found between reports or sources.
 - Format final response clearly adhering to `ValidationReport` criteria fields.
+- Inline at most 5 reports; summarize any report exceeding ~2000 characters to its key claims before verification.
 - **Never** inherit stated confidence ratings from original research reports.
 - **Never** edit codebase files or spawn child subagents.
 - **Never** delegate tasks or invoke other agents.

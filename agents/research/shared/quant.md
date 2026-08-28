@@ -28,7 +28,7 @@ Must provide quantitative verification outcome containing:
 - `Methodology`: `{Sample: String, Method: String, Date: String, Scope: String, MarginOfError: String}`
 - `Discrepancies`: Array of String
 - `Sources`: Array of String
-- `Confidence`: `HIGH` | `LOW`
+- `Confidence`: `HIGH` | `MEDIUM` | `LOW`
 
 ## Execution Workflow
 
@@ -39,7 +39,7 @@ Must provide quantitative verification outcome containing:
 ### 2. Methodology Scrutiny & Output Phase
 1. Extract methodology parameters (sample size, measurement method, collection date, scope, margin of error).
 2. Compare methodologies if conflicting numbers exist to explain discrepancy.
-3. Assign `Confidence` (`HIGH` if methodology transparent and recent, `LOW` if methodology untraceable).
+3. Assign `Confidence` (`HIGH` if methodology transparent and recent, `MEDIUM` if methodology partially traceable, `LOW` if methodology untraceable).
 4. Format final response clearly conforming to `QuantReport` criteria.
 
 ## Rules
