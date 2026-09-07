@@ -13,6 +13,7 @@ permission:
     'research/shared/skeptic': allow
     'research/shared/validation': allow
   question: allow
+  todowrite: allow
   edit: deny
   write: deny
   read: deny

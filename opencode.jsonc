@@ -3,5 +3,5 @@
   "mcp": {
 
   },
-  "shell": "/bin/zsh"
+  "shell": "/usr/bin/zsh"
 }

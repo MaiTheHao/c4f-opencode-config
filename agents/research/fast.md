@@ -9,6 +9,7 @@ permission:
     'research/shared/scout': allow
     'research/shared/deep': allow
   question: allow
+  todowrite: allow
   edit: deny
   write: deny
   read: deny
