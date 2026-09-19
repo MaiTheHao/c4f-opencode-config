@@ -24,9 +24,6 @@ permission:
     'brainstorming': allow
     'subagent-reuse': allow
     'clean-code': allow
-  todowrite: deny
-  webfetch: deny
-  websearch: deny
 ---
 
 ## Core Definition

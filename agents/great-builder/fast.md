@@ -32,18 +32,12 @@ permission:
     'brainstorming': allow
     'subagent-reuse': allow
     'clean-code': allow
-  todowrite: deny
-  webfetch: deny
-  websearch: deny
 ---
 
 ## Core Definition
 
 - **Inputs:** `TaskDescription` (+ optional `Clarifications` from Phase 0).
 - **Strategy:** Inline first; delegate only for broad context.
-- **Mandatory Skills:**
-  - MUST load and follow skill `brainstorming` before design decisions, scoping, or non-trivial implementations.
-  - MUST load and follow skill `subagent-reuse` whenever delegating, tracking, or resuming subagents.
 - **Exits:** `PROCEED` (approved) | `ABORT` (rejected / blocked / retry breach).
 
 ### Subagent Contracts

@@ -3,8 +3,6 @@ description: Fast read-only codebase analyzer for targeted scope discovery and i
 mode: subagent
 temperature: 0.1
 permission:
-  task:
-    '*': deny
   read: allow
   list: allow
   grep: allow
@@ -21,9 +19,6 @@ permission:
     'tail *': allow
     'git status *': allow
     'git diff *': allow
-  webfetch: deny
-  websearch: deny
-  todowrite: deny
 ---
 
 ## Core Definition
