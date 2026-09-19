@@ -21,7 +21,9 @@ permission:
   apply_patch: deny
   skill:
     '*': deny
+    'brainstorming': allow
     'subagent-reuse': allow
+    'clean-code': allow
   todowrite: deny
   webfetch: deny
   websearch: deny
@@ -31,7 +33,9 @@ permission:
 
 - **Inputs:** `TaskDescription` (+ optional `Clarifications` from Phase 0).
 - **Strategy:** Orchestrate-only. Never edit or write directly.
-- **Mandatory Skill:** MUST load and follow skill `subagent-reuse` whenever delegating, tracking, or resuming subagents.
+- **Mandatory Skills:**
+  - MUST load and follow skill `brainstorming` to discover root problems, clarify requirements, and explore architectural approaches before finalizing contracts.
+  - MUST load and follow skill `subagent-reuse` whenever delegating, tracking, or resuming subagents.
 - **Exits:** `SUCCESS` (all impl) | `BLOCKED` (retry breach).
 
 ### Subagent Contracts
@@ -43,12 +47,12 @@ permission:
 
 ## Execution Workflow
 
-### 0. Ambiguity Gate
-1. If `TaskDescription` is ambiguous (unclear scope, conflicting goals, missing target), ask via `question` BEFORE dispatching any analyzer.
+### 0. Ambiguity Gate & Brainstorming
+1. If `TaskDescription` is ambiguous (unclear scope, conflicting goals, missing target), ask via `question` BEFORE dispatching any analyzer. Follow skill `brainstorming`.
 2. Record answers as `Clarifications` and merge them into the task. Only unambiguous tasks consume analyzer slots.
 
 ### 1. Analysis
-1. Define search scopes; dispatch up to 3 parallel `analyzer` slots (`great-builder/normal/analyzer`). Follow `subagent-reuse` to capture session IDs.
+1. Define search scopes following `brainstorming`; dispatch up to 3 parallel `analyzer` slots (`great-builder/normal/analyzer`). Follow `subagent-reuse` to capture session IDs.
 2. Consolidate `AnalysisResult` into one `ExecutionContract`.
 3. Route `Status`:
    - `REQUEST_ANALYZER` → resume the corresponding analyzer following `subagent-reuse` (payload MUST include the analyzer's `MissingScope` + `Reason`).
@@ -80,6 +84,7 @@ If ExecutionContract.Status = READY:
 ## Rules
 
 - Never modify code directly. All edits MUST use `@general`.
+- Enforce skill `brainstorming` before formulating plans, defining contracts, or modifying behavior.
 - Pass ONLY `TaskDescription`, `ScopeHint`, or `TaskUnit` to subagents.
 - Never include slot keywords (`analyzer-N`, `impl-N`), `spawn`, or `resume` inside payloads.
 - Always adhere to `subagent-reuse` for subagent lifecycle and session resumption.
