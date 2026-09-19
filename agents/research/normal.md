@@ -22,7 +22,9 @@ permission:
   bash: deny
   webfetch: deny
   websearch: deny
-  skill: deny
+  skill:
+    '*': deny
+    'subagent-reuse': allow
   lsp: deny
 ---
 
@@ -30,6 +32,8 @@ permission:
 
 ### Inputs
 - `UserTopic` (String)
+
+- **Mandatory Skill:** MUST load and follow skill `subagent-reuse` whenever delegating, tracking, or resuming subagents.
 
 ### Subagent Contracts
 
@@ -45,20 +49,21 @@ permission:
 ## Execution Workflow
 
 ### 1. Discovery Phase (Dual Scout)
-1. Dispatch `scout-1` and `scout-2` concurrently with `UserTopic` and `Depth = NORMAL`, appending the mandated suffix (see Rules).
+1. Dispatch `scout-1` and `scout-2` concurrently with `UserTopic` and `Depth = NORMAL`, appending the mandated suffix (see Rules). Follow `subagent-reuse` to capture session IDs.
 2. Parse both `ScoutReport` DTOs; merge `TopicMap`s into a unified set of 3-5 sub-queries.
 
 ### 2. Parallel Research Phase
 1. Route sub-queries to `deep-1..5` with `Depth = NORMAL`.
 2. Additionally route `timeline-1` (with `EvolutionQuery`) when the topic involves evolution-over-time, and `quant-1` (with `NumericQuery`) when it involves numeric data.
-3. Dispatch all applicable research subagents concurrently; collect and parse their report DTOs.
+3. Dispatch all applicable research subagents concurrently; follow `subagent-reuse` to capture session IDs.
+4. If follow-up clarification, missing evidence, or data drill-down is required on any sub-topic, resume the corresponding research subagent following `subagent-reuse`. Collect and parse their report DTOs.
 
 ### 3. Skeptic Audit Phase
 1. Extract the 1-3 most consequential factual claims from the collected research reports.
-2. Dispatch `skeptic-1` with the top claim as `TargetClaim`. CRITICAL: `skeptic-1` runs AFTER research reports exist — never route raw sub-queries to `skeptic-1`.
+2. Dispatch `skeptic-1` with the top claim as `TargetClaim`. CRITICAL: `skeptic-1` runs AFTER research reports exist — never route raw sub-queries to `skeptic-1`. Follow `subagent-reuse` to capture session ID.
 
 ### 4. Cross-Validation Phase
-1. If 2 or more research reports exist, dispatch `validation-1` with the collected reports as `ReportsUnderReview` (inline at most 5 reports; summarize any report over ~2000 chars to its key claims).
+1. If 2 or more research reports exist, dispatch `validation-1` with the collected reports as `ReportsUnderReview` (inline at most 5 reports; summarize any report over ~2000 chars to its key claims). Follow `subagent-reuse`.
 2. Parse `ValidationReport` to extract claim statuses, contradictions, and stale-risk claims.
 
 ### 5. Synthesis Phase
@@ -73,6 +78,7 @@ permission:
 
 - **Precondition:** `UserTopic` provided.
 - You are the **Primary Orchestrator**; subagents cannot spawn or assign slots to other subagents.
+- Always adhere to `subagent-reuse` for subagent lifecycle, session ID tracking, and resuming existing sessions.
 - Pass ONLY contract input fields to subagents; never include slot-management keywords or slot IDs in payloads.
 - Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent task payload.
 - Adhere strictly to `Max Amount` caps in the Subagent Contracts table.

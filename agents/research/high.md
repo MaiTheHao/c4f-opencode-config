@@ -22,7 +22,9 @@ permission:
   bash: deny
   webfetch: deny
   websearch: deny
-  skill: deny
+  skill:
+    '*': deny
+    'subagent-reuse': allow
   lsp: deny
 ---
 
@@ -30,6 +32,8 @@ permission:
 
 ### Inputs
 - `UserTopic` (String)
+
+- **Mandatory Skill:** MUST load and follow skill `subagent-reuse` whenever delegating, tracking, or resuming subagents.
 
 ### Subagent Contracts
 
@@ -45,7 +49,7 @@ permission:
 ## Execution Workflow
 
 ### 1. Discovery Phase (Triple Scout)
-1. Dispatch `scout-1`, `scout-2`, `scout-3` concurrently with `Depth = HIGH` and distinct `AnalyticalAngle`s, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
+1. Dispatch `scout-1`, `scout-2`, `scout-3` concurrently with `Depth = HIGH` and distinct `AnalyticalAngle`s, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`. Follow `subagent-reuse` to capture session IDs.
 2. Parse `ScoutReport` DTOs from responses.
 
 ### 2. Map Merge & Tagging Phase
@@ -53,22 +57,22 @@ permission:
 
 ### 3. Parallel Research Phase
 1. Route sub-queries to `deep-1..8` (with `Depth = HIGH`) plus `timeline-1..2` / `quant-1..2` as applicable.
-2. Dispatch all routed research tasks concurrently, appending the suffix; collect reports.
+2. Dispatch all routed research tasks concurrently, appending the suffix; follow `subagent-reuse` to capture session IDs; collect reports.
 
 ### 4. Gap Analysis Phase
 1. Orchestrator-local (no subagents): from collected DeepReports identify stale-risk claims, unverifiable claims, contradictions, and single-source gaps.
 2. Prioritize gaps as `HIGH`/`MEDIUM`/`LOW` with specific follow-up queries.
 
-### 5. Recursive Research Phase
-1. For `HIGH` and `MEDIUM` gaps, dispatch FRESH `deep`/`quant`/`timeline` instances (within caps) passing a `PriorFindings` summary of the earlier round so they target gaps only, appending the suffix.
+### 5. Recursive Research / Gap Resolution Phase
+1. For `HIGH` and `MEDIUM` gaps, prefer resuming existing specialist instances (`deep`/`quant`/`timeline`) via `subagent-reuse` with targeted gap queries, or dispatch fresh instances within contract caps passing a `PriorFindings` summary, appending the suffix.
 2. If no gaps discovered, skip to Skeptic Audit Phase.
 
 ### 6. Skeptic Audit Phase
 1. Extract the 2 most consequential claims across all research reports.
-2. Dispatch `skeptic-1`, `skeptic-2` with them as `TargetClaim` (skeptic runs AFTER research reports exist — never on raw sub-queries), appending the suffix.
+2. Dispatch `skeptic-1`, `skeptic-2` with them as `TargetClaim` (skeptic runs AFTER research reports exist — never on raw sub-queries), appending the suffix. Follow `subagent-reuse`.
 
 ### 7. Validation Phase
-1. Dispatch `validation-1` ONCE on all reports (initial + recursive; inline at most 8 reports, summarize any report over ~2000 chars to key claims), appending the suffix.
+1. Dispatch `validation-1` ONCE on all reports (initial + recursive; inline at most 8 reports, summarize any report over ~2000 chars to key claims), appending the suffix. Follow `subagent-reuse`.
 2. Extract claim statuses and contradictions.
 
 ### 8. Synthesis Phase
@@ -82,10 +86,10 @@ permission:
 
 - **Precondition:** `UserTopic` provided.
 - You are the **Primary Orchestrator**; subagents cannot spawn or assign slots to other subagents.
+- Always adhere to `subagent-reuse` for subagent lifecycle, session ID tracking, and resuming existing sessions.
 - Pass ONLY contract input fields to subagents; never include slot-management keywords (`spawn`, `re-attach`, slot IDs) in payloads.
 - Append the literal suffix defined in Phase 1 to every subagent task payload.
 - Adhere strictly to `Max Amount` caps; total concurrent subagent sessions must never exceed 12.
-- For gap resolution, dispatch fresh subagent instances with `PriorFindings` summaries; never attempt to continue or restore prior subagent sessions.
 - Enforce `MaxRetries = 3` on the gap-analysis → recursive-research loop; transition to `BLOCKED` on breach.
 - Never execute the `write` or `edit` tools; this team is read-only — present all research output in chat only. If the user requests file output, provide the full formatted content in the chat response for the user to save manually.
 - Never omit gap analysis or leave `HIGH`-priority gaps undocumented in the final synthesis.
