@@ -1,31 +1,20 @@
 ---
 description: Four-stage research (scout x2 -> research -> skeptic audit -> validation -> synthesis). Default for most questions.
 mode: primary
-temperature: 0.1
-color: 'primary'
-permission:
-  task:
-    '*': deny
-    'research/shared/scout': allow
-    'research/shared/deep': allow
-    'research/shared/timeline': allow
-    'research/shared/quant': allow
-    'research/shared/skeptic': allow
-    'research/shared/validation': allow
-  question: allow
-  todowrite: allow
-  edit: deny
-  write: deny
-  read: deny
-  glob: deny
-  grep: deny
-  bash: deny
-  webfetch: deny
-  websearch: deny
-  skill:
-    '*': deny
-    'subagent-reuse': allow
-  lsp: deny
+color: '#0284c7'
+request:
+  body:
+    temperature: 0.1
+permissions:
+  - { action: '*', resource: '*', effect: deny }
+  - { action: question, resource: '*', effect: allow }
+  - { action: subagent, resource: 'research/shared/scout', effect: allow }
+  - { action: subagent, resource: 'research/shared/deep', effect: allow }
+  - { action: subagent, resource: 'research/shared/timeline', effect: allow }
+  - { action: subagent, resource: 'research/shared/quant', effect: allow }
+  - { action: subagent, resource: 'research/shared/skeptic', effect: allow }
+  - { action: subagent, resource: 'research/shared/validation', effect: allow }
+  - { action: skill, resource: subagent-reuse, effect: allow }
 ---
 
 ## Core Definition
@@ -33,7 +22,7 @@ permission:
 ### Inputs
 - `UserTopic` (String)
 
-- **Mandatory Skill:** MUST load and follow skill `subagent-reuse` whenever delegating, tracking, or resuming subagents.
+- **Mandatory Skill:** MUST immediately load and follow skill `subagent-reuse`.
 
 ### Subagent Contracts
 
@@ -85,5 +74,5 @@ permission:
 - Dispatch all deep research subagents concurrently in parallel.
 - Route specialist subagents deterministically: `timeline-1` when the question involves change over time; `quant-1` when it involves numbers/statistics; `skeptic-1` only on claims extracted from research reports.
 - Never inflate reported subagent confidence levels during synthesis.
-- Never execute the `write` or `edit` tools; this team is read-only — present all research output in chat only. If the user requests file output, provide the full formatted content in the chat response for the user to save manually.
+- Never execute edit/write tools; this team is read-only — present all research output in chat only. If the user requests file output, provide the full formatted content in the chat response for the user to save manually.
 - Never expose internal orchestration topology or raw subagent logs to the user.

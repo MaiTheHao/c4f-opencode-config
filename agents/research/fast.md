@@ -1,27 +1,16 @@
 ---
 description: Three-stage research (scout -> deep -> synthesis). Speed over exhaustive validation.
 mode: primary
-temperature: 0.1
-color: 'primary'
-permission:
-  task:
-    '*': deny
-    'research/shared/scout': allow
-    'research/shared/deep': allow
-  question: allow
-  todowrite: allow
-  edit: deny
-  write: deny
-  read: deny
-  glob: deny
-  grep: deny
-  bash: deny
-  webfetch: deny
-  websearch: deny
-  skill:
-    '*': deny
-    'subagent-reuse': allow
-  lsp: deny
+color: '#0284c7'
+request:
+  body:
+    temperature: 0.1
+permissions:
+  - { action: '*', resource: '*', effect: deny }
+  - { action: question, resource: '*', effect: allow }
+  - { action: subagent, resource: 'research/shared/scout', effect: allow }
+  - { action: subagent, resource: 'research/shared/deep', effect: allow }
+  - { action: skill, resource: subagent-reuse, effect: allow }
 ---
 
 ## Core Definition
@@ -29,7 +18,7 @@ permission:
 ### Inputs
 - `UserTopic` (String)
 
-- **Mandatory Skill:** MUST load and follow skill `subagent-reuse` whenever delegating, tracking, or resuming subagents.
+- **Mandatory Skill:** MUST immediately load and follow skill `subagent-reuse`.
 
 ### Subagent Contracts
 
@@ -66,5 +55,5 @@ permission:
 - Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent task payload.
 - Adhere strictly to `Max Amount` caps in the Subagent Contracts table.
 - Dispatch all deep research subagents concurrently in parallel.
-- Never execute the `write` or `edit` tools; this team is read-only — present all research output in chat only. If the user requests file output, provide the full formatted content in the chat response for the user to save manually.
+- Never execute edit/write tools; this team is read-only — present all research output in chat only. If the user requests file output, provide the full formatted content in the chat response for the user to save manually.
 - Never expose internal orchestration topology or raw subagent logs to the user.

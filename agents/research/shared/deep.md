@@ -1,20 +1,13 @@
 ---
 description: Deep-dive on one narrow sub-question via web research with source-tier verification. Depth-controlled (FAST | NORMAL | HIGH).
 mode: subagent
-temperature: 0.1
-permission:
-  webfetch: allow
-  websearch: allow
-  read: deny
-  edit: deny
-  write: deny
-  glob: deny
-  grep: deny
-  bash: deny
-  task: deny
-  skill: deny
-  lsp: deny
-  question: deny
+request:
+  body:
+    temperature: 0.1
+permissions:
+  - { action: '*', resource: '*', effect: deny }
+  - { action: webfetch, resource: '*', effect: allow }
+  - { action: websearch, resource: '*', effect: allow }
 ---
 
 ## Core Definition

@@ -73,6 +73,10 @@ Before introducing new abstractions, value objects, patterns, utility layers, er
 
 Consistency with the surrounding codebase usually beats theoretical purity.
 
+### Finding project standards
+
+Look for repo-level documentation in this order: `CODING_STANDARDS.md`, `CONTRIBUTING.md`, `docs/`, then inline conventions in the files already touched. Where the repo documents a standard, it wins over any rule in this skill.
+
 # P2 — COHESION & COUPLING
 
 The core lens for judging structure, whether reviewing one file or a related set.
@@ -91,6 +95,30 @@ The core lens for judging structure, whether reviewing one file or a related set
 * Prefer loose coupling + high cohesion: modules that are easy to understand alone and easy to recombine.
 
 Do not decouple things that change together for the same reason — that's often accidental complexity, not clean code.
+
+## Code Smells (Fowler baseline)
+
+Each smell is a heuristic label, never a hard violation. Two rules bind this list:
+
+- **P1 wins**: where the repo documents a convention that endorses a smell, suppress the flag.
+- **Always a judgement call**: name the smell, quote the offending code, let the developer decide.
+
+| Smell | Signal | Fix direction |
+|---|---|---|
+| **Mysterious Name** | Name doesn't reveal what it does/holds | Rename; if no honest name comes, the design is murky |
+| **Duplicated Code** | Same logic shape in more than one hunk/file | Extract the shared shape, call from both |
+| **Feature Envy** | Method reaches into another object's data more than its own | Move method onto the data it envies |
+| **Data Clumps** | Same few fields/params keep travelling together | Bundle into one type |
+| **Primitive Obsession** | Primitive/string standing in for a domain concept | Give the concept its own small type |
+| **Repeated Switches** | Same `switch`/`if`-cascade on the same type recurs | Replace with polymorphism or a shared map |
+| **Shotgun Surgery** | One logical change forces scattered edits across many files | Gather what changes together into one module |
+| **Divergent Change** | One file edited for several unrelated reasons | Split so each module changes for one reason |
+| **Speculative Generality** | Abstraction added for needs that don't exist yet | Delete it; inline back until a real need shows |
+| **Message Chains** | Long `a.b().c().d()` navigation | Hide the walk behind one method on the first object |
+| **Middle Man** | Class/function that mostly just delegates | Cut it, call the real target directly |
+| **Refused Bequest** | Subclass ignores/overrides most of what it inherits | Drop inheritance, use composition |
+
+Skip smells that tooling (linter, formatter, type checker) already enforces.
 
 # P3 — SOLID
 

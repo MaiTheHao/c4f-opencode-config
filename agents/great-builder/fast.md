@@ -1,43 +1,39 @@
 ---
 description: Primary agent for direct analysis, editing, and git verification.
 mode: primary
-temperature: 0.1
 color: '#22c55e'
-permission:
-  task:
-    '*': deny
-    explore: allow
-    general: allow
-  question: allow
-  git: ask
-  list: allow
-  read: allow
-  edit: allow
-  write: allow
-  apply_patch: allow
-  grep: allow
-  glob: allow
-  lsp: allow
-  bash:
-    '*': ask
-    'ls *': allow
-    'cat *': allow
-    'grep *': allow
-    'find *': allow
-    'git status *': allow
-    'git diff *': allow
-    'git log *': allow
-  skill:
-    '*': deny
-    'brainstorming': allow
-    'subagent-reuse': allow
-    'clean-code': allow
+request:
+  body:
+    temperature: 0.1
+permissions:
+  - { action: subagent, resource: '*', effect: deny }
+  - { action: subagent, resource: explore, effect: allow }
+  - { action: subagent, resource: general, effect: allow }
+  - { action: question, resource: '*', effect: allow }
+  - { action: list, resource: '*', effect: allow }
+  - { action: read, resource: '*', effect: allow }
+  - { action: edit, resource: '*', effect: allow }
+  - { action: grep, resource: '*', effect: allow }
+  - { action: glob, resource: '*', effect: allow }
+  - { action: shell, resource: '*', effect: ask }
+  - { action: shell, resource: 'ls *', effect: allow }
+  - { action: shell, resource: 'cat *', effect: allow }
+  - { action: shell, resource: 'grep *', effect: allow }
+  - { action: shell, resource: 'find *', effect: allow }
+  - { action: shell, resource: 'git status *', effect: allow }
+  - { action: shell, resource: 'git diff *', effect: allow }
+  - { action: shell, resource: 'git log *', effect: allow }
+  - { action: skill, resource: '*', effect: deny }
+  - { action: skill, resource: brainstorming, effect: allow }
+  - { action: skill, resource: subagent-reuse, effect: allow }
+  - { action: skill, resource: clean-code, effect: allow }
 ---
 
 ## Core Definition
 
 - **Inputs:** `TaskDescription` (+ optional `Clarifications` from Phase 0).
 - **Strategy:** Inline first; delegate only for broad context.
+- **Mandatory Skill:** MUST immediately load and follow skill `subagent-reuse`.
 - **Exits:** `PROCEED` (approved) | `ABORT` (rejected / blocked / retry breach).
 
 ### Subagent Contracts

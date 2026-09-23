@@ -1,8 +1,11 @@
-# OpenCode Custom Configuration & Agents
+# OpenCode Custom Configuration & Agents (OpenCode 2.x)
 
-This repository contains custom agent definitions, workflows (skills), and help documentation for **OpenCode**, a highly configurable AI agentic coding system.
+This repository contains custom agent definitions, workflows (skills), and configuration guidelines optimized natively for **OpenCode 2.x**, a highly configurable AI agentic coding system.
 
-These settings are designed to be loaded globally (under `~/.config/opencode/`) or per-project (under `.opencode/`) to provide specialized agents for brainstorming, high-throughput software implementation, and multi-stage research pipelines.
+These settings are designed to be loaded globally (under `~/.config/opencode/`) or per-project (under `.opencode/`) to provide specialized agents for high-throughput software implementation and multi-stage research pipelines.
+
+> [!NOTE]
+> **OpenCode 2.x Compatibility**: All agent frontmatters and configs in this repository strictly adhere to the OpenCode V2 native specification (`permissions` ordered arrays, action renaming `shell`/`subagent`/`edit`, and `request.body.temperature`). For details, see [`optimize-agent-config.md`](file:///home/maithehao/.config/opencode/optimize-agent-config.md).
 
 ---
 
@@ -12,7 +15,7 @@ Configure and set up OpenCode according to your use case below:
 
 ### Option 1: Per-Project Usage
 1. Clone or download this repository.
-2. Move the `agents/` and `skills/` directories into the root of your target project (typically under `.opencode/` or structured based on your project configuration).
+2. Move the `agents/` and `skills/` directories into the root of your target project (under `.opencode/`).
 3. Setup complete!
 
 ### Option 2: Global Usage
@@ -29,7 +32,6 @@ Configure and set up OpenCode according to your use case below:
 
 ### Non-Essential Files (Cleanup / Storage Optimization)
 If you wish to clean up or minimize the configuration bundle for production/storage, the following files and directories are optional and can be removed:
-- `help/` (Reference documentation guides)
 - `README.md` (This instruction file)
 - `.gitignore` (Git configuration file)
 
@@ -39,70 +41,67 @@ If you wish to clean up or minimize the configuration bundle for production/stor
 
 ```text
 .
-├── agents/                  # Configuration files defining custom AI agents
-│   ├── brainstorming/       # Design & planning workflow agents
-│   ├── great-builder/       # Fast implementation workflow agents
-│   └── research/            # Stage-based research pipeline agents
-├── help/                    # Reference guides for OpenCode features
+├── agents/                  # OpenCode 2.x agent definitions (Markdown + Frontmatter)
+│   ├── great-builder/       # Fast implementation & analysis workflow agents
+│   │   ├── fast.md          # Primary direct analyzer, editor, and git verifier
+│   │   ├── fast/            # Fast specialist subagents (analyzer)
+│   │   ├── normal.md        # Standard primary orchestrator
+│   │   └── normal/          # Standard specialist subagents (analyzer)
+│   └── research/            # Stage-based web research pipelines
+│       ├── fast.md          # 3-stage research pipeline orchestrator
+│       ├── normal.md        # 4-stage research pipeline orchestrator
+│       ├── high.md          # 8-stage research pipeline orchestrator
+│       └── shared/          # Shared specialist subagents (scout, deep, timeline, quant, skeptic, validation)
 ├── skills/                  # Extensible task-specific instructions (Skills)
-└── opencode.jsonc           # Main configuration file
+│   ├── brainstorming/       # Architecture & requirement clarification workflow
+│   ├── clean-code/          # SOLID, cohesion, and refactoring guidelines
+│   ├── executing-plans/     # Checkpoint-driven execution process
+│   ├── git-commit/          # Conventional commit message analysis and staging
+│   ├── mermaid/             # Architecture and workflow diagram generator
+│   ├── skill-creator/       # Skill authoring and eval toolkit
+│   ├── subagent-reuse/      # Subagent session tracking and lifecycle reuse
+│   └── writing-plans/       # Standard implementation plan formatting
+├── optimize-agent-config.md # Standard specification for agent configurations (V2)
+└── opencode.jsonc           # Main OpenCode configuration file
 ```
 
 ---
 
-## Agents Overview
+## Agents Overview (OpenCode 2.x)
 
-OpenCode agents are defined in Markdown format (`.md`) with YAML frontmatter specifying their parameters, modes, and tool execution permissions.
+OpenCode 2.x agents are defined in Markdown format (`.md`) with YAML frontmatter specifying their parameters, modes, and tool execution permissions using native V2 schemas.
 
-### 1. Brainstorming (`agents/brainstorming/`)
-A structured workflow geared towards evaluation, specification, and implementation planning before touching code modifications.
-- **Orchestrator (`brainstorming/orchestrator` - Primary)**: Main interface that evaluates user requests, delegates specification to subagents, and drives execution.
+### 1. Great Builder (`agents/great-builder/`)
+A high-throughput implementation pipeline built to complete features and fix bugs quickly and safely with explicit human checkpoint gates.
+- **Fast (`great-builder/fast` - Primary)**: Directly analyzes, edits, and verifies git status inline; delegates to `explore` and `general` when broad context is required.
+- **Normal (`great-builder/normal` - Primary)**: Orchestrate-only agent that dispatches parallel analyzers (`great-builder/normal/analyzer`) and up to 4 parallel implementation units (`general`).
 - **Specialist Subagents**:
-  - `brainstorming/research`: Scopes codebase analysis and evaluates tradeoffs.
-  - `brainstorming/plan-writer`: Generates detailed execution plans.
-  - `brainstorming/implementation`: Implements changes outlined in approved plans.
-  - `brainstorming/review`: Evaluates completed work.
+  - `great-builder/fast/analyzer`: Fast read-only codebase analyzer for targeted scope discovery and execution contracts.
+  - `great-builder/normal/analyzer`: In-depth cross-file reasoning, dependency analysis, and impact synthesis.
 
-### 2. Great Builder (`agents/great-builder/`)
-A high-throughput implementation pipeline built to complete features and fix bugs extremely quickly without design specs or extensive planning.
-- **Orchestrator (`great-builder/orchestrator` - Primary)**: Directly routes tasks based on active codebase patterns and constraints.
-- **Specialist Subagents**:
-  - `great-builder/explorer`: Explores codebase, analyzes scope, and generates Execution Contracts.
-  - `general`: General subagent used to execute code changes and modifications.
-  - `great-builder/review`: Audits changes for correctness and issues.
-
-### 3. Research Pipelines (`agents/research/`)
+### 2. Research Pipelines (`agents/research/`)
 A set of stage-based research pipelines that progressively discover, deep-dive, validate, and synthesize reports on complex topics.
 - **Primary Pipelines**:
   - `research/fast`: 3-stage pipeline (Scout &rarr; Deep &rarr; Synthesis).
-  - `research/normal`: 4-stage pipeline (Scout x2 &rarr; Parallel Deep &rarr; Validation &rarr; Synthesis).
-  - `research/high`: 8-stage pipeline (Scout x3 &rarr; Merge &rarr; Parallel Research &rarr; Validation &rarr; Gap Analysis &rarr; Recursive Research &rarr; Re-Validation &rarr; Synthesis).
-- **Specialist Subagents (`research/shared/` & specific versions)**:
-  - `scout`: Performs initial territory mapping and outputs sub-queries.
+  - `research/normal`: 4-stage pipeline (Scout x2 &rarr; Parallel Deep &rarr; Skeptic Audit &rarr; Validation &rarr; Synthesis).
+  - `research/high`: 8-stage pipeline (Triple Scout &rarr; Merge &rarr; Parallel Research &rarr; Gap Analysis &rarr; Recursive Research &rarr; Skeptic Audit &rarr; Validation &rarr; Synthesis).
+- **Specialist Subagents (`research/shared/`)**:
+  - `scout`: Maps research territory via web reconnaissance and produces tagged sub-queries.
   - `deep`: Performs iterative search and source-tier verification.
-  - `timeline`: Tracks historical event chronological context.
-  - `quant`: Identifies and parses original quantitative research/numbers.
-  - `skeptic`: Acts as a red-team searching for counter-evidence.
-  - `validation`: Conducts independent cross-checks on findings.
+  - `timeline`: Tracks historical event chronological context and staleness risk.
+  - `quant`: Scrutinizes quantitative numbers, sample sizes, and methodology.
+  - `skeptic`: Actively searches for counter-evidence and minority rebuttals.
+  - `validation`: Conducts independent cross-checks on findings and flags contradictions.
 
 ---
 
 ## Skills
 
 Located in the `skills/` directory, these folder structures extend the capabilities of the agents through structured instruction sets (`SKILL.md`) and prompts.
-- **`brainstorming`**: Step-by-step sequence to brainstorm architecture, evaluate options, and verify specifications.
-- **`writing-plans`**: Standard formatting structure to document implementation plans before making changes.
+- **`brainstorming`**: Step-by-step sequence to brainstorm architecture, evaluate options, and verify specifications before making changes.
+- **`clean-code`**: Engineering principles for readability, correctness, and maintainability.
+- **`writing-plans`**: Standard formatting structure to document implementation plans.
 - **`executing-plans`**: Step-by-step process for executing and validating planned code.
-
----
-
-## Guides (`help/`)
-
-The guides in the `help/` directory are compiled, rewritten, and formatted for AI agent comprehension based on the official OpenCode documentation pages:
-- [Agents Guide](help/agents.md) — Source: [OpenCode Agents Documentation](https://opencode.ai/docs/agents/)
-- [Custom Tools Guide](help/custom-tools.md) — Source: [OpenCode Custom Tools Documentation](https://opencode.ai/docs/custom-tools/)
-- [MCP Servers Guide](help/mcp-servers.md) — Source: [OpenCode MCP Servers Documentation](https://opencode.ai/docs/mcp-servers/)
-- [Permissions Guide](help/permissions.md) — Source: [OpenCode Permissions Documentation](https://opencode.ai/docs/permissions/)
-- [Policies Guide](help/policies.md) — Source: [OpenCode Policies Documentation](https://opencode.ai/docs/policies/)
-- [Rules Guide](help/rules.md) — Source: [OpenCode Rules Documentation](https://opencode.ai/docs/rules/)
-- [Tools Guide](help/tools.md) — Source: [OpenCode Tools Documentation](https://opencode.ai/docs/tools/)
+- **`git-commit`**: Structured git commit staging and conventional message generation.
+- **`mermaid`**: Visual diagram generation for markdown documents.
+- **`skill-creator`**: Tools and workflows to build, evaluate, and optimize skills.

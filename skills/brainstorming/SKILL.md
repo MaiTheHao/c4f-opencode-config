@@ -1,8 +1,7 @@
 ---
-
 name: brainstorming
 description: Use before implementing features, changing behavior, or making architectural decisions. Discover the real problem, inspect existing context, resolve critical ambiguity, explore meaningful designs, and obtain explicit approval before implementation.
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---
 
 # Brainstorming
 
@@ -12,40 +11,40 @@ Transform a requirement or idea into a **validated technical design before imple
 
 Optimize for:
 
-* correctness over speed
-* evidence over assumptions
-* minimal necessary ceremony
-* reuse of existing architecture
-* explicit decisions and trade-offs
+- correctness over speed
+- evidence over assumptions
+- minimal necessary ceremony
+- reuse of existing architecture
+- explicit decisions and trade-offs
 
 ---
 
-# HARD GATE
+## HARD GATE
 
 **Do not implement before explicit design approval.**
 
 Before approval, you may:
 
-* inspect code and documentation
-* search the repository
-* investigate APIs, dependencies, and existing behavior
-* run read-only commands
-* draw diagrams
-* write pseudocode
-* discuss designs
+- inspect code and documentation
+- search the repository
+- investigate APIs, dependencies, and existing behavior
+- run read-only commands
+- draw diagrams
+- write pseudocode
+- discuss designs
 
 Before approval, do not:
 
-* write implementation code
-* modify implementation files
-* scaffold implementation
-* execute implementation plans
+- write implementation code
+- modify implementation files
+- scaffold implementation
+- execute implementation plans
 
 ---
 
-# PROCESS
+## PROCESS
 
-## 1. Inspect
+### 1. Inspect
 
 Before asking the user questions, inspect available context.
 
@@ -63,14 +62,14 @@ Potential Conflicts
 
 Inspect:
 
-* relevant source code
-* project structure
-* related modules
-* existing patterns
-* API/data contracts
-* tests
-* configuration
-* relevant documentation
+- relevant source code
+- project structure
+- related modules
+- existing patterns
+- API/data contracts
+- tests
+- configuration
+- relevant documentation
 
 Prefer repository evidence over generic assumptions.
 
@@ -78,9 +77,7 @@ Prefer repository evidence over generic assumptions.
 
 If the repository does not provide enough information and external knowledge would materially affect the design, research it before proposing the design.
 
----
-
-## 2. Understand the Problem
+### 2. Understand the Problem
 
 Convert the request into:
 
@@ -103,27 +100,25 @@ Ask only questions that materially affect the design.
 
 Prefer:
 
-* one focused question at a time
-* batching only tightly related questions
-* making reasonable assumptions when uncertainty is non-critical
+- one focused question at a time
+- batching only tightly related questions
+- making reasonable assumptions when uncertainty is non-critical
 
 Do not turn clarification into an interview.
 
----
-
-## 3. Challenge
+### 3. Challenge
 
 Challenge only assumptions that could materially affect:
 
-* correctness
-* security
-* performance
-* reliability
-* maintainability
-* compatibility
-* architecture
-* data integrity
-* operational behavior
+- correctness
+- security
+- performance
+- reliability
+- maintainability
+- compatibility
+- architecture
+- data integrity
+- operational behavior
 
 For important assumptions, test:
 
@@ -136,29 +131,25 @@ What constraint justifies this choice?
 
 Do not challenge decisions merely to create discussion.
 
----
-
-## 4. Analyze Risks
+### 4. Analyze Risks
 
 Check only dimensions relevant to the design:
 
-* edge cases
-* failure modes
-* concurrency
-* data consistency
-* performance
-* security
-* backward compatibility
-* migration
-* observability
-* deployment / rollback
-* operational impact
+- edge cases
+- failure modes
+- concurrency
+- data consistency
+- performance
+- security
+- backward compatibility
+- migration
+- observability
+- deployment / rollback
+- operational impact
 
 Do not perform a generic checklist when a dimension is irrelevant.
 
----
-
-## 5. Explore Designs
+### 5. Explore Designs
 
 If meaningful alternatives exist, compare **2–3 materially different approaches**.
 
@@ -187,9 +178,7 @@ If one approach is clearly appropriate, use it directly.
 
 **Never manufacture alternatives merely to satisfy the process.**
 
----
-
-## 6. Construct the Design
+### 6. Construct the Design
 
 Build the design incrementally.
 
@@ -211,7 +200,7 @@ Trade-offs
 
 Keep the design proportional to task complexity.
 
-### Adaptive depth
+#### Adaptive depth
 
 ```text
 Trivial / well-defined
@@ -226,21 +215,19 @@ Complex / architectural / high-risk
 
 Do not apply maximum ceremony to every task.
 
----
-
-## 7. Consistency Check
+### 7. Consistency Check
 
 Before requesting approval, verify that decisions made during the session remain consistent.
 
 Look for:
 
-* contradictory requirements
-* conflicting decisions
-* changed assumptions
-* inconsistent terminology
-* API/domain conflicts
-* architecture/data conflicts
-* scope creep
+- contradictory requirements
+- conflicting decisions
+- changed assumptions
+- inconsistent terminology
+- API/domain conflicts
+- architecture/data conflicts
+- scope creep
 
 If a contradiction exists:
 
@@ -248,9 +235,7 @@ If a contradiction exists:
 
 Never silently choose between conflicting requirements.
 
----
-
-## 8. Final Validation
+### 8. Final Validation
 
 Before approval, verify:
 
@@ -273,7 +258,7 @@ Do not block approval over non-critical uncertainty.
 
 ---
 
-# APPROVAL GATE
+## APPROVAL GATE
 
 Present the resulting design clearly.
 
@@ -298,7 +283,7 @@ If critical ambiguity remains:
 
 ---
 
-# AFTER APPROVAL
+## AFTER APPROVAL
 
 The approved design becomes the implementation contract.
 
@@ -322,7 +307,7 @@ Minor implementation details that do not alter the approved design do not requir
 
 ---
 
-# DECISION RULES
+## DECISION RULES
 
 ```text
 IF context already answers a question
@@ -370,22 +355,22 @@ IF implementation reveals a material design conflict
 
 ---
 
-# FORBIDDEN
+## FORBIDDEN
 
 Never:
 
-* implement before approval
-* modify implementation files before approval
-* blindly accept a proposed solution
-* ask questions answerable from context
-* turn brainstorming into unnecessary interrogation
-* force alternatives when none are meaningful
-* apply maximum ceremony to trivial tasks
-* ignore relevant existing patterns
-* ignore material failure modes
-* ignore compatibility or migration impact
-* hide contradictions
-* silently change approved architectural decisions
-* leave critical TODO / TBD unresolved
-* claim certainty where evidence is unavailable
-* continue implementation after discovering a material contradiction
+- implement before approval
+- modify implementation files before approval
+- blindly accept a proposed solution
+- ask questions answerable from context
+- turn brainstorming into unnecessary interrogation
+- force alternatives when none are meaningful
+- apply maximum ceremony to trivial tasks
+- ignore relevant existing patterns
+- ignore material failure modes
+- ignore compatibility or migration impact
+- hide contradictions
+- silently change approved architectural decisions
+- leave critical TODO / TBD unresolved
+- claim certainty where evidence is unavailable
+- continue implementation after discovering a material contradiction

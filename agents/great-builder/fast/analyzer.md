@@ -1,24 +1,24 @@
 ---
 description: Fast read-only codebase analyzer for targeted scope discovery and implementation context.
 mode: subagent
-temperature: 0.1
-permission:
-  read: allow
-  list: allow
-  grep: allow
-  glob: allow
-  edit: deny
-  write: deny
-  skill:
-    '*': deny
-  bash:
-    '*': ask
-    'ls *': allow
-    'cat *': allow
-    'head *': allow
-    'tail *': allow
-    'git status *': allow
-    'git diff *': allow
+request:
+  body:
+    temperature: 0.1
+permissions:
+  - { action: subagent, resource: '*', effect: deny }
+  - { action: read, resource: '*', effect: allow }
+  - { action: list, resource: '*', effect: allow }
+  - { action: grep, resource: '*', effect: allow }
+  - { action: glob, resource: '*', effect: allow }
+  - { action: edit, resource: '*', effect: deny }
+  - { action: skill, resource: '*', effect: deny }
+  - { action: shell, resource: '*', effect: ask }
+  - { action: shell, resource: 'ls *', effect: allow }
+  - { action: shell, resource: 'cat *', effect: allow }
+  - { action: shell, resource: 'head *', effect: allow }
+  - { action: shell, resource: 'tail *', effect: allow }
+  - { action: shell, resource: 'git status *', effect: allow }
+  - { action: shell, resource: 'git diff *', effect: allow }
 ---
 
 ## Core Definition

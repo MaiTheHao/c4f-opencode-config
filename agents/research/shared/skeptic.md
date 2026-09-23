@@ -1,20 +1,13 @@
 ---
 description: Actively search for counter-evidence, minority views, and rebuttals to mainstream narrative claims for any topic.
 mode: subagent
-temperature: 0.0
-permission:
-  webfetch: allow
-  websearch: allow
-  read: deny
-  edit: deny
-  write: deny
-  glob: deny
-  grep: deny
-  bash: deny
-  task: deny
-  skill: deny
-  lsp: deny
-  question: deny
+request:
+  body:
+    temperature: 0.0
+permissions:
+  - { action: '*', resource: '*', effect: deny }
+  - { action: webfetch, resource: '*', effect: allow }
+  - { action: websearch, resource: '*', effect: allow }
 ---
 
 ## Core Definition
@@ -49,5 +42,5 @@ Must provide counter-evidence evaluation containing:
 - Assess whether claim survived, weakened, or broke under scrutiny.
 - Format final response clearly adhering to `SkepticReport` criteria fields.
 - **Never** create false equivalence for unsubstantiated fringe views.
-- **Never** read local workspace files or execute bash operations.
+- **Never** read local workspace files or execute shell operations.
 - **Never** delegate tasks or invoke other agents.

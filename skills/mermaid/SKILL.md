@@ -3,18 +3,20 @@ name: mermaid
 description: Help users create clear, accessible, and correct Mermaid diagrams embedded in markdown documents.
 ---
 
-# Mission
+# Mermaid
+
+## Mission
 
 Generate syntax-valid, theme-adaptive, accessible Mermaid diagrams in markdown.
 
 ---
 
-# Rules
+## Rules
 
-- **Code Block Syntax:** MUST use ` ```mermaid `. Never use tildes (`~~~`).
+- **Code Block Syntax:** MUST use `` ```mermaid ``. Never use tildes (`~~~`).
 - **Label Quoting:** ALWAYS wrap labels in double quotes `A["Label (Details)"]` to prevent parser breaks on special characters or spaces.
 - **Line Breaks:** MUST use `<br/>`. Never use `\n`.
-- **Node IDs:** 
+- **Node IDs:**
   - MUST use camelCase without spaces.
   - MUST NOT start with `o` or `x` (triggers unintended edge renderers).
   - MUST NOT use reserved word `end` as node ID (use `End` or `A["end"]`).
@@ -32,12 +34,12 @@ Generate syntax-valid, theme-adaptive, accessible Mermaid diagrams in markdown.
 
 ---
 
-# Supported Diagram Icons
+## Supported Diagram Icons
 
 Mermaid Chart supports icon packages in node labels and architecture diagrams:
 
 | Icon Package | Syntax / Prefix Example | Description & Usage |
-|---|---|---|
+| :--- | :--- | :--- |
 | **Font Awesome** | `fa:fa-user`, `fa:fa-database`, `fa:fa-server` | General UI, database, server, and user icons |
 | **AWS Icons** | `aws:ec2`, `aws:s3`, `aws:lambda`, `aws:rds` | Amazon Web Services cloud architecture components |
 | **Azure Icons** | `azure:vm`, `azure:storage`, `azure:sql` | Microsoft Azure cloud architecture components |
@@ -47,21 +49,21 @@ Usage example: `nodeId["fa:fa-database Database Server"]` or `cloudNode["aws:s3 
 
 ---
 
-# Execution Workflow
+## Execution Workflow
 
-```
+```text
 1. Select Chart Type (Flowchart | Sequence | Class | State | ERD | Gantt | Mindmap | Architecture | etc.)
 2. Determine Flow Direction (TD | LR)
 3. Draft Nodes & Edges (Enforce Node ID, Edge Syntax & Quoting rules)
 4. Audit Checklist (No themes/styles, valid IDs, standard edges, proper escaping)
-5. Output raw ```mermaid block
+5. Output raw mermaid code block
 ```
 
 ---
 
-# Forbidden Patterns
+## Forbidden Patterns
 
-- ✗ `~~~mermaid` (Use ` ```mermaid `)
+- ✗ `~~~mermaid` (Use `` ```mermaid ``)
 - ✗ `A[Text (Detail)]` (Unquoted special characters)
 - ✗ `A["Line1\nLine2"]` (Use `<br/>`)
 - ✗ `end` as Node ID
