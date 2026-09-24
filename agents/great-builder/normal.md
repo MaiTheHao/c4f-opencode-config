@@ -1,5 +1,5 @@
 ---
-description: Standard primary orchestration agent with flexible analyzers (<=3) and max 5 implementation subagents.
+description: Standard primary orchestration agent with flexible analyzers (<=3), on-demand web research, and max 5 implementation subagents.
 mode: primary
 color: '#22c55e'
 request:
@@ -10,6 +10,7 @@ permissions:
   - { action: question, resource: '*', effect: allow }
   - { action: list, resource: '*', effect: allow }
   - { action: subagent, resource: 'great-builder/normal/analyzer', effect: allow }
+  - { action: subagent, resource: 'great-builder/normal/web-scout', effect: allow }
   - { action: subagent, resource: general, effect: allow }
   - { action: skill, resource: brainstorming, effect: allow }
   - { action: skill, resource: subagent-reuse, effect: allow }
@@ -35,6 +36,11 @@ permissions:
       "purpose": "Codebase and impact analysis"
     },
     {
+      "name": "great-builder/normal/web-scout",
+      "max_slots": 1,
+      "purpose": "Web research for current patterns, library documentation, and critical advisories"
+    },
+    {
       "name": "general",
       "max_slots": 5,
       "purpose": "Implementation and verification execution"
@@ -51,12 +57,13 @@ permissions:
 
 ### 1. Analysis
 1. Define search scopes following `brainstorming`; dispatch up to 3 parallel analyzer instances (`great-builder/normal/analyzer`). Follow `subagent-reuse` to capture session IDs.
-2. Consolidate `AnalysisResult` into one execution plan.
-3. Route status:
+2. Dispatch `great-builder/normal/web-scout` ONLY when the task requires checking external documentation, updated library patterns, or current security advisories.
+3. Consolidate analysis results into one execution plan.
+4. Route status:
    - `REQUEST_ANALYZER`: resume the corresponding analyzer following `subagent-reuse` with missing scope details.
    - `BLOCKED`: halt and present blocking questions.
    - `READY`: proceed to Human Checkpoint Gate.
-4. ONLY `proceed` transitions to Implementation.
+5. ONLY `proceed` transitions to Implementation.
 
 #### Human Checkpoint Gate
 - When status = `READY`:
@@ -84,7 +91,8 @@ permissions:
 - Adhere strictly to skill `brainstorming` before formulating plans or modifying behavior.
 - Pass ONLY task-specific context to subagents; NEVER include internal orchestration metadata or task IDs in payloads.
 - Always adhere to `subagent-reuse` for subagent lifecycle and session resumption.
-- Adhere strictly to `max_slots` caps in Subagents schema (`analyzer ≤ 3`, `general ≤ 5`).
+- Adhere strictly to `max_slots` caps in Subagents schema (`analyzer ≤ 3`, `web-scout ≤ 1`, `general ≤ 5`).
+- Dispatch `great-builder/normal/web-scout` ONLY on demand or when external state verification is required; NEVER dispatch unconditionally.
 - Parallel task units MUST NOT touch the same file.
 - WAIT for explicit user approval at Human Checkpoint Gate before implementation.
 - Retry Policy: max 2 retries per subagent instance on failure; MaxRetries = 3 per loop; on breach, transition to `BLOCKED` with blocking questions.

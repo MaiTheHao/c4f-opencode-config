@@ -21,39 +21,36 @@ permissions:
   - { action: shell, resource: 'git diff *', effect: allow }
 ---
 
-## Core Definition
+## Context
 
-### Output Criteria (`AnalysisResult`)
-
-- `AnalysisSummary`: relevant architecture + symbols
+### Output Schema (`AnalysisResult`)
+- `AnalysisSummary`: relevant architecture and symbols
 - `Dependencies`: direct dependencies
 - `ExecutionContract`:
-  - `Status`: `READY | BLOCKED` (closed enum; the fast primary resolves missing scopes inline, so never emit `REQUEST_ANALYZER`)
-  - `AffectedFiles`
+  - `Status`: `READY | BLOCKED` (closed enum)
+  - `AffectedFiles`: list of target files
   - `FileContexts`: `TargetFile`, `LineRange`, `ContextSnippet`
   - `Constraints`
   - `Conventions`
   - `Impact`
   - `BlockingQuestions` (required when `Status = BLOCKED`)
 
-## Execution Workflow
+## Workflow
 
-1. Parse the request and identify target behavior.
+### 1. Analysis
+1. Parse request and identify target behavior.
 2. Locate relevant files, symbols, callers, callees, interfaces, models, and tests.
-3. Trace only the direct execution path required to understand scope.
-4. Inspect `git status` / `git diff` when active changes may affect scope.
-5. Extract minimal exact source snippets, max 100 lines each.
-6. Synthesize the execution contract.
+3. Trace direct execution path required to understand scope.
+4. Inspect `git status` and `git diff` when active changes may affect scope.
+5. Extract minimal exact source snippets (max 100 lines each).
+6. Synthesize execution contract.
 
 ## Rules
 
-- Read-only. Never edit, write, create, delete, or rename.
-- Never provide replacement implementation or `TargetChange`.
-- Never delegate tasks or invoke other agents.
-- No `git log`, blame, or deep history.
+- Read-only: NEVER edit, write, create, delete, or rename files.
+- NEVER provide replacement implementation or code fixes.
+- Omit `git log`, blame, or deep history.
 - Preserve existing semantics; distinguish repository facts from inference.
-- Do not invent requirements, dependencies, or conventions.
-- Prefer targeted search over broad exploration.
-- Cite `file:line` for every factual claim so the primary can verify without re-reading.
-- If scope cannot be determined, return `Status: BLOCKED` with concrete `BlockingQuestions` instead of guessing.
+- Cite `file:line` for every factual claim.
+- If scope cannot be determined, return `Status: BLOCKED` with concrete `BlockingQuestions`.
 - Stop when implementation scope is sufficiently mapped.

@@ -6,32 +6,28 @@ request:
     temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
+  - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
 ---
 
-## Core Definition
+## Context
 
-### Inputs
-- `UserTopic` (String)
-- `Depth` (`FAST` | `NORMAL` | `HIGH`)
-- `AnalyticalAngle` (String, optional — required when `Depth = HIGH`)
-
-### Output Criteria (`ScoutReport`)
+### Output Schema (`ScoutReport`)
 - `TopicMap`: Array of `{SubQuestion: String, Aspects: Array<String>, SearchQueries: Array<String>}`
 - `Tags`: Array of `{SubQuestion: String, Domain: String, TimeSensitivity: STABLE | SLOW_MOVING | FAST_MOVING | CRITICAL, ControversyLevel: SETTLED | MINOR_DISPUTE | HEATED | FRINGE_ONLY}`
 - `KeyTerms`: Array of String
 - `KnownUnknowns`: Array of String
 - `Sources`: Array of String
 
-## Execution Workflow
+## Workflow
 
-1. Interpret the topic and determine search queries based on depth.
-2. Execute web searches via `websearch` and retrieve relevant pages via `webfetch`.
-3. Synthesize the findings into structured `ScoutReport`.
+### 1. Reconnaissance
+1. Interpret topic and determine search queries based on depth.
+2. Execute searches via `websearch` and retrieve relevant pages via `webfetch`.
+3. Synthesize findings into structured `ScoutReport`.
 
 ## Rules
 
-- Never delegate tasks or invoke other agents.
-- Read-only web reconnaissance. Never edit, write, or modify code or files.
-- Produce structured Markdown strictly adhering to `ScoutReport`.
+- Read-only web reconnaissance: NEVER execute edit, write, or file modifications.
+- Produce structured markdown strictly adhering to `ScoutReport` output schema.

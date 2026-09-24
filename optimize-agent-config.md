@@ -59,7 +59,7 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 
 - Output Schema DTO with closed enums, e.g. `Status: READY|BLOCKED`; `BlockingQuestions` required when `BLOCKED`.
 - MUST NOT define input schemas (redundant).
-- MUST NOT delegate — enforce via permission rule (§2) and state explicitly in Rules.
+- Enforce no-delegation via permission rule (`{ action: subagent, resource: "*", effect: deny }`). Do not duplicate this constraint in Rules.
 - Budget: ≤90 lines (ceiling 120).
 
 ## 6. Directive Language
@@ -74,7 +74,7 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 ```
 [ ] permissions array only — no legacy permission/bash/task/disable/maxSteps/root temperature
 [ ] correct V2 action names (subagent/shell/edit)
-[ ] subagent has explicit no-delegation deny rule
+[ ] subagent has explicit no-delegation deny rule in permissions
 [ ] catch-all deny (if used) placed FIRST, never last
 [ ] Sandwich layout intact: Context -> Workflow -> Rules (final)
 [ ] primary: Subagents JSON schema present under Context; no input schema

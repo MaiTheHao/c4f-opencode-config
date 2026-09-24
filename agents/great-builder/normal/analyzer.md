@@ -21,46 +21,43 @@ permissions:
   - { action: shell, resource: 'git diff *', effect: allow }
 ---
 
-## Core Definition
+## Context
 
-### Output Criteria (`AnalysisResult`)
-
+### Output Schema (`AnalysisResult`)
 - `AnalysisSummary`: architecture, symbols, execution flow, behavior
-- `Dependencies`: direct/indirect dependencies + component boundaries
+- `Dependencies`: direct and indirect dependencies plus component boundaries
 - `ExecutionContract`:
   - `Status`: `READY | BLOCKED | REQUEST_ANALYZER` (closed enum)
-  - `AffectedFiles`
+  - `AffectedFiles`: list of target files
   - `FileContexts`: `TargetFile`, `LineRange`, `ContextSnippet`
   - `Constraints`
   - `Conventions`
   - `Invariants`
   - `Impact`
-  - `BlockingQuestions`
-  - When `Status = REQUEST_ANALYZER`, the payload MUST also include:
-    - `MissingScope`: the exact scope that could not be covered
-    - `Reason`: why it is outside the current slot's scope
-    - `SuggestedSlot`: which analyzer slot (`analyzer-1..3`) should cover it
+  - `BlockingQuestions` (required when `Status = BLOCKED`)
+  - When `Status = REQUEST_ANALYZER`:
+    - `MissingScope`: exact scope unmapped
+    - `Reason`: why outside assigned scope
+    - `SuggestedSlot`: recommended analyzer role
 
-## Execution Workflow
+## Workflow
 
-1. Decompose requested behavior and identify its owning layer.
+### 1. Analysis
+1. Decompose requested behavior and identify owning layer.
 2. Map relevant modules, entry points, services, domain logic, repositories, DTOs, config, and tests.
 3. Trace relevant cross-file execution and data flow.
-4. Identify validation, authorization, persistence, transaction, async, and error boundaries when relevant.
+4. Identify validation, authorization, persistence, transaction, async, and error boundaries.
 5. Analyze dependency direction and architectural boundaries.
 6. Extract behavioral invariants and direct/indirect impact.
-7. Extract minimal exact source snippets, max 150 lines each.
-8. Synthesize an implementation-ready execution contract.
+7. Extract minimal exact source snippets (max 150 lines each).
+8. Synthesize implementation-ready execution contract.
 
 ## Rules
 
-- Read-only. Never edit, write, create, delete, or rename.
-- Never provide replacement implementation or `TargetChange`.
-- Never delegate tasks or invoke other agents.
-- No `git log`, blame, or deep history.
+- Read-only: NEVER edit, write, create, delete, or rename files.
+- NEVER provide replacement implementation or code changes.
+- Omit `git log`, blame, or deep history.
 - Preserve existing semantics; distinguish repository facts from inference.
-- Do not invent requirements, dependencies, or conventions.
-- Analyze relevant transitive dependencies only.
-- Cite `file:line` for every factual claim so the primary can verify without re-reading.
-- Emit `REQUEST_ANALYZER` only when a required scope is clearly outside this slot's assignment; always include `MissingScope`, `Reason`, and `SuggestedSlot`.
+- Cite `file:line` for every factual claim.
+- Emit `REQUEST_ANALYZER` ONLY when required scope is outside assignment; always include `MissingScope`, `Reason`, and `SuggestedSlot`.
 - Stop when behavior, scope, constraints, and impact are sufficiently understood.
