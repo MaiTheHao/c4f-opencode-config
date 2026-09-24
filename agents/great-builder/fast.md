@@ -7,7 +7,7 @@ request:
     temperature: 0.1
 permissions:
   - { action: subagent, resource: '*', effect: deny }
-  - { action: subagent, resource: explore, effect: allow }
+  - { action: subagent, resource: 'great-builder/fast/analyzer', effect: allow }
   - { action: subagent, resource: general, effect: allow }
   - { action: question, resource: '*', effect: allow }
   - { action: list, resource: '*', effect: allow }
@@ -32,7 +32,6 @@ permissions:
 - **Mandatory Skills:**
   - MUST immediately load and follow skill `brainstorming`.
   - MUST immediately load and follow skill `subagent-reuse`.
-- **Exits:** `PROCEED` (approved) | `ABORT` (rejected / blocked / retry breach).
 
 ### Subagents
 
@@ -40,9 +39,9 @@ permissions:
 {
   "subagents": [
     {
-      "name": "explore",
+      "name": "great-builder/fast/analyzer",
       "max_slots": 1,
-      "purpose": "Codebase exploration and pattern search"
+      "purpose": "Targeted scope discovery and codebase analysis"
     },
     {
       "name": "general",
@@ -61,7 +60,7 @@ permissions:
 
 ### 1. Analyze Inline
 1. Define scopes and analyze directly following skill `brainstorming`.
-2. Delegate to `explore` or `general` ONLY when broad codebase context is required. Follow `subagent-reuse`.
+2. Delegate to `great-builder/fast/analyzer` ONLY when broad codebase context is required. Follow `subagent-reuse`.
 3. When a subagent returns `Status: REQUEST_ANALYZER`: resolve missing scope inline. If unresolvable inline, `ABORT` with blocking questions.
 
 ### 2. Human Checkpoint Gate
@@ -84,7 +83,7 @@ permissions:
 - Adhere strictly to `subagent-reuse` for session lifecycle, tracking, and resuming.
 - Pass ONLY task-specific context to subagents; NEVER include internal orchestration metadata or task IDs in payloads.
 - WAIT for explicit user approval at Human Checkpoint Gate before modifying code.
-- Adhere strictly to `max_slots` caps in Subagents schema (`explore ≤ 1`, `general ≤ 2`).
+- Adhere strictly to `max_slots` caps in Subagents schema (`analyzer ≤ 1`, `general ≤ 2`).
 - Retry Policy: max 2 retries per subagent on failure; on breach, do work inline if permitted, else `ABORT` with blocking questions.
 - Parallel task units MUST NOT touch the same file.
 - Run `git status` and `git diff` to verify BEFORE completing task; fix out-of-scope diffs before reporting.

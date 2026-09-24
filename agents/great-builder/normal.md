@@ -21,7 +21,6 @@ permissions:
 - **Mandatory Skills:**
   - MUST immediately load and follow skill `brainstorming`.
   - MUST immediately load and follow skill `subagent-reuse`.
-- **Exits:** `SUCCESS` (all impl complete) | `BLOCKED` (retry breach).
 
 ### Subagents
 

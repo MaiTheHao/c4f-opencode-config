@@ -1,376 +1,119 @@
 ---
 name: brainstorming
-description: Use before implementing features, changing behavior, or making architectural decisions. Discover the real problem, inspect existing context, resolve critical ambiguity, explore meaningful designs, and obtain explicit approval before implementation.
+description: Use before implementing features, changing behavior, or making architectural decisions. Use whenever a request would create or modify code, interfaces, data, or architecture, even if the user does not say "brainstorm". Classifies the task, inspects context, aligns on intent, designs with trade-offs, and gets explicit approval before any implementation.
 ---
 
 # Brainstorming
 
-Act as a senior technical partner.
+Act as a senior technical partner. Turn a request into a **validated design before implementation**.
 
-Transform a requirement or idea into a **validated technical design before implementation**.
+Priorities: evidence over assumptions · reuse of existing architecture · explicit trade-offs · minimal necessary ceremony.
 
-Optimize for:
+## Hard Gate
 
-- correctness over speed
-- evidence over assumptions
-- minimal necessary ceremony
-- reuse of existing architecture
-- explicit decisions and trade-offs
+**No implementation before explicit approval of the stage required by the chosen path** (see Step 1).
 
----
+- Allowed before approval: read code/docs, search the repo, run read-only commands, investigate APIs and dependencies, draw diagrams, write pseudocode.
+- Not allowed: write or modify implementation files, scaffold, install dependencies, invoke implementation skills, execute plans.
 
-## HARD GATE
+Approval applies only to the stage actually presented. Approving an idea does not approve a design or plan that has not been presented yet; approving one task does not approve the next. Ambiguous replies are not approval while material decisions remain open. Valid examples: "Approved", "Proceed with this design".
 
-**Do not implement before explicit design approval.**
+## Step 1: Classify
 
-Before approval, you may:
+Say the path out loud so the user can override it (e.g. "This looks bounded, so I'll give a short design in chat").
 
-- inspect code and documentation
-- search the repository
-- investigate APIs, dependencies, and existing behavior
-- run read-only commands
-- draw diagrams
-- write pseudocode
-- discuss designs
+| Path | When | Output | Approval required |
+|---|---|---|---|
+| **Spike** | Feasibility question ("can we…", "quick and dirty"). Result is an answer, not code to keep. | Question + probe plan in 2–3 sentences, then findings as a recommendation. Anything built is labeled throwaway. | The question and probe |
+| **Bounded** | Well-scoped change to a flow that already exists in the repo. | Short design in chat: approach, files touched, testing. No plan document. | The in-chat design |
+| **Architectural** | New project or subsystem, restructured components, changed interfaces others depend on. | Full design in chat (sectioned, with alternatives), then hand off to `writing-plans`. | The design; the plan is approved inside `writing-plans` |
 
-Before approval, do not:
+- When in doubt, take the heavier path. No existing flow to read means not bounded.
+- The path only upgrades, never downgrades. If hidden complexity appears, stop, say so, and step up.
+- If the request spans multiple independent subsystems, decompose first and brainstorm one sub-project at a time.
 
-- write implementation code
-- modify implementation files
-- scaffold implementation
-- execute implementation plans
+## Step 2: Inspect
 
----
+Before asking anything, inspect what is relevant: code, structure, existing patterns, API/data contracts, tests, config, docs, recent commits.
 
-## PROCESS
+- Never ask what the context can answer.
+- If external knowledge materially affects the design, research it first.
 
-### 1. Inspect
+## Step 3: Align on Intent
 
-Before asking the user questions, inspect available context.
+- Identify the problem, intended outcome, who it is for, success criteria, and constraints.
+- If purpose is missing, ask one focused question at a time (multiple choice when possible). Batch only tightly related questions. Assume reasonably for non-critical gaps.
+- Write back a short note: **Goal / Constraints / Success criteria / Assumptions**, with assumptions marked separately from what the user said. Invite correction and incorporate it before designing. If the request already supplies these, reflect them instead of re-asking.
+- Treat a user-proposed solution as a hypothesis: verify it solves the root problem.
 
-Determine only what is relevant:
+## Step 4: Challenge and Risks
 
-```text
-Current State
-Affected Components
-Existing Patterns
-Constraints
-Contracts
-Unknowns
-Potential Conflicts
-```
+Challenge only what materially affects correctness, security, performance, reliability, compatibility, data integrity, or operations.
 
-Inspect:
+- For key assumptions ask: Why is it valid? What happens if it is wrong? Does it solve the root problem?
+- Check only relevant risks: edge cases, failure modes, concurrency, data consistency, backward compatibility, migration, observability, rollback.
 
-- relevant source code
-- project structure
-- related modules
-- existing patterns
-- API/data contracts
-- tests
-- configuration
-- relevant documentation
+## Step 5: Design
 
-Prefer repository evidence over generic assumptions.
+- **Alternatives:** compare 2–3 materially different approaches (complexity, risk, compatibility, operational impact). Lead with the recommendation and say when another would win. If one approach is clearly right, use it. Never manufacture alternatives.
+- **YAGNI:** remove anything the success criteria do not require.
+- **Existing code:** follow current patterns. Include targeted improvements only where they affect this work. No unrelated refactoring.
+- **Isolation:** units with one clear purpose, well-defined interfaces, independently testable.
+- **Sections (only the relevant ones):** Scope, Non-goals, Components and responsibilities, Interfaces/contracts, Data model, Main flow, Failure handling, Compatibility/migration, Observability, Trade-offs.
+- **Depth:** trivial → concise design; moderate → focused design + risks; complex → full design + alternatives.
+- **Architectural path:** present the design in sections and confirm after each. Do not write a spec file; the approved in-chat design is the input to `writing-plans`.
 
-**Do not ask the user for information that can be established from available context.**
+## Step 6: Consistency Check
 
-If the repository does not provide enough information and external knowledge would materially affect the design, research it before proposing the design.
+Before requesting approval, verify:
 
-### 2. Understand the Problem
+- No contradictory requirements or decisions, no changed assumptions, consistent terminology, no scope creep.
+- No placeholder, TODO/TBD, or requirement open to two readings.
+- Requirements, scope, non-goals, success criteria, failure states, compatibility, and trade-offs are all explicit.
 
-Convert the request into:
+Surface any contradiction explicitly and resolve it. Never silently pick a side. Do not block approval over non-critical uncertainty.
 
-```text
-Problem
-→ Intent
-→ Constraints
-→ Success Criteria
-→ Assumptions
-→ Candidate Solutions
-→ Trade-offs
-→ Decision
-```
+## Step 7: Approval
 
-If the user already proposes a solution, treat it as a **hypothesis**, not as a requirement.
+Present the design and ask for explicit approval. Do not request approval while critical ambiguity remains.
 
-Determine whether it actually addresses the underlying problem.
+Architectural path, in order:
 
-Ask only questions that materially affect the design.
+1. Design approval → permits invoking `writing-plans` only.
+2. Plan approval (handled by `writing-plans`) → permits `executing-plans`.
 
-Prefer:
+## After Approval
 
-- one focused question at a time
-- batching only tightly related questions
-- making reasonable assumptions when uncertainty is non-critical
+The approved design is the implementation contract. Do not silently change the architecture.
 
-Do not turn clarification into an interview.
+- **Spike:** report the recommendation.
+- **Bounded:** implement through the normal workflow (TDD applies).
+- **Architectural:** `writing-plans` → plan approved → `executing-plans`. Invoke no other skill in between.
 
-### 3. Challenge
-
-Challenge only assumptions that could materially affect:
-
-- correctness
-- security
-- performance
-- reliability
-- maintainability
-- compatibility
-- architecture
-- data integrity
-- operational behavior
-
-For important assumptions, test:
+If implementation reveals a material new constraint or contradiction:
 
 ```text
-Why is this assumption valid?
-What happens if it is wrong?
-Does this solve the root problem?
-What constraint justifies this choice?
+STOP → explain the discovery → identify the affected decision
+→ propose the design change → re-approve if material → resume
 ```
 
-Do not challenge decisions merely to create discussion.
-
-### 4. Analyze Risks
-
-Check only dimensions relevant to the design:
-
-- edge cases
-- failure modes
-- concurrency
-- data consistency
-- performance
-- security
-- backward compatibility
-- migration
-- observability
-- deployment / rollback
-- operational impact
-
-Do not perform a generic checklist when a dimension is irrelevant.
-
-### 5. Explore Designs
-
-If meaningful alternatives exist, compare **2–3 materially different approaches**.
-
-For each relevant option:
-
-```text
-Approach
-Complexity
-Performance
-Maintainability
-Compatibility
-Risk
-Operational Impact
-Trade-offs
-```
-
-Then identify:
-
-```text
-Preferred Approach
-Reason
-When another approach would make more sense
-```
-
-If one approach is clearly appropriate, use it directly.
-
-**Never manufacture alternatives merely to satisfy the process.**
-
-### 6. Construct the Design
-
-Build the design incrementally.
-
-Include only relevant sections:
-
-```text
-Scope
-Non-Goals
-Components
-Responsibilities
-Interfaces / Contracts
-Data Model
-Main Flow
-Failure Handling
-Compatibility / Migration
-Observability
-Trade-offs
-```
-
-Keep the design proportional to task complexity.
-
-#### Adaptive depth
-
-```text
-Trivial / well-defined
-→ minimal clarification + concise design
-
-Moderate
-→ focused design + relevant risks
-
-Complex / architectural / high-risk
-→ full design + alternatives + consistency review
-```
-
-Do not apply maximum ceremony to every task.
-
-### 7. Consistency Check
-
-Before requesting approval, verify that decisions made during the session remain consistent.
-
-Look for:
-
-- contradictory requirements
-- conflicting decisions
-- changed assumptions
-- inconsistent terminology
-- API/domain conflicts
-- architecture/data conflicts
-- scope creep
-
-If a contradiction exists:
-
-**surface it explicitly and resolve it before approval.**
-
-Never silently choose between conflicting requirements.
-
-### 8. Final Validation
-
-Before approval, verify:
-
-```text
-Requirements covered
-Scope defined
-Non-goals defined
-Success criteria understood
-Responsibilities defined
-Relevant failure states addressed
-Compatibility understood
-Important assumptions explicit
-Trade-offs explicit
-No critical ambiguity
-No unresolved TODO / TBD
-Design internally consistent
-```
-
-Do not block approval over non-critical uncertainty.
-
----
-
-## APPROVAL GATE
-
-Present the resulting design clearly.
-
-Explicitly ask for approval.
-
-Approval must refer to the **current design**.
-
-Examples of valid approval:
-
-```text
-Approved
-Approve this design
-Proceed with this design
-Yes, implement this design
-```
-
-Do not treat ambiguous responses as approval when material design decisions remain unresolved.
-
-If critical ambiguity remains:
-
-**do not request implementation approval yet.**
-
----
-
-## AFTER APPROVAL
-
-The approved design becomes the implementation contract.
-
-1. Preserve the approved architecture and decisions.
-2. Do not silently introduce material architectural changes.
-3. Transition to `writing-plans` for multi-step implementation work.
-4. After the implementation plan is approved, transition to `executing-plans`.
-
-If implementation reveals a **material new constraint or contradiction**:
-
-```text
-STOP
-→ explain the discovery
-→ identify the affected decision
-→ propose the necessary design change
-→ obtain approval if the change is material
-→ resume execution
-```
-
-Minor implementation details that do not alter the approved design do not require re-approval.
-
----
-
-## DECISION RULES
-
-```text
-IF context already answers a question
-→ do not ask it.
-
-IF user proposes a solution
-→ validate the underlying problem first.
-
-IF a critical assumption affects the design
-→ challenge it.
-
-IF external information materially affects the decision
-→ research before finalizing the design.
-
-IF meaningful alternatives exist
-→ compare them.
-
-IF no meaningful alternative exists
-→ use the straightforward approach.
-
-IF a relevant failure mode exists
-→ address it.
-
-IF existing behavior may change
-→ evaluate compatibility.
-
-IF persistent data changes
-→ evaluate consistency and migration.
-
-IF decisions conflict
-→ stop and resolve the conflict.
-
-IF critical ambiguity remains
-→ continue clarification.
-
-IF design is sufficiently complete
-→ request explicit approval.
-
-IF design is approved
-→ transition to writing-plans.
-
-IF implementation reveals a material design conflict
-→ stop and return to design review.
-```
-
----
-
-## FORBIDDEN
-
-Never:
-
-- implement before approval
-- modify implementation files before approval
-- blindly accept a proposed solution
-- ask questions answerable from context
-- turn brainstorming into unnecessary interrogation
-- force alternatives when none are meaningful
-- apply maximum ceremony to trivial tasks
-- ignore relevant existing patterns
-- ignore material failure modes
-- ignore compatibility or migration impact
-- hide contradictions
-- silently change approved architectural decisions
-- leave critical TODO / TBD unresolved
-- claim certainty where evidence is unavailable
-- continue implementation after discovering a material contradiction
+Minor details that do not alter the approved design need no re-approval.
+
+## Red Flags
+
+| Thought | Reality |
+|---|---|
+| "Too simple to need a design" | Bounded still gets a short design in chat. |
+| "It's bounded, I'll start while they read" | Present, then stop until you hear yes. |
+| "I'll call it bounded to skip the full design" | Using a label to skip work means take the heavier path. |
+| "It grew, but I'm almost done" | Hidden complexity upgrades the path. Stop and say so. |
+
+## Never
+
+- Implement or modify implementation files before approval.
+- Blindly accept a proposed solution.
+- Ask questions the context can answer, or turn clarification into an interview.
+- Force alternatives, or apply maximum ceremony to trivial tasks.
+- Ignore existing patterns, failure modes, or compatibility impact.
+- Hide contradictions, or claim certainty without evidence.
+- Leave critical TODO/TBD unresolved.
