@@ -24,11 +24,12 @@ Actions: `subagent`, `shell`, `edit` (write/patch merged), `read`, `glob`, `grep
 ```yaml
 permissions:
   - { action: "*", resource: "*", effect: deny }              # default-deny baseline, FIRST
+  - { action: skill, resource: "*", effect: allow }           # cho phép toàn bộ skill trên primary
   - { action: subagent, resource: "team/analyzer", effect: allow }
   - { action: shell, resource: "git status *", effect: allow }
 ```
 
-Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unless explicitly designed to spawn children.
+Primary agents nên mở quyền skill toàn cục (`{ action: skill, resource: "*", effect: allow }`) thay vì chỉ định chi tiết từng skill. Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unless explicitly designed to spawn children.
 
 ## 3. File Layout (mandatory order)
 
@@ -39,7 +40,7 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
    - NEVER define redundant input schemas
 3. `## Workflow` — numbered steps (e.g. `### 1. Discovery`, omit "Phase")
 4. `## Rules` — flat bullets, MUST be the final section
-   - Mandatory/Required skills MUST be declared here as bullet(s), e.g. `- Required skills: \`brainstorming\`, \`subagent-reuse\`, \`opencode-model-routing\`.` (do NOT keep a "Mandatory Skills" section under Context).
+   - Mandatory/Required skills MUST be declared here as bullet(s), e.g. `- Required skills: \`brainstorming\`, \`opencode-model-routing\`.` (do NOT keep a "Mandatory Skills" section under Context). Không duplicate việc nhắc skill/model routing ở từng bước nhỏ trong Workflow.
 
 ## 4. Primary Orchestrator
 

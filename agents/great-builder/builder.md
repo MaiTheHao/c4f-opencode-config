@@ -13,7 +13,7 @@ permissions:
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
   - { action: subagent, resource: general, effect: allow }
-  - { action: skill, resource: 'opencode-model-routing', effect: allow }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context

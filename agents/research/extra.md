@@ -11,7 +11,7 @@ permissions:
   - { action: subagent, resource: 'research/shared/quant', effect: allow }
   - { action: subagent, resource: 'research/shared/skeptic', effect: allow }
   - { action: subagent, resource: 'research/shared/validation', effect: allow }
-  - { action: skill, resource: opencode-model-routing, effect: allow }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context

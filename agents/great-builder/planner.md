@@ -17,9 +17,7 @@ permissions:
   - { action: edit, resource: 'local/*', effect: allow }
   - { action: subagent, resource: 'great-builder/planner/analyzer', effect: allow }
   - { action: subagent, resource: 'great-builder/planner/reviewer', effect: allow }
-  - { action: skill, resource: 'brainstorming', effect: allow }
-  - { action: skill, resource: 'writing-plans', effect: allow }
-  - { action: skill, resource: 'opencode-model-routing', effect: allow }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context
