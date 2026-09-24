@@ -1,7 +1,7 @@
 ---
 description: Primary agent for direct analysis, editing, and git verification.
 mode: primary
-color: '#22c55e'
+color: '#00ff66'
 request:
   body:
     temperature: 0.1

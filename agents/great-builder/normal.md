@@ -1,7 +1,7 @@
 ---
 description: Standard primary orchestration agent with flexible analyzers (<=3), on-demand web research, and max 5 implementation subagents.
 mode: primary
-color: '#22c55e'
+color: '#00ff66'
 request:
   body:
     temperature: 0.1

@@ -1,7 +1,7 @@
 ---
 description: Assistant for understanding, choosing, and troubleshooting OpenCode agents in this configuration, including free-tier restrictions.
 mode: primary
-color: '#8b5cf6'
+color: '#a855f7'
 request:
   body:
     temperature: 0.1
@@ -12,6 +12,7 @@ permissions:
   - { action: list, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }
+  - { action: subagent, resource: '*', effect: allow }
 ---
 
 ## Context

@@ -1,7 +1,7 @@
 ---
 description: Four-stage research (scout x2 -> research -> skeptic audit -> validation -> synthesis). Default for most questions.
 mode: primary
-color: '#0284c7'
+color: '#00e5ff'
 request:
   body:
     temperature: 0.1

@@ -1,7 +1,7 @@
 ---
 description: Single-agent lightweight research (no subagents). Fast evidence sweep with self-check and synthesis.
 mode: primary
-color: '#0284c7'
+color: '#00e5ff'
 request:
   body:
     temperature: 0.1

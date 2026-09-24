@@ -1,7 +1,7 @@
 ---
 description: High-coverage research (triple scout -> research -> gap analysis -> recursive research -> validation -> synthesis). Maximum coverage with bounded fan-out.
 mode: primary
-color: '#0284c7'
+color: '#00e5ff'
 request:
   body:
     temperature: 0.1
