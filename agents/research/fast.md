@@ -19,22 +19,10 @@ permissions:
 
 ### Subagents
 
-```json
-{
-  "subagents": [
-    {
-      "name": "research/shared/scout",
-      "max_slots": 1,
-      "purpose": "Map domain landscape and generate sub-queries"
-    },
-    {
-      "name": "research/shared/deep",
-      "max_slots": 3,
-      "purpose": "Deep-dive research per sub-query"
-    }
-  ]
-}
-```
+| Name | Max Slots | Purpose |
+|---|---|---|
+| `research/shared/scout` | 1 | Map domain landscape and generate sub-queries |
+| `research/shared/deep` | 3 | Deep-dive research per sub-query |
 
 ## Workflow
 

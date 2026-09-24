@@ -23,42 +23,14 @@ permissions:
 
 ### Subagents
 
-```json
-{
-  "subagents": [
-    {
-      "name": "research/shared/scout",
-      "max_slots": 5,
-      "purpose": "Multi-angle discovery across 5 analytical dimensions"
-    },
-    {
-      "name": "research/shared/deep",
-      "max_slots": "UNLIMITED",
-      "purpose": "Recursive deep-dive research into prioritized gaps"
-    },
-    {
-      "name": "research/shared/timeline",
-      "max_slots": 3,
-      "purpose": "Trace historical and temporal evolution"
-    },
-    {
-      "name": "research/shared/quant",
-      "max_slots": 3,
-      "purpose": "Quantitative data extraction and dataset analysis"
-    },
-    {
-      "name": "research/shared/skeptic",
-      "max_slots": 3,
-      "purpose": "Adversarial audit and counter-evidence search"
-    },
-    {
-      "name": "research/shared/validation",
-      "max_slots": 2,
-      "purpose": "Multi-pass independent factual verification"
-    }
-  ]
-}
-```
+| Name | Max Slots | Purpose |
+|---|---|---|
+| `research/shared/scout` | 5 | Multi-angle discovery across 5 analytical dimensions |
+| `research/shared/deep` | UNLIMITED | Recursive deep-dive research into prioritized gaps |
+| `research/shared/timeline` | 3 | Trace historical and temporal evolution |
+| `research/shared/quant` | 3 | Quantitative data extraction and dataset analysis |
+| `research/shared/skeptic` | 3 | Adversarial audit and counter-evidence search |
+| `research/shared/validation` | 2 | Multi-pass independent factual verification |
 
 ### Runtime Guardrails
 

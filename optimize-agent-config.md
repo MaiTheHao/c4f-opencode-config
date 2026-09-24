@@ -34,7 +34,7 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 
 1. YAML frontmatter
 2. `## Context`
-   - primary: `### Subagents` (JSON schema with `name`, `max_slots`, `purpose`)
+   - primary: `### Subagents` (Markdown table with `Name`, `Max Slots`, `Purpose`)
    - subagent: `### Output Schema` (DTO with closed enums)
    - NEVER define redundant input schemas
 3. `## Workflow` — numbered steps (e.g. `### 1. Discovery`, omit "Phase")
@@ -43,14 +43,10 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 ## 4. Primary Orchestrator
 
 - MUST NOT edit files directly if a subagent covers that purpose.
-- Subagents JSON object required under `### Subagents`:
-  ```json
-  {
-    "subagents": [
-      { "name": "...", "max_slots": 1, "purpose": "..." }
-    ]
-  }
-  ```
+- Subagents table required under `### Subagents`:
+  | Name | Max Slots | Purpose |
+  |---|---|---|
+  | `team/analyzer` | 1 | Codebase and impact analysis |
 - Human Checkpoint Gate required before any mutating step: present `AffectedFiles` table + 3–6 change bullets → await `proceed|revise|cancel`.
 - NEVER leak orchestration keywords (`ctx-N`, `slot-N`, `spawn`, `resume`) into subagent task payloads.
 - Budget: ≤150 lines (ceiling 160).
@@ -67,7 +63,7 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 - Binding only: `MUST`, `ONLY`, `NEVER`, `PRECONDITION`, `EXIT`.
 - Banned: `should`, `prefer`, `try to`, `carefully`, `as needed`.
 - No fluff, no rationale prose, no constraint duplicated across Workflow and Rules.
-- Prefer clean JSON objects over markdown tables for structured schemas.
+- Use clean Markdown tables for Subagents and tabular structures. Prefer clean JSON/DTO schemas for data transfer models where appropriate.
 
 ## 7. Compliance Checklist
 
@@ -77,7 +73,7 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 [ ] subagent has explicit no-delegation deny rule in permissions
 [ ] catch-all deny (if used) placed FIRST, never last
 [ ] Sandwich layout intact: Context -> Workflow -> Rules (final)
-[ ] primary: Subagents JSON schema present under Context; no input schema
+[ ] primary: Subagents table present under Context (or omitted for solo agent); no input schema
 [ ] subagent: Output Schema DTO present; no input schema
 [ ] only MUST/NEVER/ONLY directives, no soft language
 [ ] line budget respected (subagent ≤90, primary ≤150)

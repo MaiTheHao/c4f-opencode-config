@@ -23,42 +23,14 @@ permissions:
 
 ### Subagents
 
-```json
-{
-  "subagents": [
-    {
-      "name": "research/shared/scout",
-      "max_slots": 3,
-      "purpose": "Multi-angle domain exploration and topic mapping"
-    },
-    {
-      "name": "research/shared/deep",
-      "max_slots": 8,
-      "purpose": "Deep-dive research across prioritized sub-questions"
-    },
-    {
-      "name": "research/shared/timeline",
-      "max_slots": 2,
-      "purpose": "Trace historical and temporal evolution"
-    },
-    {
-      "name": "research/shared/quant",
-      "max_slots": 2,
-      "purpose": "Quantitative data extraction and dataset analysis"
-    },
-    {
-      "name": "research/shared/skeptic",
-      "max_slots": 2,
-      "purpose": "Challenge consequential claims with counter-evidence"
-    },
-    {
-      "name": "research/shared/validation",
-      "max_slots": 1,
-      "purpose": "Independent factual cross-validation"
-    }
-  ]
-}
-```
+| Name | Max Slots | Purpose |
+|---|---|---|
+| `research/shared/scout` | 3 | Multi-angle domain exploration and topic mapping |
+| `research/shared/deep` | 8 | Deep-dive research across prioritized sub-questions |
+| `research/shared/timeline` | 2 | Trace historical and temporal evolution |
+| `research/shared/quant` | 2 | Quantitative data extraction and dataset analysis |
+| `research/shared/skeptic` | 2 | Challenge consequential claims with counter-evidence |
+| `research/shared/validation` | 1 | Independent factual cross-validation |
 
 ## Workflow
 

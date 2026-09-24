@@ -23,42 +23,14 @@ permissions:
 
 ### Subagents
 
-```json
-{
-  "subagents": [
-    {
-      "name": "research/shared/scout",
-      "max_slots": 2,
-      "purpose": "Scout domain landscape and construct topic map"
-    },
-    {
-      "name": "research/shared/deep",
-      "max_slots": 5,
-      "purpose": "Deep dive into prioritized sub-questions"
-    },
-    {
-      "name": "research/shared/timeline",
-      "max_slots": 1,
-      "purpose": "Trace historical and temporal evolution"
-    },
-    {
-      "name": "research/shared/quant",
-      "max_slots": 1,
-      "purpose": "Extract and analyze quantitative metrics"
-    },
-    {
-      "name": "research/shared/skeptic",
-      "max_slots": 1,
-      "purpose": "Stress-test claims and challenge counter-evidence"
-    },
-    {
-      "name": "research/shared/validation",
-      "max_slots": 1,
-      "purpose": "Verify cross-report factual consistency"
-    }
-  ]
-}
-```
+| Name | Max Slots | Purpose |
+|---|---|---|
+| `research/shared/scout` | 2 | Scout domain landscape and construct topic map |
+| `research/shared/deep` | 5 | Deep dive into prioritized sub-questions |
+| `research/shared/timeline` | 1 | Trace historical and temporal evolution |
+| `research/shared/quant` | 1 | Extract and analyze quantitative metrics |
+| `research/shared/skeptic` | 1 | Stress-test claims and challenge counter-evidence |
+| `research/shared/validation` | 1 | Verify cross-report factual consistency |
 
 ## Workflow
 

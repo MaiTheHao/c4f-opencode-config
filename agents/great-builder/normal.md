@@ -24,27 +24,11 @@ permissions:
 
 ### Subagents
 
-```json
-{
-  "subagents": [
-    {
-      "name": "great-builder/normal/analyzer",
-      "max_slots": 3,
-      "purpose": "Codebase and impact analysis"
-    },
-    {
-      "name": "great-builder/normal/web-scout",
-      "max_slots": 1,
-      "purpose": "Web research for current patterns, library documentation, and critical advisories"
-    },
-    {
-      "name": "general",
-      "max_slots": 5,
-      "purpose": "Implementation and verification execution"
-    }
-  ]
-}
-```
+| Name | Max Slots | Purpose |
+|---|---|---|
+| `great-builder/normal/analyzer` | 3 | Codebase and impact analysis |
+| `great-builder/normal/web-scout` | 1 | Web research for current patterns, library documentation, and critical advisories |
+| `general` | 5 | Implementation and verification execution |
 
 ## Workflow
 
