@@ -2,9 +2,6 @@
 description: Read-only primary planner. Analyzes scope, writes an executable plan for the builder, and reviews finished work against that plan.
 mode: primary
 color: '#3399ff'
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }

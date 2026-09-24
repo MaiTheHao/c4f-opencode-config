@@ -2,9 +2,6 @@
 description: Extreme-coverage research (reinforced scout -> unlimited deep research -> recursive gap closure -> multi-pass skepticism/validation -> synthesis).
 mode: primary
 color: '#00e5ff'
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }

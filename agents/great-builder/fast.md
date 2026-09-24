@@ -2,9 +2,6 @@
 description: Primary agent for direct analysis, editing, and git verification.
 mode: primary
 color: '#00ff66'
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: question, resource: '*', effect: allow }
   - { action: list, resource: '*', effect: allow }

@@ -2,9 +2,6 @@
 description: Four-stage research (scout x2 -> research -> skeptic audit -> validation -> synthesis). Default for most questions.
 mode: primary
 color: '#00e5ff'
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }

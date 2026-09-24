@@ -1,9 +1,6 @@
 ---
 description: Actively search for counter-evidence, minority views, and rebuttals to mainstream narrative claims for any topic.
 mode: subagent
-request:
-  body:
-    temperature: 0.0
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: subagent, resource: '*', effect: deny }

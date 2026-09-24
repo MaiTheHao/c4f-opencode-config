@@ -1,9 +1,6 @@
 ---
 description: Track how something evolved over time and pin down current state for any topic.
 mode: subagent
-request:
-  body:
-    temperature: 0.0
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: subagent, resource: '*', effect: deny }

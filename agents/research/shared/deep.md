@@ -1,9 +1,6 @@
 ---
 description: Deep-dive on one narrow sub-question via web research with source-tier verification. Depth-controlled (FAST | NORMAL | HIGH).
 mode: subagent
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: subagent, resource: '*', effect: deny }

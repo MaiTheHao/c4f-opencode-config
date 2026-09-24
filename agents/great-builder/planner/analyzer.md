@@ -1,9 +1,6 @@
 ---
 description: Read-only codebase analyzer for the planner. Cross-file reasoning, execution tracing, dependency analysis, and plan-ready scope synthesis.
 mode: subagent
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }

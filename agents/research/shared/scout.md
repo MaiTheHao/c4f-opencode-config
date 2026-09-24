@@ -1,9 +1,6 @@
 ---
 description: Maps research territory via web reconnaissance and produces tagged sub-queries. Depth-controlled (FAST | NORMAL | HIGH).
 mode: subagent
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: subagent, resource: '*', effect: deny }

@@ -2,9 +2,6 @@
 description: Single-agent lightweight research (no subagents). Fast evidence sweep with self-check and synthesis.
 mode: primary
 color: '#00e5ff'
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }

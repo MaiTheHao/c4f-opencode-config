@@ -2,9 +2,6 @@
 description: Standard primary orchestration agent with flexible analyzers (<=3) and max 5 implementation subagents.
 mode: primary
 color: '#00ff66'
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }

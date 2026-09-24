@@ -2,9 +2,6 @@
 description: Plan-driven primary builder. Requires an approved plan, executes it with up to 5 parallel workers, and verifies the diff. No brainstorming, no planning.
 mode: primary
 color: '#00ff66'
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }

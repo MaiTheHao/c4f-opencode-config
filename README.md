@@ -5,7 +5,7 @@ This repository contains custom agent definitions, workflows (skills), and confi
 These settings are designed to be loaded globally (under `~/.config/opencode/`) or per-project (under `.opencode/`) to provide specialized agents for high-throughput software implementation and multi-stage research pipelines.
 
 > [!NOTE]
-> **OpenCode 2.x Compatibility**: All agent frontmatters and configs in this repository strictly adhere to the OpenCode V2 native specification (`permissions` ordered arrays, action renaming `shell`/`subagent`/`edit`, and `request.body.temperature`). For details, see [`optimize-agent-config.md`](file:///home/maithehao/.config/opencode/optimize-agent-config.md).
+> **OpenCode 2.x Compatibility**: All agent frontmatters and configs in this repository strictly adhere to the OpenCode V2 native specification (`permissions` ordered arrays, action renaming `shell`/`subagent`/`edit`, and strictly omitting `temperature`/`top_p` in favor of native model reasoning optimization). For details, see [`optimize-agent-config.md`](file:///home/maithehao/.config/opencode/optimize-agent-config.md).
 
 ---
 

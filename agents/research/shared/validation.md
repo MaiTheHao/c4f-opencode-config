@@ -1,9 +1,6 @@
 ---
 description: Cross-check claims from other research agents' reports and surface contradictions or unsupported claims.
 mode: subagent
-request:
-  body:
-    temperature: 0.0
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: subagent, resource: '*', effect: deny }

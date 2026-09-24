@@ -1,6 +1,6 @@
 # OpenCode V2 Agent Config Spec
 
-**Scope**: Governs all agent Markdown+YAML definitions for OpenCode V2 — both the schema standard and the authoring style standard. Native V2 syntax only. Forbidden: `permission`, `bash`, `task`, `disable`, `maxSteps`, root-level `temperature`/`top_p`.
+**Scope**: Governs all agent Markdown+YAML definitions for OpenCode V2 — both the schema standard and the authoring style standard. Native V2 syntax only. Forbidden: `permission`, `bash`, `task`, `disable`, `maxSteps`, `temperature`, `top_p` (ở mọi cấp độ; nghiêm cấm cấu hình `temperature`/`top_p` vì các mô hình hiện nay đã được tối ưu qua reasoning).
 
 ## 1. Frontmatter Schema
 
@@ -13,7 +13,7 @@
 | `steps` | int | opt | replaces `maxSteps` |
 | `hidden` | bool | opt | hide from picker/catalog |
 | `permissions` | array | Y | ordered `{action, resource, effect}` |
-| `request` | object | opt | `{ headers, body: { temperature } }` |
+| `request` | object | opt | `{ headers }` (NGHIÊM CẤM đặt `temperature` / `top_p`) |
 
 ## 2. Permissions
 
@@ -68,7 +68,8 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 ## 7. Compliance Checklist
 
 ```
-[ ] permissions array only — no legacy permission/bash/task/disable/maxSteps/root temperature
+[ ] permissions array only — no legacy permission/bash/task/disable/maxSteps
+[ ] KHÔNG cấu hình temperature / top_p (để model tự tối ưu bằng reasoning)
 [ ] correct V2 action names (subagent/shell/edit)
 [ ] subagent has explicit no-delegation deny rule in permissions
 [ ] catch-all deny (if used) placed FIRST, never last

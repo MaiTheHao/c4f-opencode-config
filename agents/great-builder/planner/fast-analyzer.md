@@ -1,9 +1,6 @@
 ---
 description: Fast read-only codebase analyzer for targeted scope discovery and implementation context.
 mode: subagent
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }

@@ -1,9 +1,6 @@
 ---
 description: Read-only reviewer for the planner. REVIEW_PLAN critiques a draft plan against the codebase; REVIEW_WORK verifies the working-tree diff against an approved plan.
 mode: subagent
-request:
-  body:
-    temperature: 0.1
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
