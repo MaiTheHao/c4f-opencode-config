@@ -8,8 +8,6 @@ permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
-  - { action: read, resource: '*.env.*', effect: deny }
-  - { action: read, resource: '*.env.example', effect: allow }
   - { action: list, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }

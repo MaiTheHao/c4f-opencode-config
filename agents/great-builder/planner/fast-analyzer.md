@@ -5,20 +5,19 @@ request:
   body:
     temperature: 0.1
 permissions:
-  - { action: subagent, resource: '*', effect: deny }
+  - { action: '*', resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
+  - { action: read, resource: '*.env', effect: deny }
   - { action: list, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
-  - { action: edit, resource: '*', effect: deny }
-  - { action: skill, resource: '*', effect: deny }
-  - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'ls *', effect: allow }
   - { action: shell, resource: 'cat *', effect: allow }
   - { action: shell, resource: 'head *', effect: allow }
   - { action: shell, resource: 'tail *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
+  - { action: shell, resource: '*--output*', effect: deny }
 ---
 
 ## Context

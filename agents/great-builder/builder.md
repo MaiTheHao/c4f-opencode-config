@@ -11,8 +11,6 @@ permissions:
   - { action: list, resource: '*', effect: allow }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
-  - { action: read, resource: '*.env.*', effect: deny }
-  - { action: read, resource: '*.env.example', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
