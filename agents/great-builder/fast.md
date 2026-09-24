@@ -23,10 +23,7 @@ permissions:
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
   - { action: shell, resource: 'git log *', effect: allow }
-  - { action: skill, resource: '*', effect: deny }
-  - { action: skill, resource: brainstorming, effect: allow }
-  - { action: skill, resource: subagent-reuse, effect: allow }
-  - { action: skill, resource: clean-code, effect: allow }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context

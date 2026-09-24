@@ -12,9 +12,7 @@ permissions:
   - { action: subagent, resource: 'great-builder/normal/analyzer', effect: allow }
   - { action: subagent, resource: 'great-builder/normal/web-scout', effect: allow }
   - { action: subagent, resource: general, effect: allow }
-  - { action: skill, resource: brainstorming, effect: allow }
-  - { action: skill, resource: subagent-reuse, effect: allow }
-  - { action: skill, resource: clean-code, effect: allow }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context
