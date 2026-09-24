@@ -18,7 +18,6 @@ permissions:
   - { action: subagent, resource: 'great-builder/planner/analyzer', effect: allow }
   - { action: subagent, resource: 'great-builder/planner/reviewer', effect: allow }
   - { action: skill, resource: 'brainstorming', effect: allow }
-  - { action: skill, resource: 'subagent-reuse', effect: allow }
   - { action: skill, resource: 'writing-plans', effect: allow }
   - { action: skill, resource: 'opencode-model-routing', effect: allow }
 ---
@@ -45,17 +44,17 @@ permissions:
 ### PLAN flow
 
 #### 1. Analysis
-1. Define search scopes per `brainstorming`; dispatch up to 3 parallel `analyzer` instances. Follow `subagent-reuse` to capture session IDs. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+1. Define search scopes per `brainstorming`; dispatch up to 3 parallel `analyzer` instances.
 2. Route status:
-   - `REQUEST_ANALYZER`: resume the analyzer per `subagent-reuse` with the missing scope. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
-   - `BLOCKED`: present blocking questions via `question`, merge answers, re-dispatch. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+   - `REQUEST_ANALYZER`: resume the analyzer with the missing scope.
+   - `BLOCKED`: present blocking questions via `question`, merge answers, re-dispatch.
    - `READY`: continue.
 
 #### 2. Draft
 1. Load skill `writing-plans` and consolidate the analysis results (`FileContexts`, `Constraints`, `Conventions`, `Invariants`) into a plan that follows it exactly.
 
 #### 3. Plan Review
-1. Dispatch one `reviewer` in `REVIEW_PLAN` mode with the draft. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+1. Dispatch one `reviewer` in `REVIEW_PLAN` mode with the draft.
 2. `CHANGES_REQUIRED`: fix the draft and re-review (max 2 loops). `PASS`: continue.
 
 #### 4. Human Checkpoint Gate
@@ -74,7 +73,7 @@ permissions:
 ### REVIEW flow
 
 1. Require a plan (path or pasted). If missing, ask via `question`.
-2. Dispatch up to 3 `reviewer` instances in `REVIEW_WORK` mode, split by `TaskUnits`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+2. Dispatch up to 3 `reviewer` instances in `REVIEW_WORK` mode, split by `TaskUnits`.
 3. Consolidate into one verdict:
    - `PASS`: report coverage per unit and acceptance status.
    - `CHANGES_REQUIRED`: present findings (`Severity | file:line | Issue | RequiredChange`), then draft a Fix Plan per skill `writing-plans` (only the files that need changes). Pass through the Human Checkpoint Gate and, on `approve`, save it as a Fix Plan at the location defined by that skill.
@@ -82,7 +81,7 @@ permissions:
 
 ## Rules
 
-- Required skills: `brainstorming`, `subagent-reuse`, `writing-plans`, `opencode-model-routing`.
+- Required skills: `brainstorming`, `writing-plans`, `opencode-model-routing`.
 - NEVER modify anything outside `.opencode/plans/*.md`.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs in payloads or plan files.

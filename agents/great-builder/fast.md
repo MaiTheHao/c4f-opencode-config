@@ -39,9 +39,9 @@ permissions:
 2. Record answers and merge them into task context. Proceed to analysis ONLY when requirements are clear.
 
 ### 1. Analysis with Analyzer
-1. MUST dispatch `great-builder/planner/fast-analyzer` (max 2 slots concurrently) to discover codebase scope, symbols, call paths, and impact. Follow `subagent-reuse` to capture session IDs. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+1. MUST dispatch `great-builder/planner/fast-analyzer` (max 2 slots concurrently) to discover codebase scope, symbols, call paths, and impact.
 2. When analyzer returns `AnalysisResult`: parse `ExecutionContract` (`AffectedFiles`, `FileContexts`, `Constraints`, `Conventions`).
-3. If analyzer returns `Status: BLOCKED`: resolve missing scope via `question` or resume analyzer session per `subagent-reuse`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+3. If analyzer returns `Status: BLOCKED`: resolve missing scope via `question` or resume analyzer session.
 
 ### 2. Human Checkpoint Gate
 1. Present checkpoint in this exact format:
@@ -58,7 +58,7 @@ permissions:
 
 ## Rules
 
-- Required skills: `brainstorming`, `subagent-reuse`, `opencode-model-routing`.
+- Required skills: `brainstorming`, `opencode-model-routing`.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
 - MUST dispatch `great-builder/planner/fast-analyzer` at Step 1 before formulating checkpoint.

@@ -13,7 +13,6 @@ permissions:
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
   - { action: subagent, resource: general, effect: allow }
-  - { action: skill, resource: 'subagent-reuse', effect: allow }
   - { action: skill, resource: 'opencode-model-routing', effect: allow }
 ---
 
@@ -53,22 +52,22 @@ Additionally: unit `Files` sets are disjoint, every `AffectedFiles` entry belong
 2. Within a wave, run all units in parallel (max 5 concurrent workers).
 
 ### 2. Execute
-1. For each unit, dispatch one `general` worker. Follow `subagent-reuse` to capture session IDs. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+1. For each unit, dispatch one `general` worker.
 2. Worker payload: ONLY that unit's `Files`, `Spec`, `Verify`, plus plan-level `Constraints`, `Conventions`, and the relevant `Acceptance` items. Instruct the worker to touch only its `Files` and to return `SUCCESS | FAILED | NEEDS_CLARIFICATION` with a per-file summary.
 3. A wave completes only when all its units return `SUCCESS`; then start the next wave.
 4. Route results:
-   - `FAILED`: resume the same worker per `subagent-reuse` with the failure context (retry policy applies). Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
-   - `NEEDS_CLARIFICATION`: ask the user via `question`. If the answer stays within the unit's `Files` and `Spec`, merge it and resume the worker. If it changes `AffectedFiles`, unit boundaries, or scope, STOP and tell the user to take it back to `planner`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+   - `FAILED`: resume the same worker with the failure context (retry policy applies).
+   - `NEEDS_CLARIFICATION`: ask the user via `question`. If the answer stays within the unit's `Files` and `Spec`, merge it and resume the worker. If it changes `AffectedFiles`, unit boundaries, or scope, STOP and tell the user to take it back to `planner`.
 
 ### 3. Verify & Report
 1. Run `git status` and `git diff` directly.
 2. Compare changed files against `AffectedFiles` and check each unit's `Verify` and `Acceptance` outcome from worker reports.
-3. If the diff has changes outside `AffectedFiles`, missing changes, or unmet acceptance: resume the matching worker per `subagent-reuse` with a corrective task, then re-verify. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+3. If the diff has changes outside `AffectedFiles`, missing changes, or unmet acceptance: resume the matching worker with a corrective task, then re-verify.
 4. Report completed work as a table `File | Action | Unit | Status`, plus acceptance status per criterion. Suggest running `planner` in review mode if the plan is high-risk.
 
 ## Rules
 
-- Required skills: `subagent-reuse`, `opencode-model-routing`.
+- Required skills: `opencode-model-routing`.
 - NEVER modify code directly; all edits MUST use `general`.
 - NEVER brainstorm, analyze scope, or write or alter plans. The plan is the single source of truth.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.

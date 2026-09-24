@@ -11,7 +11,6 @@ permissions:
   - { action: subagent, resource: 'research/shared/quant', effect: allow }
   - { action: subagent, resource: 'research/shared/skeptic', effect: allow }
   - { action: subagent, resource: 'research/shared/validation', effect: allow }
-  - { action: skill, resource: subagent-reuse, effect: allow }
   - { action: skill, resource: opencode-model-routing, effect: allow }
 ---
 
@@ -31,30 +30,30 @@ permissions:
 ## Workflow
 
 ### 1. Discovery
-1. Dispatch 3 concurrent `research/shared/scout` instances with `Depth = HIGH` and distinct analytical angles, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`. Follow `subagent-reuse` to capture session IDs. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+1. Dispatch 3 concurrent `research/shared/scout` instances with `Depth = HIGH` and distinct analytical angles, appending suffix `"Respond ONLY in structured markdown adhering to your Output criteria."`.
 2. Parse `ScoutReport` DTOs from responses.
 
 ### 2. Map Merge & Prioritization
 1. Merge Topic Maps into 6-8 final sub-queries using domain, time-sensitivity, and controversy tags to prioritize.
 
 ### 3. Parallel Research
-1. Route sub-queries to `research/shared/deep` (up to 8 instances with `Depth = HIGH`) plus `timeline` and `quant` instances where questions require temporal or numeric analysis. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
-2. Dispatch all routed research tasks concurrently, appending the mandated suffix; follow `subagent-reuse` to capture session IDs; collect reports. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+1. Route sub-queries to `research/shared/deep` (up to 8 instances with `Depth = HIGH`) plus `timeline` and `quant` instances where questions require temporal or numeric analysis.
+2. Dispatch all routed research tasks concurrently, appending the mandated suffix; collect reports.
 
 ### 4. Gap Analysis
 1. Orchestrator-local: from collected `DeepReport`s, identify stale-risk claims, unverifiable claims, contradictions, and single-source gaps.
 2. Prioritize gaps as `HIGH`, `MEDIUM`, or `LOW` with specific follow-up queries.
 
 ### 5. Recursive Research
-1. For `HIGH` and `MEDIUM` gaps, resume existing specialist instances (`deep`, `quant`, `timeline`) via `subagent-reuse` with targeted gap queries, or dispatch fresh instances within slot caps passing prior findings. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+1. For `HIGH` and `MEDIUM` gaps, resume existing specialist instances (`deep`, `quant`, `timeline`) with targeted gap queries, or dispatch fresh instances within slot caps passing prior findings.
 2. When no material gaps remain, proceed directly to Skeptic Audit.
 
 ### 6. Skeptic Audit
 1. Extract the 2 most consequential claims across all research reports.
-2. Dispatch `research/shared/skeptic` instances with extracted claims as targets. PRECONDITION: skeptic runs ONLY after research reports exist; NEVER on raw sub-queries. Follow `subagent-reuse`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+2. Dispatch `research/shared/skeptic` instances with extracted claims as targets. PRECONDITION: skeptic runs ONLY after research reports exist; NEVER on raw sub-queries.
 
 ### 7. Validation
-1. Dispatch `research/shared/validation` ONCE on all reports (inline at most 8 reports; summarize any report over ~2000 chars to key claims), appending the mandated suffix. Follow `subagent-reuse`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+1. Dispatch `research/shared/validation` ONCE on all reports (inline at most 8 reports; summarize any report over ~2000 chars to key claims), appending the mandated suffix.
 2. Extract claim statuses and contradictions.
 
 ### 8. Synthesis
@@ -66,7 +65,7 @@ permissions:
 
 ## Rules
 
-- Required skills: `subagent-reuse`, `opencode-model-routing`.
+- Required skills: `opencode-model-routing`.
 - **Precondition:** `UserTopic` provided.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
