@@ -37,7 +37,7 @@ permissions:
 ## Workflow
 
 ### 1. Reinforced Discovery
-1. Dispatch up to 5 concurrent `research/shared/scout` instances with `Depth = HIGH` and distinct analytical angles:
+1. Dispatch up to 5 concurrent `research/shared/scout` instances with `Depth = HIGH` and distinct analytical angles: Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
    - `Landscape`: map domain and competing explanations.
    - `PrimarySource`: trace claims to original/first-party sources.
    - `Adversarial`: search failure modes, counter-evidence, and minority evidence.
@@ -52,10 +52,10 @@ permissions:
 3. Preserve unresolved `KnownUnknowns` as explicit research targets instead of dropping them.
 
 ### 3. Unlimited Parallel Deep Research
-1. Route prioritized sub-questions to `research/shared/deep` with `Depth = HIGH`.
-2. Dispatch deep tasks in waves up to `MaxConcurrentSubagents = 16`.
+1. Route prioritized sub-questions to `research/shared/deep` with `Depth = HIGH`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+2. Dispatch deep tasks in waves up to `MaxConcurrentSubagents = 16`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 3. Pass prior findings on follow-up waves so new work targets evidence gaps, contradictions, or novel questions.
-4. Route `research/shared/timeline` and `research/shared/quant` when the topic requires them.
+4. Route `research/shared/timeline` and `research/shared/quant` when the topic requires them. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 
 ### 4. Evidence Graph & Gap Analysis
 1. Orchestrator-local: build claim/evidence map across all returned reports.
@@ -70,22 +70,22 @@ permissions:
 4. Create the next deep-research wave from the highest-priority gaps.
 
 ### 5. Recursive Deep Resolution
-1. Resume existing deep sessions where continuity is required; otherwise dispatch new deep instances.
+1. Resume existing deep sessions where continuity is required; otherwise dispatch new deep instances. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 2. Continue generating new deep tasks until stopping criteria are met.
 3. Treat a gap as resolved ONLY when evidence is sufficient for the claim's required confidence level or when documented as unresolved.
 4. Stop ONLY when the evidence set reaches saturation.
 
 ### 6. Skeptic Audit
 1. Extract up to 3 most consequential or decision-relevant claims.
-2. Dispatch `research/shared/skeptic` instances with precise targets after research reports exist.
+2. Dispatch `research/shared/skeptic` instances with precise targets after research reports exist. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 3. Enforce failure-mode searches and explicit counter-evidence evaluation.
-4. Feed `WEAKENED`/`BROKEN` results back into deep research as targeted follow-ups.
+4. Feed `WEAKENED`/`BROKEN` results back into deep research as targeted follow-ups. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 
 ### 7. Multi-Pass Validation
-1. Dispatch `research/shared/validation` (first pass) after first major evidence set is assembled.
+1. Dispatch `research/shared/validation` (first pass) after first major evidence set is assembled. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 2. Independently verify extracted claims without reusing original report sources.
 3. When validation exposes contradictions, stale-risk claims, or unsupported consequential claims, run necessary deep follow-ups.
-4. Dispatch `research/shared/validation` (second pass) on revised evidence set ONLY when material changes occurred.
+4. Dispatch `research/shared/validation` (second pass) on revised evidence set ONLY when material changes occurred. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 
 ### 8. Evidence-Saturation Stop
 Stop recursive deep dispatch ONLY when all conditions hold:
@@ -115,3 +115,4 @@ Stop recursive deep dispatch ONLY when all conditions hold:
 - Dispatch concurrent work in bounded waves; NEVER exceed `MaxConcurrentSubagents = 16`.
 - Read-only research: NEVER edit files directly.
 - NEVER inflate subagent confidence levels or expose raw subagent logs to user.
+- Subagent models MUST be resolved per skill `opencode-model-routing`; `skeptic`/`validation` audit instances SHOULD NOT run on the same model as the `deep` instances whose reports they audit.

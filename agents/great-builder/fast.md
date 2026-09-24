@@ -39,9 +39,9 @@ permissions:
 2. Record answers and merge them into task context. Proceed to analysis ONLY when requirements are clear.
 
 ### 1. Analysis with Analyzer
-1. MUST dispatch `great-builder/planner/fast-analyzer` (max 2 slots concurrently) to discover codebase scope, symbols, call paths, and impact. Follow `subagent-reuse` to capture session IDs.
+1. MUST dispatch `great-builder/planner/fast-analyzer` (max 2 slots concurrently) to discover codebase scope, symbols, call paths, and impact. Follow `subagent-reuse` to capture session IDs. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 2. When analyzer returns `AnalysisResult`: parse `ExecutionContract` (`AffectedFiles`, `FileContexts`, `Constraints`, `Conventions`).
-3. If analyzer returns `Status: BLOCKED`: resolve missing scope via `question` or resume analyzer session per `subagent-reuse`.
+3. If analyzer returns `Status: BLOCKED`: resolve missing scope via `question` or resume analyzer session per `subagent-reuse`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 
 ### 2. Human Checkpoint Gate
 1. Present checkpoint in this exact format:
@@ -66,3 +66,4 @@ permissions:
 - Retry Policy: max 2 retries per subagent; on breach, do work inline if permitted, else `ABORT`.
 - Run `git status` and `git diff` to verify BEFORE completing task; fix out-of-scope diffs before reporting.
 - NEVER commit, push, or amend unless explicitly requested.
+- Every subagent dispatch/resume MUST pass a `model` resolved per skill `opencode-model-routing`.

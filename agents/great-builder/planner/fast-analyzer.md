@@ -2,7 +2,7 @@
 description: Fast read-only codebase analyzer for targeted scope discovery and implementation context.
 mode: subagent
 permissions:
-  - { action: '*', resource: '*', effect: deny }
+  - { action: '*', resource: '*', effect: ask }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
   - { action: list, resource: '*', effect: allow }

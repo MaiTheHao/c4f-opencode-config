@@ -31,23 +31,23 @@ permissions:
 ## Workflow
 
 ### 1. Discovery
-1. Dispatch 2 concurrent `research/shared/scout` instances with `Depth = NORMAL`, appending the mandated suffix. Follow `subagent-reuse` to capture session IDs.
+1. Dispatch 2 concurrent `research/shared/scout` instances with `Depth = NORMAL`, appending the mandated suffix. Follow `subagent-reuse` to capture session IDs. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 2. Parse both `ScoutReport` DTOs; merge `TopicMap`s into a unified set of 3-5 sub-queries.
 
 ### 2. Parallel Research
-1. Route sub-queries to `research/shared/deep` (up to 5 instances) with `Depth = NORMAL`.
-2. When the topic involves evolution-over-time, route `research/shared/timeline`.
-3. When the topic involves numerical data, route `research/shared/quant`.
-4. Dispatch all routed subagents in parallel; follow `subagent-reuse` to capture session IDs.
-5. When follow-up clarification is required on any sub-topic, resume the corresponding subagent session following `subagent-reuse`.
+1. Route sub-queries to `research/shared/deep` (up to 5 instances) with `Depth = NORMAL`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+2. When the topic involves evolution-over-time, route `research/shared/timeline`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+3. When the topic involves numerical data, route `research/shared/quant`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+4. Dispatch all routed subagents in parallel; follow `subagent-reuse` to capture session IDs. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+5. When follow-up clarification is required on any sub-topic, resume the corresponding subagent session following `subagent-reuse`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 6. Collect and parse all report DTOs.
 
 ### 3. Skeptic Audit
 1. Extract 1-3 most consequential factual claims from collected research reports.
-2. Dispatch `research/shared/skeptic` with top claim as target. PRECONDITION: execute skeptic ONLY after research reports exist; NEVER route raw sub-queries. Follow `subagent-reuse`.
+2. Dispatch `research/shared/skeptic` with top claim as target. PRECONDITION: execute skeptic ONLY after research reports exist; NEVER route raw sub-queries. Follow `subagent-reuse`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 
 ### 4. Cross-Validation
-1. When 2 or more research reports exist, dispatch `research/shared/validation` with collected reports (inline at most 5 reports; summarize any report over ~2000 chars to key claims). Follow `subagent-reuse`.
+1. When 2 or more research reports exist, dispatch `research/shared/validation` with collected reports (inline at most 5 reports; summarize any report over ~2000 chars to key claims). Follow `subagent-reuse`. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 2. Parse `ValidationReport` to extract claim statuses, contradictions, and stale-risk claims.
 
 ### 5. Synthesis
@@ -67,3 +67,4 @@ permissions:
 - Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to subagent payloads.
 - Read-only research: NEVER edit files directly.
 - NEVER inflate subagent confidence levels or expose raw subagent logs to user.
+- Subagent models MUST be resolved per skill `opencode-model-routing`; `skeptic`/`validation` audit instances SHOULD NOT run on the same model as the `deep` instances whose reports they audit.

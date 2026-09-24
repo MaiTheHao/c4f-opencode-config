@@ -29,10 +29,10 @@ permissions:
 2. Record answers and merge them into task context. Proceed to analysis ONLY when requirements are unambiguous.
 
 ### 1. Analysis
-1. Define search scopes following `brainstorming`; dispatch up to 3 parallel analyzer instances (`great-builder/planner/analyzer`). Follow `subagent-reuse` to capture session IDs.
+1. Define search scopes following `brainstorming`; dispatch up to 3 parallel analyzer instances (`great-builder/planner/analyzer`). Follow `subagent-reuse` to capture session IDs. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 2. Consolidate analysis results into one execution plan.
 3. Route status:
-   - `REQUEST_ANALYZER`: resume the corresponding analyzer following `subagent-reuse` with missing scope details.
+   - `REQUEST_ANALYZER`: resume the corresponding analyzer following `subagent-reuse` with missing scope details. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
    - `BLOCKED`: halt and present blocking questions.
    - `READY`: proceed to Human Checkpoint Gate.
 4. ONLY `proceed` transitions to Implementation.
@@ -46,14 +46,14 @@ permissions:
 
 ### 2. Implementation
 1. Merge user feedback and analysis results into per-file specifications; partition into at most 5 task units with NON-overlapping file sets. If two units must touch the same file, merge them into one unit or run sequentially.
-2. Dispatch parallel `general` instances (max 5). Follow `subagent-reuse` to capture session IDs.
+2. Dispatch parallel `general` instances (max 5). Follow `subagent-reuse` to capture session IDs. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 3. Route results:
-   - `REQUEST_ANALYZER`: resume analyzer following `subagent-reuse`, update plan, then resume implementation.
+   - `REQUEST_ANALYZER`: resume analyzer following `subagent-reuse`, update plan, then resume implementation. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
    - All `SUCCESS`: proceed to Final Verification.
 
 ### 3. Final Verification & Reporting
-1. Dispatch one `general` instance (or resume an existing session per `subagent-reuse`) to run `git status` and `git diff` (primary has no direct shell access).
-2. If diff shows changes outside approved `AffectedFiles` or missing changes: resume matching subagent per `subagent-reuse` with a corrective task unit, then re-verify.
+1. Dispatch one `general` instance (or resume an existing session per `subagent-reuse`) to run `git status` and `git diff` (primary has no direct shell access). Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
+2. If diff shows changes outside approved `AffectedFiles` or missing changes: resume matching subagent per `subagent-reuse` with a corrective task unit, then re-verify. Before dispatch/resume, resolve the subagent model per skill `opencode-model-routing` and pass the resolved model explicitly into the subagent call.
 3. Report completed work and every modified file with its action.
 
 ## Rules
@@ -67,3 +67,4 @@ permissions:
 - Retry Policy: max 2 retries per subagent instance; on breach, transition to `BLOCKED`.
 - Final Reporting requires ALL implementation instances to return `SUCCESS` AND a clean verification diff.
 - NEVER commit, push, or amend unless explicitly requested.
+- Every subagent dispatch/resume MUST pass a `model` resolved per skill `opencode-model-routing`.

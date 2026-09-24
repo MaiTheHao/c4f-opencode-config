@@ -2,7 +2,7 @@
 description: Read-only reviewer for the planner. REVIEW_PLAN critiques a draft plan against the codebase; REVIEW_WORK verifies the working-tree diff against an approved plan.
 mode: subagent
 permissions:
-  - { action: '*', resource: '*', effect: deny }
+  - { action: '*', resource: '*', effect: ask }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
   - { action: list, resource: '*', effect: allow }
@@ -14,7 +14,6 @@ permissions:
   - { action: shell, resource: 'tail *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
-  - { action: shell, resource: '*--output*', effect: deny }
   - { action: skill, resource: 'writing-plans', effect: allow }
 ---
 
