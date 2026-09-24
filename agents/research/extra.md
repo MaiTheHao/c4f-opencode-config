@@ -25,7 +25,7 @@ permissions:
 
 | Name | Max Slots | Purpose |
 |---|---|---|
-| `research/shared/scout` | 5 | Multi-angle discovery across 5 analytical dimensions |
+| `research/shared/scout` | 8 | Multi-angle discovery across 5 analytical dimensions |
 | `research/shared/deep` | UNLIMITED | Recursive deep-dive research into prioritized gaps |
 | `research/shared/timeline` | 3 | Trace historical and temporal evolution |
 | `research/shared/quant` | 3 | Quantitative data extraction and dataset analysis |

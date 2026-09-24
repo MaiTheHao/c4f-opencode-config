@@ -31,7 +31,7 @@ permissions:
 1. Map user requirements to the appropriate agent team and tier:
    - **Coding / Building**:
      - `great-builder/fast`: Inline-first analysis and focused edits.
-     - `great-builder/normal`: Deep multi-file analysis, on-demand web research (`web-scout`), and parallel implementation.
+     - `great-builder/normal`: Deep multi-file analysis and parallel implementation.
    - **Research**:
      - `research/lite`: Solo agent, 0 subagents, fast web sweep and self-check.
      - `research/fast`: 3-stage reconnaissance (scout -> deep -> synthesis).

@@ -6,7 +6,6 @@ request:
   body:
     temperature: 0.1
 permissions:
-  - { action: subagent, resource: '*', effect: allow }
   - { action: question, resource: '*', effect: allow }
   - { action: list, resource: '*', effect: allow }
   - { action: read, resource: '*', effect: allow }
@@ -22,6 +21,8 @@ permissions:
   - { action: shell, resource: 'git diff *', effect: allow }
   - { action: shell, resource: 'git log *', effect: allow }
   - { action: skill, resource: '*', effect: allow }
+  - { action: subagent, resource: 'great-builder/planner/fast-analyzer', effect: allow }
+  - { action: subagent, resource: 'general', effect: allow }
 ---
 
 ## Context
@@ -35,7 +36,7 @@ permissions:
 
 | Name | Max Slots | Purpose |
 |---|---|---|
-| `great-builder/fast/analyzer` | 2 | Targeted scope discovery and codebase analysis |
+| `great-builder/planner/fast-analyzer` | 2 | Targeted scope discovery and codebase analysis |
 
 ## Workflow
 
@@ -44,7 +45,7 @@ permissions:
 2. Record answers and merge them into task context. Proceed to analysis ONLY when requirements are clear.
 
 ### 1. Analysis with Analyzer
-1. MUST dispatch `great-builder/fast/analyzer` (max 2 slots concurrently) to discover codebase scope, symbols, call paths, and impact. Follow `subagent-reuse` to capture session IDs.
+1. MUST dispatch `great-builder/planner/fast-analyzer` (max 2 slots concurrently) to discover codebase scope, symbols, call paths, and impact. Follow `subagent-reuse` to capture session IDs.
 2. When analyzer returns `AnalysisResult`: parse `ExecutionContract` (`AffectedFiles`, `FileContexts`, `Constraints`, `Conventions`).
 3. If analyzer returns `Status: BLOCKED`: resolve missing scope via `question` or resume analyzer session per `subagent-reuse`.
 
@@ -67,7 +68,7 @@ permissions:
 - Adhere strictly to skill `brainstorming` before code edits.
 - Adhere strictly to `subagent-reuse` for session lifecycle, tracking, and resuming.
 - Pass ONLY task-specific context to subagents; NEVER include internal orchestration metadata or task IDs in payloads.
-- MUST dispatch `great-builder/fast/analyzer` at Step 1 for discovery before formulating checkpoint.
+- MUST dispatch `great-builder/planner/fast-analyzer` at Step 1 for discovery before formulating checkpoint.
 - WAIT for explicit user approval at Human Checkpoint Gate before modifying code.
 - Adhere strictly to `max_slots` cap in Subagents schema (`analyzer ≤ 2`).
 - Retry Policy: max 2 retries per subagent on failure; on breach, do work inline if permitted, else `ABORT` with blocking questions.
