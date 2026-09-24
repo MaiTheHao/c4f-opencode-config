@@ -17,62 +17,89 @@ permissions:
   - { action: skill, resource: subagent-reuse, effect: allow }
 ---
 
-## Core Definition
-
-### Inputs
-- `UserTopic` (String)
+## Context
 
 - **Mandatory Skill:** MUST immediately load and follow skill `subagent-reuse`.
 
-### Subagent Contracts
+### Subagents
 
-| Name | Max Amount | Subagent Contract Define |
-|---|---|---|
-| `research/shared/scout` | `Max 2` (`scout-1`, `scout-2`) | Inputs: `UserTopic`, `Depth` |
-| `research/shared/deep` | `Max 5` (`deep-1`..`deep-5`) | Inputs: `SubQuestion`, `Aspects`, `Depth` |
-| `research/shared/timeline` | `1` (`timeline-1`) | Inputs: `EvolutionQuery` |
-| `research/shared/quant` | `1` (`quant-1`) | Inputs: `NumericQuery` |
-| `research/shared/skeptic` | `1` (`skeptic-1`) | Inputs: `TargetClaim` |
-| `research/shared/validation` | `1` (`validation-1`) | Inputs: `ReportsUnderReview` |
+```json
+{
+  "subagents": [
+    {
+      "name": "research/shared/scout",
+      "max_slots": 2,
+      "purpose": "Scout domain landscape and construct topic map"
+    },
+    {
+      "name": "research/shared/deep",
+      "max_slots": 5,
+      "purpose": "Deep dive into prioritized sub-questions"
+    },
+    {
+      "name": "research/shared/timeline",
+      "max_slots": 1,
+      "purpose": "Trace historical and temporal evolution"
+    },
+    {
+      "name": "research/shared/quant",
+      "max_slots": 1,
+      "purpose": "Extract and analyze quantitative metrics"
+    },
+    {
+      "name": "research/shared/skeptic",
+      "max_slots": 1,
+      "purpose": "Stress-test claims and challenge counter-evidence"
+    },
+    {
+      "name": "research/shared/validation",
+      "max_slots": 1,
+      "purpose": "Verify cross-report factual consistency"
+    }
+  ]
+}
+```
 
-## Execution Workflow
+## Workflow
 
-### 1. Discovery Phase (Dual Scout)
-1. Dispatch `scout-1` and `scout-2` concurrently with `UserTopic` and `Depth = NORMAL`, appending the mandated suffix (see Rules). Follow `subagent-reuse` to capture session IDs.
+### 1. Discovery
+1. Dispatch 2 concurrent `research/shared/scout` instances with `Depth = NORMAL`, appending the mandated suffix. Follow `subagent-reuse` to capture session IDs.
 2. Parse both `ScoutReport` DTOs; merge `TopicMap`s into a unified set of 3-5 sub-queries.
 
-### 2. Parallel Research Phase
-1. Route sub-queries to `deep-1..5` with `Depth = NORMAL`.
-2. Additionally route `timeline-1` (with `EvolutionQuery`) when the topic involves evolution-over-time, and `quant-1` (with `NumericQuery`) when it involves numeric data.
-3. Dispatch all applicable research subagents concurrently; follow `subagent-reuse` to capture session IDs.
-4. If follow-up clarification, missing evidence, or data drill-down is required on any sub-topic, resume the corresponding research subagent following `subagent-reuse`. Collect and parse their report DTOs.
+### 2. Parallel Research
+1. Route sub-queries to `research/shared/deep` (up to 5 instances) with `Depth = NORMAL`.
+2. When the topic involves evolution-over-time, route `research/shared/timeline`.
+3. When the topic involves numerical data, route `research/shared/quant`.
+4. Dispatch all routed subagents in parallel; follow `subagent-reuse` to capture session IDs.
+5. When follow-up clarification is required on any sub-topic, resume the corresponding subagent session following `subagent-reuse`.
+6. Collect and parse all report DTOs.
 
-### 3. Skeptic Audit Phase
-1. Extract the 1-3 most consequential factual claims from the collected research reports.
-2. Dispatch `skeptic-1` with the top claim as `TargetClaim`. CRITICAL: `skeptic-1` runs AFTER research reports exist — never route raw sub-queries to `skeptic-1`. Follow `subagent-reuse` to capture session ID.
+### 3. Skeptic Audit
+1. Extract 1-3 most consequential factual claims from collected research reports.
+2. Dispatch `research/shared/skeptic` with top claim as target. PRECONDITION: execute skeptic ONLY after research reports exist; NEVER route raw sub-queries. Follow `subagent-reuse`.
 
-### 4. Cross-Validation Phase
-1. If 2 or more research reports exist, dispatch `validation-1` with the collected reports as `ReportsUnderReview` (inline at most 5 reports; summarize any report over ~2000 chars to its key claims). Follow `subagent-reuse`.
+### 4. Cross-Validation
+1. When 2 or more research reports exist, dispatch `research/shared/validation` with collected reports (inline at most 5 reports; summarize any report over ~2000 chars to key claims). Follow `subagent-reuse`.
 2. Parse `ValidationReport` to extract claim statuses, contradictions, and stale-risk claims.
 
-### 5. Synthesis Phase
-1. Unify research, skeptic, and validation outputs into a unified answer.
-2. Lead with the bottom line; surface contradictions and counter-evidence prominently.
-3. Match user language and render markdown visualizations.
+### 5. Synthesis
+1. Unify research, skeptic, and validation outputs into a single evidence-backed answer.
+2. Lead with direct conclusions; surface contradictions and counter-evidence prominently.
+3. Match user language and render markdown tables and bullet lists.
 
-### 6. Final Reporting Phase
-1. Present the final synthesized research report to user.
+### 6. Final Reporting
+1. Present final synthesized research report to user in chat.
 
 ## Rules
 
 - **Precondition:** `UserTopic` provided.
-- You are the **Primary Orchestrator**; subagents cannot spawn or assign slots to other subagents.
-- Always adhere to `subagent-reuse` for subagent lifecycle, session ID tracking, and resuming existing sessions.
-- Pass ONLY contract input fields to subagents; never include slot-management keywords or slot IDs in payloads.
+- Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
+- Adhere strictly to `subagent-reuse` for session lifecycle, tracking, and resuming.
+- Pass ONLY task-specific context to subagents; NEVER include internal orchestration metadata or task IDs in payloads.
 - Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent task payload.
-- Adhere strictly to `Max Amount` caps in the Subagent Contracts table.
-- Dispatch all deep research subagents concurrently in parallel.
-- Route specialist subagents deterministically: `timeline-1` when the question involves change over time; `quant-1` when it involves numbers/statistics; `skeptic-1` only on claims extracted from research reports.
-- Never inflate reported subagent confidence levels during synthesis.
-- Never execute edit/write tools; this team is read-only — present all research output in chat only. If the user requests file output, provide the full formatted content in the chat response for the user to save manually.
-- Never expose internal orchestration topology or raw subagent logs to the user.
+- Adhere strictly to `max_slots` caps in the Subagents schema.
+- Dispatch all deep research subagents in parallel.
+- Route specialist subagents deterministically: `timeline` for temporal change; `quant` for statistics/numbers; `skeptic` ONLY on claims extracted from research reports.
+- NEVER inflate reported subagent confidence levels during synthesis.
+- Read-only research: NEVER execute write or edit actions; present all research output directly in chat.
+- NEVER expose internal orchestration topology or raw subagent logs to the user.

@@ -33,21 +33,32 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 ## 3. File Layout (mandatory order)
 
 1. YAML frontmatter
-2. `## Core Definition` — primary: Subagent Contracts table; subagent: Output Criteria DTO
-3. `## Execution Workflow` — numbered phases
+2. `## Context`
+   - primary: `### Subagents` (JSON schema with `name`, `max_slots`, `purpose`)
+   - subagent: `### Output Schema` (DTO with closed enums)
+   - NEVER define redundant input schemas
+3. `## Workflow` — numbered steps (e.g. `### 1. Discovery`, omit "Phase")
 4. `## Rules` — flat bullets, MUST be the final section
 
 ## 4. Primary Orchestrator
 
 - MUST NOT edit files directly if a subagent covers that purpose.
-- Subagent Contracts table required: `Name | Max Slots | Contract | Purpose`.
+- Subagents JSON object required under `### Subagents`:
+  ```json
+  {
+    "subagents": [
+      { "name": "...", "max_slots": 1, "purpose": "..." }
+    ]
+  }
+  ```
 - Human Checkpoint Gate required before any mutating step: present `AffectedFiles` table + 3–6 change bullets → await `proceed|revise|cancel`.
 - NEVER leak orchestration keywords (`ctx-N`, `slot-N`, `spawn`, `resume`) into subagent task payloads.
 - Budget: ≤150 lines (ceiling 160).
 
 ## 5. Subagent Specialist
 
-- Output Criteria DTO with closed enums, e.g. `Status: READY|BLOCKED`; `BlockingQuestions` required when `BLOCKED`.
+- Output Schema DTO with closed enums, e.g. `Status: READY|BLOCKED`; `BlockingQuestions` required when `BLOCKED`.
+- MUST NOT define input schemas (redundant).
 - MUST NOT delegate — enforce via permission rule (§2) and state explicitly in Rules.
 - Budget: ≤90 lines (ceiling 120).
 
@@ -56,7 +67,7 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 - Binding only: `MUST`, `ONLY`, `NEVER`, `PRECONDITION`, `EXIT`.
 - Banned: `should`, `prefer`, `try to`, `carefully`, `as needed`.
 - No fluff, no rationale prose, no constraint duplicated across Workflow and Rules.
-- Table any collection of 3+ items.
+- Prefer clean JSON objects over markdown tables for structured schemas.
 
 ## 7. Compliance Checklist
 
@@ -65,9 +76,9 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 [ ] correct V2 action names (subagent/shell/edit)
 [ ] subagent has explicit no-delegation deny rule
 [ ] catch-all deny (if used) placed FIRST, never last
-[ ] Sandwich layout intact; Rules is the final section
-[ ] primary: Subagent Contracts table + Checkpoint Gate present
-[ ] subagent: Output Criteria DTO w/ closed enum + no-delegation rule stated
+[ ] Sandwich layout intact: Context -> Workflow -> Rules (final)
+[ ] primary: Subagents JSON schema present under Context; no input schema
+[ ] subagent: Output Schema DTO present; no input schema
 [ ] only MUST/NEVER/ONLY directives, no soft language
 [ ] line budget respected (subagent ≤90, primary ≤150)
 ```
