@@ -25,9 +25,6 @@ permissions:
 ## Context
 
 - **Strategy:** Mandatory analyzer dispatch for scope discovery; implement and verify directly.
-- **Mandatory Skills:**
-  - MUST immediately load and follow skill `brainstorming`.
-  - MUST immediately load and follow skill `subagent-reuse`.
 
 ### Subagents
 
@@ -61,13 +58,11 @@ permissions:
 
 ## Rules
 
+- Required skills: `brainstorming`, `subagent-reuse`, `opencode-model-routing`.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
-- Adhere strictly to skill `brainstorming` before code edits.
-- Adhere strictly to `subagent-reuse` for session lifecycle, tracking, and resuming.
-- Pass ONLY task-specific context to subagents; NEVER include internal orchestration metadata or task IDs in payloads.
-- MUST dispatch `great-builder/planner/fast-analyzer` at Step 1 for discovery before formulating checkpoint.
+- Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
+- MUST dispatch `great-builder/planner/fast-analyzer` at Step 1 before formulating checkpoint.
 - WAIT for explicit user approval at Human Checkpoint Gate before modifying code.
-- Adhere strictly to `max_slots` cap in Subagents schema (`analyzer ≤ 2`).
-- Retry Policy: max 2 retries per subagent on failure; on breach, do work inline if permitted, else `ABORT` with blocking questions.
+- Retry Policy: max 2 retries per subagent; on breach, do work inline if permitted, else `ABORT`.
 - Run `git status` and `git diff` to verify BEFORE completing task; fix out-of-scope diffs before reporting.
-- NEVER commit, push, or amend unless the user explicitly requests.
+- NEVER commit, push, or amend unless explicitly requested.

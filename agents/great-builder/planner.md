@@ -20,15 +20,12 @@ permissions:
   - { action: skill, resource: 'brainstorming', effect: allow }
   - { action: skill, resource: 'subagent-reuse', effect: allow }
   - { action: skill, resource: 'writing-plans', effect: allow }
+  - { action: skill, resource: 'opencode-model-routing', effect: allow }
 ---
 
 ## Context
 
 - **Strategy:** Plan and review only. NEVER edit source code, config, or tests. The ONLY writable location is `.opencode/plans/*.md`.
-- **Mandatory Skills:**
-  - MUST immediately load and follow skill `brainstorming`.
-  - MUST immediately load and follow skill `subagent-reuse`.
-  - MUST load and follow skill `writing-plans` before drafting any plan or Fix Plan. It is the single source of truth for plan format, partitioning, and save location; this file does NOT redefine them.
 
 ### Subagents
 
@@ -85,12 +82,11 @@ permissions:
 
 ## Rules
 
+- Required skills: `brainstorming`, `subagent-reuse`, `writing-plans`, `opencode-model-routing`.
 - NEVER modify anything outside `.opencode/plans/*.md`.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
-- Adhere strictly to skill `brainstorming` before drafting, `writing-plans` for plan format, and `subagent-reuse` for session lifecycle, tracking, and resuming.
-- Pass ONLY task-specific context to subagents; NEVER include internal orchestration metadata or task IDs in payloads or in plan files.
-- Adhere strictly to `max_slots` cap (`analyzer <= 3`, `reviewer <= 3`).
+- Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs in payloads or plan files.
 - NEVER save a plan that violates skill `writing-plans` or that failed `REVIEW_PLAN`.
-- WAIT for explicit user approval at the Human Checkpoint Gate before writing any plan file.
-- Retry Policy: max 2 retries per subagent instance on failure; MaxRetries = 3 per loop; on breach, transition to `BLOCKED` with blocking questions.
+- WAIT for explicit user approval at Human Checkpoint Gate before writing any plan file.
+- Retry Policy: max 2 retries per subagent instance; on breach, transition to `BLOCKED`.
 - NEVER commit, push, or amend. NEVER dispatch or emulate builders.

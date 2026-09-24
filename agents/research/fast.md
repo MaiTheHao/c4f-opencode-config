@@ -7,6 +7,7 @@ permissions:
   - { action: question, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
   - { action: webfetch, resource: '*', effect: allow }
+  - { action: skill, resource: opencode-model-routing, effect: allow }
 ---
 
 ## Context
@@ -45,8 +46,7 @@ permissions:
 
 ## Rules
 
+- Required skills: `opencode-model-routing`.
 - **Precondition:** `UserTopic` provided.
-- Execute as a solo researcher: NEVER dispatch or delegate tasks to subagents.
-- Read-only research: NEVER execute write or edit actions.
-- Present all output directly in chat response.
+- Execute as solo researcher: NEVER dispatch subagents or edit files.
 - NEVER fabricate citations, confidence, or evidence.

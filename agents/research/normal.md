@@ -12,11 +12,10 @@ permissions:
   - { action: subagent, resource: 'research/shared/skeptic', effect: allow }
   - { action: subagent, resource: 'research/shared/validation', effect: allow }
   - { action: skill, resource: subagent-reuse, effect: allow }
+  - { action: skill, resource: opencode-model-routing, effect: allow }
 ---
 
 ## Context
-
-- **Mandatory Skill:** MUST immediately load and follow skill `subagent-reuse`.
 
 ### Subagents
 
@@ -61,14 +60,10 @@ permissions:
 
 ## Rules
 
+- Required skills: `subagent-reuse`, `opencode-model-routing`.
 - **Precondition:** `UserTopic` provided.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
-- Adhere strictly to `subagent-reuse` for session lifecycle, tracking, and resuming.
-- Pass ONLY task-specific context to subagents; NEVER include internal orchestration metadata or task IDs in payloads.
-- Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent task payload.
-- Adhere strictly to `max_slots` caps in the Subagents schema.
-- Dispatch all deep research subagents in parallel.
-- Route specialist subagents deterministically: `timeline` for temporal change; `quant` for statistics/numbers; `skeptic` ONLY on claims extracted from research reports.
-- NEVER inflate reported subagent confidence levels during synthesis.
-- Read-only research: NEVER execute write or edit actions; present all research output directly in chat.
-- NEVER expose internal orchestration topology or raw subagent logs to the user.
+- Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
+- Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to subagent payloads.
+- Read-only research: NEVER edit files directly.
+- NEVER inflate subagent confidence levels or expose raw subagent logs to user.

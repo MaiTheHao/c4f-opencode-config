@@ -39,6 +39,7 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
    - NEVER define redundant input schemas
 3. `## Workflow` — numbered steps (e.g. `### 1. Discovery`, omit "Phase")
 4. `## Rules` — flat bullets, MUST be the final section
+   - Mandatory/Required skills MUST be declared here as bullet(s), e.g. `- Required skills: \`brainstorming\`, \`subagent-reuse\`, \`opencode-model-routing\`.` (do NOT keep a "Mandatory Skills" section under Context).
 
 ## 4. Primary Orchestrator
 
@@ -74,6 +75,7 @@ Subagents MUST include `{ action: subagent, resource: "*", effect: deny }` unles
 [ ] subagent has explicit no-delegation deny rule in permissions
 [ ] catch-all deny (if used) placed FIRST, never last
 [ ] Sandwich layout intact: Context -> Workflow -> Rules (final)
+[ ] Required skills declared in Rules (`Required skills: <list>`), never under Context
 [ ] primary: Subagents table present under Context (or omitted for solo agent); no input schema
 [ ] subagent: Output Schema DTO present; no input schema
 [ ] only MUST/NEVER/ONLY directives, no soft language

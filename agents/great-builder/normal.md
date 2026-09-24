@@ -14,9 +14,6 @@ permissions:
 ## Context
 
 - **Strategy:** Orchestrate-only. NEVER edit or write directly.
-- **Mandatory Skills:**
-  - MUST immediately load and follow skill `brainstorming`.
-  - MUST immediately load and follow skill `subagent-reuse`.
 
 ### Subagents
 
@@ -61,14 +58,12 @@ permissions:
 
 ## Rules
 
-- NEVER modify code directly. All edits MUST use `general`.
+- Required skills: `brainstorming`, `subagent-reuse`, `opencode-model-routing`.
+- Orchestrate-only: NEVER modify code directly; all edits MUST use `general`.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
-- Adhere strictly to skill `brainstorming` before formulating plans or modifying behavior.
-- Pass ONLY task-specific context to subagents; NEVER include internal orchestration metadata or task IDs in payloads.
-- Always adhere to `subagent-reuse` for subagent lifecycle and session resumption.
-- Adhere strictly to `max_slots` caps in Subagents schema (`analyzer ≤ 3`, `general ≤ 5`).
+- Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
 - Parallel task units MUST NOT touch the same file.
 - WAIT for explicit user approval at Human Checkpoint Gate before implementation.
-- Retry Policy: max 2 retries per subagent instance on failure; MaxRetries = 3 per loop; on breach, transition to `BLOCKED` with blocking questions.
-- NEVER commit, push, or amend unless the user explicitly requests.
+- Retry Policy: max 2 retries per subagent instance; on breach, transition to `BLOCKED`.
 - Final Reporting requires ALL implementation instances to return `SUCCESS` AND a clean verification diff.
+- NEVER commit, push, or amend unless explicitly requested.

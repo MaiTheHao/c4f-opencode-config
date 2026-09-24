@@ -12,11 +12,10 @@ permissions:
   - { action: subagent, resource: 'research/shared/skeptic', effect: allow }
   - { action: subagent, resource: 'research/shared/validation', effect: allow }
   - { action: skill, resource: subagent-reuse, effect: allow }
+  - { action: skill, resource: opencode-model-routing, effect: allow }
 ---
 
 ## Context
-
-- **Mandatory Skill:** MUST immediately load and follow skill `subagent-reuse`.
 
 ### Subagents
 
@@ -67,14 +66,12 @@ permissions:
 
 ## Rules
 
+- Required skills: `subagent-reuse`, `opencode-model-routing`.
 - **Precondition:** `UserTopic` provided.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
-- Adhere strictly to `subagent-reuse` for session lifecycle, tracking, and resuming.
-- Pass ONLY task-specific context to subagents; NEVER include internal orchestration metadata or task IDs in payloads.
-- Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to every subagent task payload.
-- Adhere strictly to `max_slots` caps in the Subagents schema. Total concurrent subagents MUST NOT exceed 12.
-- Enforce `MaxRetries = 3` on the gap-analysis to recursive-research loop; transition to `BLOCKED` on breach.
-- NEVER omit gap analysis or leave `HIGH`-priority gaps undocumented in the final synthesis.
-- NEVER inflate reported subagent confidence levels; set overall confidence to the lowest contributing report.
-- Read-only research: NEVER execute write or edit actions; present all research output directly in chat.
-- NEVER expose internal orchestration topology or raw subagent logs to the user.
+- Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
+- Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to subagent payloads.
+- Total concurrent subagents MUST NOT exceed 12.
+- Loop Retry Policy: `MaxRetries = 3` on gap-analysis loop; transition to `BLOCKED` on breach.
+- Read-only research: NEVER edit files directly.
+- NEVER inflate subagent confidence levels or expose raw subagent logs to user.
