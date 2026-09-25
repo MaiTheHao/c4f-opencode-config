@@ -1,39 +1,83 @@
-# OpenCode Custom Configuration & Agents (OpenCode 2.x)
+# OpenCode Configuration & Agents
 
-This repository contains custom agent definitions, workflows (skills), and configuration guidelines optimized natively for **OpenCode 2.x**, a highly configurable AI agentic coding system.
+Custom agent definitions, model routing policies, and configuration optimized for OpenCode 2.x.
 
-These settings are designed to be loaded globally (under `~/.config/opencode/`) or per-project (under `.opencode/`) to provide specialized agents for high-throughput software implementation and multi-stage research pipelines.
-
-> [!NOTE]
-> **OpenCode 2.x Compatibility**: All agent frontmatters and configs in this repository strictly adhere to the OpenCode V2 native specification (`permissions` ordered arrays, action renaming `shell`/`subagent`/`edit`, and strictly omitting `temperature`/`top_p` in favor of native model reasoning optimization). For details, see [`optimize-agent-config.md`](file:///home/maithehao/.config/opencode/optimize-agent-config.md).
+> **OpenCode 2.x Compatibility**: Agent configs adhere to V2 specification (ordered permissions, action renaming `shell`/`subagent`/`edit`, native reasoning settings). See [optimize-agent-config.md](optimize-agent-config.md).
 
 ---
 
-## Installation & Setup
+## External Skills Setup (Required)
 
-Configure and set up OpenCode according to your use case below:
+General agent workflow skills are managed in [c4f-agent-skills](https://github.com/MaiTheHao/c4f-agent-skills.git). Clone them to your user agents directory:
 
-### Option 1: Per-Project Usage
-1. Clone or download this repository.
-2. Move the `agents/` and `skills/` directories into the root of your target project (under `.opencode/`).
-3. Setup complete!
+- **Linux / macOS**: `~/.agents/skills`
+- **Windows**: `%USERPROFILE%\.agents\skills`
 
-### Option 2: Global Usage
-1. Clone or download this repository.
-2. Move all repository contents into the global OpenCode configuration directory on your machine:
-   - **Linux / macOS**: `~/.config/opencode/`
-   - **Windows**: `%USERPROFILE%\.config\opencode\` (or `%APPDATA%\opencode\`)
-3. Open a terminal in the target configuration directory and run:
-   ```bash
-   npm install
-   ```
+#### Linux / macOS:
+```bash
+mkdir -p ~/.agents
+git clone https://github.com/MaiTheHao/c4f-agent-skills.git ~/.agents/skills
+```
 
----
+To update:
+```bash
+git -C ~/.agents/skills pull
+```
 
-### Non-Essential Files (Cleanup / Storage Optimization)
-If you wish to clean up or minimize the configuration bundle for production/storage, the following files and directories are optional and can be removed:
-- `README.md` (This instruction file)
-- `.gitignore` (Git configuration file)
+#### Windows (PowerShell / Command Prompt):
+```powershell
+# PowerShell
+New-Item -ItemType Directory -Force -Path "$HOME\.agents"
+git clone https://github.com/MaiTheHao/c4f-agent-skills.git "$HOME\.agents\skills"
+```
+
+To update:
+```powershell
+git -C "$HOME\.agents\skills" pull
+```
+
+Bundled skills in external repo:
+- `brainstorming`: Architecture & requirements clarification.
+- `clean-code`: Code quality, SOLID, and refactoring guidelines.
+- `writing-plans`: Implementation plan drafting standard.
+- `executing-plans`: Checkpoint-driven execution process.
+- `git-commit`: Conventional commit analysis and staging.
+- `mermaid`: Workflow and architectural diagrams.
+
+*Note: Model routing (`skills/opencode-model-routing`) remains in this repo to handle provider-specific routing and subagent session reuse.*
+
+## Installation
+
+### Global Usage (Recommended)
+
+Clone this repository into your global OpenCode configuration directory:
+
+- **Linux / macOS**: `~/.config/opencode`
+- **Windows**: `%USERPROFILE%\.config\opencode` (or `%APPDATA%\opencode`)
+
+#### Linux / macOS:
+```bash
+# Clone opencode config
+git clone https://github.com/MaiTheHao/c4f-opencode-config.git ~/.config/opencode
+
+# Install dependencies
+cd ~/.config/opencode
+npm install
+```
+
+#### Windows (PowerShell):
+```powershell
+# Clone opencode config
+git clone https://github.com/MaiTheHao/c4f-opencode-config.git "$HOME\.config\opencode"
+
+# Install dependencies
+cd "$HOME\.config\opencode"
+npm install
+```
+
+### Per-Project Usage
+1. Place `agents/` in `.opencode/` at project root.
+2. Ensure skills exist in `~/.agents/skills` (or `.opencode/skills/`).
 
 ---
 
@@ -41,67 +85,39 @@ If you wish to clean up or minimize the configuration bundle for production/stor
 
 ```text
 .
-├── agents/                  # OpenCode 2.x agent definitions (Markdown + Frontmatter)
-│   ├── great-builder/       # Fast implementation & analysis workflow agents
-│   │   ├── fast.md          # Primary direct analyzer, editor, and git verifier
-│   │   ├── fast/            # Fast specialist subagents (analyzer)
-│   │   ├── normal.md        # Standard primary orchestrator
-│   │   └── normal/          # Standard specialist subagents (analyzer)
-│   └── research/            # Stage-based web research pipelines
-│       ├── fast.md          # 3-stage research pipeline orchestrator
-│       ├── normal.md        # 4-stage research pipeline orchestrator
-│       ├── high.md          # 8-stage research pipeline orchestrator
-│       └── shared/          # Shared specialist subagents (scout, deep, timeline, quant, skeptic, validation)
-├── skills/                  # Extensible task-specific instructions (Skills)
-│   ├── brainstorming/       # Architecture & requirement clarification workflow
-│   ├── clean-code/          # SOLID, cohesion, and refactoring guidelines
-│   ├── executing-plans/     # Checkpoint-driven execution process
-│   ├── git-commit/          # Conventional commit message analysis and staging
-│   ├── mermaid/             # Architecture and workflow diagram generator
-│   ├── skill-creator/       # Skill authoring and eval toolkit
-│   ├── subagent-reuse/      # Subagent session tracking and lifecycle reuse
-│   └── writing-plans/       # Standard implementation plan formatting
-├── optimize-agent-config.md # Standard specification for agent configurations (V2)
-└── opencode.jsonc           # Main OpenCode configuration file
+├── agents/                  # OpenCode agent definitions
+│   ├── great-builder/       # Implementation & planning pipelines
+│   │   ├── fast.md          # Direct analyzer, editor, and git verifier
+│   │   ├── normal.md        # Parallel orchestrator
+│   │   ├── planner.md       # Scope planner and plan reviewer
+│   │   ├── planner/         # Planner subagents (analyzer, reviewer)
+│   │   └── builder.md       # Plan-driven worker orchestrator
+│   └── research/            # Web research pipelines
+│       ├── fast.md          # 3-stage research orchestrator
+│       ├── normal.md        # 4-stage research orchestrator
+│       ├── high.md          # 8-stage research orchestrator
+│       ├── extra.md         # In-depth research orchestrator
+│       └── shared/          # Research subagents (scout, deep, quant, skeptic, validation)
+├── changelogs/              # Change history
+├── skills/                  # Local repo skills
+│   └── opencode-model-routing/ # Model routing & session reuse
+├── optimize-agent-config.md # Agent configuration specification
+└── opencode.jsonc           # OpenCode main config
 ```
 
 ---
 
-## Agents Overview (OpenCode 2.x)
-
-OpenCode 2.x agents are defined in Markdown format (`.md`) with YAML frontmatter specifying their parameters, modes, and tool execution permissions using native V2 schemas.
+## Agents Summary
 
 ### 1. Great Builder (`agents/great-builder/`)
-A high-throughput implementation pipeline built to complete features and fix bugs quickly and safely with explicit human checkpoint gates.
-- **Fast (`great-builder/fast` - Primary)**: Directly analyzes, edits, and verifies git status inline; delegates to `explore` and `general` when broad context is required.
-- **Normal (`great-builder/normal` - Primary)**: Orchestrate-only agent that dispatches parallel analyzers (`great-builder/normal/analyzer`) and up to 4 parallel implementation units (`general`).
-- **Specialist Subagents**:
-  - `great-builder/fast/analyzer`: Fast read-only codebase analyzer for targeted scope discovery and execution contracts.
-  - `great-builder/normal/analyzer`: In-depth cross-file reasoning, dependency analysis, and impact synthesis.
+- `fast`: Direct analyze, edit, and git verification.
+- `normal`: Orchestrator dispatching parallel analyzers and workers.
+- `planner`: Read-only planner and reviewer (`brainstorming`, `writing-plans`).
+- `builder`: Parallel execution engine for approved plans.
 
 ### 2. Research Pipelines (`agents/research/`)
-A set of stage-based research pipelines that progressively discover, deep-dive, validate, and synthesize reports on complex topics.
-- **Primary Pipelines**:
-  - `research/fast`: 3-stage pipeline (Scout &rarr; Deep &rarr; Synthesis).
-  - `research/normal`: 4-stage pipeline (Scout x2 &rarr; Parallel Deep &rarr; Skeptic Audit &rarr; Validation &rarr; Synthesis).
-  - `research/high`: 8-stage pipeline (Triple Scout &rarr; Merge &rarr; Parallel Research &rarr; Gap Analysis &rarr; Recursive Research &rarr; Skeptic Audit &rarr; Validation &rarr; Synthesis).
-- **Specialist Subagents (`research/shared/`)**:
-  - `scout`: Maps research territory via web reconnaissance and produces tagged sub-queries.
-  - `deep`: Performs iterative search and source-tier verification.
-  - `timeline`: Tracks historical event chronological context and staleness risk.
-  - `quant`: Scrutinizes quantitative numbers, sample sizes, and methodology.
-  - `skeptic`: Actively searches for counter-evidence and minority rebuttals.
-  - `validation`: Conducts independent cross-checks on findings and flags contradictions.
-
----
-
-## Skills
-
-Located in the `skills/` directory, these folder structures extend the capabilities of the agents through structured instruction sets (`SKILL.md`) and prompts.
-- **`brainstorming`**: Step-by-step sequence to brainstorm architecture, evaluate options, and verify specifications before making changes.
-- **`clean-code`**: Engineering principles for readability, correctness, and maintainability.
-- **`writing-plans`**: Standard formatting structure to document implementation plans.
-- **`executing-plans`**: Step-by-step process for executing and validating planned code.
-- **`git-commit`**: Structured git commit staging and conventional message generation.
-- **`mermaid`**: Visual diagram generation for markdown documents.
-- **`skill-creator`**: Tools and workflows to build, evaluate, and optimize skills.
+- `fast`: 3-stage pipeline (Scout -> Deep -> Synthesis).
+- `normal`: 4-stage pipeline (Parallel Scout -> Deep -> Skeptic -> Synthesis).
+- `high`: 8-stage exhaustive recursive research pipeline.
+- `extra`: Deep multi-phase specialized investigation.
+- `shared/*`: Subagents for search reconnaissance, verification, quantitative checks, and audits.
