@@ -46,6 +46,7 @@ permissions:
 
 ## Rules
 
+- Required skills: none.
 - **Precondition:** `UserTopic` provided.
 - Execute as solo researcher: NEVER dispatch subagents or edit files.
 - NEVER fabricate citations, confidence, or evidence.

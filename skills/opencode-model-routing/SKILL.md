@@ -1,6 +1,6 @@
 ---
 name: opencode-model-routing
-description: Resolves role-to-model routing, execution tier escalation (cheap vs. quality), and session reuse invariants. Use whenever dispatching, delegating, spawning subagents, or selecting LLM profiles for coding, analysis, review, or research tasks.
+description: Resolves role-to-model routing, execution tier escalation (cheap vs. quality), free-tier delegation constraints, and session reuse invariants. Use whenever dispatching, delegating, spawning subagents, or selecting LLM profiles for coding, analysis, review, or research tasks.
 ---
 
 # Model Routing
@@ -65,3 +65,14 @@ Before spawning any subagent, check for an existing resumable session for that r
 | `quick` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` |
 
 **Default `cheap`.** Escalate to `quality` only on explicit trigger: "high accuracy", "critical", "production", "security-grade", "cần chính xác cao".
+
+## 4. Free Tier Constraint (Self-Detection & Delegation)
+
+**Trigger:** If you (the agent reading/executing this skill) are currently running on a **FREE model** (free tier / quota miễn phí):
+
+- **Self-Inventory:** MUST inspect the runtime environment / available provider catalog to list all active, usable **FREE** models before delegating any task.
+- **Strict Free Delegation:** MUST override the default Routing Table above. NEVER dispatch, spawn, or escalate subagents to paid or chargeable models. All child sessions and subagent delegations MUST strictly use verified free-tier models.
+- **Adaptive Capability Allocation:** Dynamically distribute roles across the discovered free models based on task complexity:
+  - Higher-capability / reasoning free models -> `code`, `analyze`, `review`, `research-deep`.
+  - Lightweight / faster free models -> `research-scout`, `timeline`, `quick`, `code-cheap`.
+- **Cost Guard:** If no compatible free model is available for an essential role, STOP and report `BLOCKED` with the missing free capability, rather than leaking into paid models.

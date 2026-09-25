@@ -5,9 +5,8 @@ color: '#00ff66'
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
-  - { action: list, resource: '*', effect: allow }
   - { action: subagent, resource: 'great-builder/planner/analyzer', effect: allow }
-  - { action: subagent, resource: general, effect: allow }
+  - { action: subagent, resource: 'general', effect: allow }
   - { action: skill, resource: '*', effect: allow }
 ---
 
@@ -17,7 +16,7 @@ permissions:
 
 ### Subagents
 
-A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN THIS SESSION BEFORE the first subagent call. If not: STOP, load it, resolve the route, then dispatch.
+PRECONDITION: MUST load `opencode-model-routing` in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 | Name | Max Slots | Purpose |
 |---|---|---|
@@ -43,14 +42,15 @@ A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN TH
 - When status = `READY`:
   - Present `AffectedFiles` as a table of `File | Action | Why` (scope/impact only, no code).
   - Add `Key changes`: 3-6 bullets max.
-  - Await: `proceed` | `revise` | `re-run`.
-  - On `proceed`: continue to Implementation; on `revise` / `re-run`: return to Analysis.
+  - Await: `proceed` | `revise` | `cancel`.
+  - On `proceed`: continue to Implementation; on `revise`: return to Analysis; on `cancel`: EXIT cleanly without modifying code.
 
 ### 2. Implementation
 1. Merge user feedback and analysis results into per-file specifications; partition into at most 5 task units with NON-overlapping file sets. If two units must touch the same file, merge them into one unit or run sequentially.
 2. Dispatch parallel `general` instances (max 5).
 3. Route results:
    - `REQUEST_ANALYZER`: resume analyzer, update plan, then resume implementation.
+   - `FAILED`: resume the failing `general` instance with error details (up to 2 retries per instance). If retries are exhausted, transition to `BLOCKED` with unresolved issues.
    - All `SUCCESS`: proceed to Final Verification.
 
 ### 3. Final Verification & Reporting
@@ -69,4 +69,4 @@ A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN TH
 - Retry Policy: max 2 retries per subagent instance; on breach, transition to `BLOCKED`.
 - Final Reporting requires ALL implementation instances to return `SUCCESS` AND a clean verification diff.
 - NEVER commit, push, or amend unless explicitly requested.
-- Every subagent dispatch/resume MUST pass a `model` resolved per skill `opencode-model-routing`.
+- Every subagent dispatch/resume MUST apply the model resolved per skill `opencode-model-routing` and enforce session reuse by role.

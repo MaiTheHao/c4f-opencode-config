@@ -3,9 +3,11 @@ description: Primary agent for direct analysis, editing, and git verification.
 mode: primary
 color: '#00ff66'
 permissions:
+  - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
-  - { action: list, resource: '*', effect: allow }
   - { action: read, resource: '*', effect: allow }
+  - { action: read, resource: '*.env', effect: deny }
+  - { action: read, resource: '*.env.*', effect: deny }
   - { action: edit, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
@@ -19,7 +21,6 @@ permissions:
   - { action: shell, resource: 'git log *', effect: allow }
   - { action: skill, resource: '*', effect: allow }
   - { action: subagent, resource: 'great-builder/planner/fast-analyzer', effect: allow }
-  - { action: subagent, resource: 'general', effect: allow }
 ---
 
 ## Context
@@ -28,7 +29,7 @@ permissions:
 
 ### Subagents
 
-A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN THIS SESSION BEFORE the first subagent call. If not: STOP, load it, resolve the route, then dispatch.
+PRECONDITION: MUST load `opencode-model-routing` in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 | Name | Max Slots | Purpose |
 |---|---|---|
@@ -49,8 +50,8 @@ A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN TH
 1. Present checkpoint in this exact format:
    - **AffectedFiles:** table of `File | Action | Why` (scope/impact only, no code).
    - **Key changes:** 3–6 bullets max.
-2. Await `proceed` | `revise` | `re-analyze`.
-3. On `revise` / `re-analyze`: merge feedback and return to analysis. On `proceed`: continue to implementation.
+2. Await `proceed` | `revise` | `cancel`.
+3. On `revise`: merge feedback and return to analysis. On `cancel`: EXIT cleanly without modifying code. On `proceed`: continue to implementation.
 
 ### 3. Implement & Verify
 1. Perform necessary edits directly across approved `AffectedFiles` using `edit` tool.
@@ -68,4 +69,4 @@ A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN TH
 - Retry Policy: max 2 retries per subagent; on breach, do work inline if permitted, else `ABORT`.
 - Run `git status` and `git diff` to verify BEFORE completing task; fix out-of-scope diffs before reporting.
 - NEVER commit, push, or amend unless explicitly requested.
-- Every subagent dispatch/resume MUST pass a `model` resolved per skill `opencode-model-routing`.
+- Every subagent dispatch/resume MUST apply the model resolved per skill `opencode-model-routing` and enforce session reuse by role.

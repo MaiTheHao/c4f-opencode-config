@@ -18,12 +18,12 @@ permissions:
 
 ### Subagents
 
-A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN THIS SESSION BEFORE the first subagent call. If not: STOP, load it, resolve the route, then dispatch.
+PRECONDITION: MUST load `opencode-model-routing` in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 | Name | Max Slots | Purpose |
 |---|---|---|
 | `research/shared/scout` | 8 | Multi-angle discovery across 5 analytical dimensions |
-| `research/shared/deep` | UNLIMITED | Recursive deep-dive research into prioritized gaps |
+| `research/shared/deep` | 16 | Recursive deep-dive research into prioritized gaps |
 | `research/shared/timeline` | 3 | Trace historical and temporal evolution |
 | `research/shared/quant` | 3 | Quantitative data extraction and dataset analysis |
 | `research/shared/skeptic` | 3 | Adversarial audit and counter-evidence search |
@@ -32,8 +32,8 @@ A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN TH
 ### Runtime Guardrails
 
 - `MaxConcurrentSubagents = 16`
-- `deep` has no total dispatch cap, controlled strictly by evidence-saturation stopping rules.
-- Unlimited deep means unlimited within the current research run, bounded by concurrent fan-out limit.
+- `deep` has no total dispatch cap, controlled strictly by evidence-saturation stopping rules and bounded by concurrent fan-out limit (16).
+- Operational stopping budget: maximum 5 recursive waves or user cancellation; if budget is exhausted before evidence saturation, output qualified synthesis with unresolved gaps explicitly documented.
 
 ## Workflow
 
@@ -116,4 +116,4 @@ Stop recursive deep dispatch ONLY when all conditions hold:
 - Dispatch concurrent work in bounded waves; NEVER exceed `MaxConcurrentSubagents = 16`.
 - Read-only research: NEVER edit files directly.
 - NEVER inflate subagent confidence levels or expose raw subagent logs to user.
-- Subagent models MUST be resolved per skill `opencode-model-routing`; `skeptic`/`validation` audit instances SHOULD NOT run on the same model as the `deep` instances whose reports they audit.
+- Subagent models MUST be resolved per skill `opencode-model-routing` with session reuse enforced by role; `skeptic`/`validation` audit instances MUST receive fresh sessions and SHOULD NOT run on the same model as the `deep` instances whose reports they audit.

@@ -5,9 +5,9 @@ color: '#3399ff'
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
-  - { action: list, resource: '*', effect: allow }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
+  - { action: read, resource: '*.env.*', effect: deny }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
@@ -26,7 +26,7 @@ permissions:
 
 ### Subagents
 
-A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN THIS SESSION BEFORE the first subagent call. If not: STOP, load it, resolve the route, then dispatch.
+PRECONDITION: MUST load `opencode-model-routing` in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 | Name | Max Slots | Purpose |
 |---|---|---|
@@ -60,9 +60,10 @@ A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN TH
   - **TaskUnits:** one line per unit (`U<n> | files | DependsOn`).
   - **Key changes:** 3-6 bullets max.
   - **User Review Required:** items from the plan, if any.
-  - Await: `approve` | `revise` | `re-analyze`.
-  - On `revise` / `re-analyze`: merge feedback, update draft plan via `edit` (or return to Analysis).
-  - On `approve`: proceed to Publish.
+  - Await: `proceed` (or `approve`) | `revise` | `cancel`.
+  - On `proceed` (or `approve`): proceed to Publish.
+  - On `revise`: merge feedback, update draft plan via `edit` (or return to Analysis).
+  - On `cancel`: EXIT cleanly leaving draft plan intact.
 
 #### 2. Publish
 1. Update the plan file via `edit`: change status from `[DRAFT]` to `[APPROVED]`.
@@ -87,4 +88,4 @@ A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN TH
 - Session Reuse: MUST reuse active/resumable subagent sessions by session ID before spawning new ones.
 - Retry Policy: max 2 retries per subagent instance; on breach, transition to `BLOCKED`.
 - NEVER commit, push, or amend. NEVER dispatch or emulate builders.
-- Every subagent dispatch/resume MUST pass a `model` resolved per skill `opencode-model-routing`.
+- Every subagent dispatch/resume MUST apply the model resolved per skill `opencode-model-routing` and enforce session reuse by role.

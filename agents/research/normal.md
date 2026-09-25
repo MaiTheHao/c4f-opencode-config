@@ -18,7 +18,7 @@ permissions:
 
 ### Subagents
 
-A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN THIS SESSION BEFORE the first subagent call. If not: STOP, load it, resolve the route, then dispatch.
+PRECONDITION: MUST load `opencode-model-routing` in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 | Name | Max Slots | Purpose |
 |---|---|---|
@@ -28,6 +28,10 @@ A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN TH
 | `research/shared/quant` | 1 | Extract and analyze quantitative metrics |
 | `research/shared/skeptic` | 1 | Stress-test claims and challenge counter-evidence |
 | `research/shared/validation` | 1 | Verify cross-report factual consistency |
+
+### Runtime Guardrails
+
+- `MaxConcurrentSubagents = 7` (bounded deep wave cap: 5 deep + 1 timeline + 1 quant).
 
 ## Workflow
 
@@ -68,4 +72,4 @@ A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN TH
 - Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to subagent payloads.
 - Read-only research: NEVER edit files directly.
 - NEVER inflate subagent confidence levels or expose raw subagent logs to user.
-- Subagent models MUST be resolved per skill `opencode-model-routing`; `skeptic`/`validation` audit instances SHOULD NOT run on the same model as the `deep` instances whose reports they audit.
+- Subagent models MUST be resolved per skill `opencode-model-routing` with session reuse enforced by role; `skeptic`/`validation` audit instances MUST receive fresh sessions and SHOULD NOT run on the same model as the `deep` instances whose reports they audit.

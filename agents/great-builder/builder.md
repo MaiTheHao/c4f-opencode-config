@@ -5,14 +5,14 @@ color: '#00ff66'
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
-  - { action: list, resource: '*', effect: allow }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
+  - { action: read, resource: '*.env.*', effect: deny }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
-  - { action: subagent, resource: general, effect: allow }
+  - { action: subagent, resource: 'general', effect: allow }
   - { action: skill, resource: '*', effect: allow }
 ---
 
@@ -22,7 +22,7 @@ permissions:
 
 ### Subagents
 
-A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN THIS SESSION BEFORE the first subagent call. If not: STOP, load it, resolve the route, then dispatch.
+PRECONDITION: MUST load `opencode-model-routing` in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 | Name | Max Slots | Purpose |
 |---|---|---|
@@ -78,4 +78,4 @@ Additionally: unit `Files` sets are disjoint, every `AffectedFiles` entry belong
 - Retry Policy: max 2 retries per worker instance; on breach, halt with blocking questions.
 - Final Reporting requires ALL units `SUCCESS` AND a clean verification diff.
 - NEVER commit, push, or amend unless explicitly requested.
-- Every subagent dispatch/resume MUST pass a `model` resolved per skill `opencode-model-routing`.
+- Every subagent dispatch/resume MUST apply the model resolved per skill `opencode-model-routing` and enforce session reuse by role.
