@@ -1,15 +1,6 @@
 ---
 name: opencode-model-routing
-description: >-
-  MANDATORY PRE-SPAWN GATE. Load this skill at the moment you are about to
-  dispatch any subagent (analyzer, reviewer, builder, code, test...) and resolve
-  its model from the Routing Table BEFORE composing the payload. A subagent
-  call that (1) does not follow a Load of this skill in the same session before
-  spawning, (2) omits role→model resolution from the Routing Table, or
-  (3) pairs a reviewer with the same model family as the generator,
-  is procedurally invalid. Triggers: "any call to the subagent tool",
-  "spawn/dispatch of subagents", "review plan", "review work", "REVIEW_PLAN",
-  "REVIEW_WORK".
+description: Resolve role-to-model mappings and execution tiers before dispatching subagents. Trigger on subagent spawn, dispatch, delegate, worker assignment, REVIEW_PLAN, REVIEW_WORK, or whenever determining the optimal LLM for code, review, analysis, or testing tasks.
 ---
 
 # Model Routing
