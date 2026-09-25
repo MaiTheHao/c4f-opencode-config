@@ -1,6 +1,6 @@
 ---
 name: opencode-model-routing
-description: Resolve role-to-model mappings and execution tiers before dispatching subagents. Trigger on subagent spawn, dispatch, delegate, worker assignment, or whenever determining the optimal LLM for code, review, analysis, or testing tasks.
+description: Resolves role-to-model routing, execution tier escalation (cheap vs. quality), and session reuse invariants. Use whenever dispatching, delegating, spawning subagents, or selecting LLM profiles for coding, analysis, review, or research tasks.
 ---
 
 # Model Routing
@@ -26,6 +26,7 @@ Before spawning any subagent, check for an existing resumable session for that r
 | `test` | Code | Write/repair tests, run-fix loop | "add tests" |
 | `research-scout` | Research | Broad recon, low rigor | first-pass scoping |
 | `research-deep` | Research | One sub-question, high rigor | "dig into X" |
+| `timeline` | Research | Trace historical and temporal evolution | timeline, historical progression |
 | `analyze` | Analysis | Root-cause, architecture read | "why does this happen" |
 | `quant` | Analysis | Numbers/benchmark audit | "how much", "audit methodology" |
 | `review` | Review | Code/PR quality gate | "review this PR" |
@@ -35,29 +36,32 @@ Before spawning any subagent, check for an existing resumable session for that r
 
 ## 2. Models & Variants
 
-| Model | Variants | Cap / Note |
+> **Provider Prefix Mandate:** Every subagent dispatch/resume payload MUST format `model` as `providerID/modelID` or `providerID/modelID#variant` (e.g. `opencode-go/deepseek-v4.1-flash#low`). Omitting the provider prefix causes runtime syntax errors (`Invalid model...`).
+
+| Model (Catalog ID) | Variants | Cap / Note |
 |---|---|---|
-| `glm-5.3-flash` | `low`, `high` | `max` never used |
-| `deepseek-v4.1-flash` | `low`, `high` | `max` never used except `analyze`/`quant` quality; `low` never for `analyze`/`research-deep`/`quant` (scout only) |
-| `mimo-v2.6-pro` | — | route by ID, no suffix |
-| `muse-spark-1.3-contributor` | `medium`, `xhigh` | ceiling `xhigh` (no `max`) |
+| `opencode-go/glm-5.3-flash` | `low`, `high` | `max` never used |
+| `opencode-go/deepseek-v4.1-flash` | `low`, `high`, `max` | `max` never used except `analyze`/`quant` quality; `low` never for `analyze`/`research-deep`/`quant` (scout/timeline only) |
+| `opencode-go/mimo-v2.6-pro` | — | route by ID, no suffix |
+| `opencode-go/muse-spark-1.3-contributor` | `medium`, `xhigh` | ceiling `xhigh` (no `max`) |
 
 ## 3. Routing Table
 
 | Role | `cheap` (default) | `quality` (opt-in) |
 |---|---|---|
-| `code` | `glm-5.3-flash#low` | `deepseek-v4.1-flash#high` |
-| `code-cheap` | `glm-5.3-flash#low` | `deepseek-v4.1-flash#low` |
-| `bulk-edit` | `glm-5.3-flash#low` | `glm-5.3-flash#high` |
-| `refactor` | `deepseek-v4.1-flash#low` | `deepseek-v4.1-flash#high` |
-| `test` | `deepseek-v4.1-flash#low` | `deepseek-v4.1-flash#high` |
-| `research-scout` | `deepseek-v4.1-flash#low` | `deepseek-v4.1-flash#high` |
-| `research-deep` | `muse-spark-1.3-contributor#medium` | `muse-spark-1.3-contributor#xhigh` |
-| `analyze` | `deepseek-v4.1-flash#high` | `deepseek-v4.1-flash#max` |
-| `quant` | `deepseek-v4.1-flash#high` | `deepseek-v4.1-flash#max` |
-| `review` | `deepseek-v4.1-flash#high` | `mimo-v2.6-pro` |
-| `skeptic` | `deepseek-v4.1-flash#high` | `muse-spark-1.3-contributor#xhigh` (public data only) else `mimo-v2.6-pro` |
-| `validation` | `mimo-v2.6-pro` | `mimo-v2.6-pro` |
-| `quick` | `glm-5.3-flash#low` | `glm-5.3-flash#high` |
+| `code` | `opencode-go/glm-5.3-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
+| `code-cheap` | `opencode-go/glm-5.3-flash#low` | `opencode-go/deepseek-v4.1-flash#low` |
+| `bulk-edit` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` |
+| `refactor` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
+| `test` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
+| `research-scout` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
+| `research-deep` | `opencode-go/muse-spark-1.3-contributor#medium` | `opencode-go/muse-spark-1.3-contributor#xhigh` |
+| `timeline` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
+| `analyze` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
+| `quant` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
+| `review` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/mimo-v2.6-pro` |
+| `skeptic` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/muse-spark-1.3-contributor#xhigh` (public data only) else `opencode-go/mimo-v2.6-pro` |
+| `validation` | `opencode-go/mimo-v2.6-pro` | `opencode-go/mimo-v2.6-pro` |
+| `quick` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` |
 
 **Default `cheap`.** Escalate to `quality` only on explicit trigger: "high accuracy", "critical", "production", "security-grade", "cần chính xác cao".
