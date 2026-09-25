@@ -37,29 +37,29 @@ description: >-
 
 | Model | Variants | Notes |
 |---|---|---|
-| `glm-5.3-flash` | `low`, `high`, `max` | Vendor default is `max`; thinking cannot be disabled. `#low` for mechanical/bulk, `#high` for logic and review, `#max` only when escalating |
-| `deepseek-v4.1-flash` | `low` (=50), `high` (=75), `max` (=100) reasoning effort | Never `#low` for `analyze`, `research-deep`, `quant`; `#low` is for scout triage only |
-| `mimo-v2.6-pro` | none | Route by model ID alone, no suffix |
-| `muse-spark-1.3-contributor` | `minimal`, `low`, `medium`, `high`, `xhigh` | `#max` is unavailable on Contributor tier; `#xhigh` is the ceiling |
+| `opencode-go/glm-5.3-flash` | `low`, `high`, `max` | Vendor default is `max`; thinking cannot be disabled. `#low` for mechanical/bulk, `#high` for logic and review, `#max` only when escalating |
+| `opencode-go/deepseek-v4.1-flash` | `low` (=50), `high` (=75), `max` (=100) reasoning effort | Never `#low` for `analyze`, `research-deep`, `quant`; `#low` is for scout triage only |
+| `opencode-go/mimo-v2.6-pro` | none | Route by model ID alone, no suffix |
+| `opencode-go/muse-spark-1.3-contributor` | `minimal`, `low`, `medium`, `high`, `xhigh` | `#max` is unavailable on Contributor tier; `#xhigh` is the ceiling |
 
 ## 3. Routing Table
 
 | Role | `cheap` (default) | `quality` (opt-in) |
 |---|---|---|
-| `code` | `glm-5.3-flash#high` | `deepseek-v4.1-flash#max` |
-| `code-cheap` | `glm-5.3-flash#low` | `deepseek-v4.1-flash#high` |
-| `bulk-edit` | `glm-5.3-flash#low` | `glm-5.3-flash#high` |
-| `refactor` | `glm-5.3-flash#high` | `deepseek-v4.1-flash#max` |
-| `test` | `glm-5.3-flash#high` | `deepseek-v4.1-flash#max` |
-| `research-scout` | `deepseek-v4.1-flash#low` | `deepseek-v4.1-flash#high` |
-| `research-deep` | `deepseek-v4.1-flash#high` | `deepseek-v4.1-flash#max` |
-| `analyze` | `deepseek-v4.1-flash#high` | `deepseek-v4.1-flash#max` |
-| `quant` | `deepseek-v4.1-flash#high` | `deepseek-v4.1-flash#max` |
-| `review` | `deepseek-v4.1-flash#high` | `mimo-v2.6-pro` |
-| `skeptic` | `deepseek-v4.1-flash#high` | `muse-spark-1.3-contributor#xhigh` (public data only); else `mimo-v2.6-pro` |
-| `validation` | `deepseek-v4.1-flash#high` | `deepseek-v4.1-flash#max` |
-| `quick` | `glm-5.3-flash#low` | `glm-5.3-flash#high` |
-| `bulk` | `muse-spark-1.3-contributor#low` (public only); else `glm-5.3-flash#low` | same as `cheap` |
+| `code` | `opencode-go/glm-5.3-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
+| `code-cheap` | `opencode-go/glm-5.3-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
+| `bulk-edit` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` |
+| `refactor` | `opencode-go/glm-5.3-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
+| `test` | `opencode-go/glm-5.3-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
+| `research-scout` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
+| `research-deep` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
+| `analyze` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
+| `quant` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
+| `review` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/mimo-v2.6-pro` |
+| `skeptic` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/muse-spark-1.3-contributor#xhigh` (public data only); else `opencode-go/mimo-v2.6-pro` |
+| `validation` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
+| `quick` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` |
+| `bulk` | `opencode-go/muse-spark-1.3-contributor#low` (public only); else `opencode-go/glm-5.3-flash#low` | same as `cheap` |
 
 ## 4. Rules
 
@@ -68,10 +68,10 @@ description: >-
 3. **Family diversity for verifiers.**
    - `review` MUST NOT share a model family with the generator (`code` / `code-cheap`).
    - `skeptic` and `validation` SHOULD use a different family from the generator.
-   - Table defaults assume a GLM generator. If the generator runs on DeepSeek (e.g. `quality` `code`/`refactor`/`test`), swap the verifier to `glm-5.3-flash#high` (`#max` in `quality`); `review` in `quality` stays on MiMo.
-4. **Data-governance gate (hard veto, both modes).** NEVER send proprietary or sensitive data (private codebase, incident logs, PII, internal docs) to `muse-spark-1.3-contributor`. Use Muse only for open/public text (`bulk`) or public skeptic audits. When in doubt, use GLM.
+   - Table defaults assume a GLM generator. If the generator runs on DeepSeek (e.g. `quality` `code`/`refactor`/`test`), swap the verifier to `opencode-go/glm-5.3-flash#high` (`#max` in `quality`); `review` in `quality` stays on MiMo.
+4. **Data-governance gate (hard veto, both modes).** NEVER send proprietary or sensitive data (private codebase, incident logs, PII, internal docs) to `opencode-go/muse-spark-1.3-contributor`. Use Muse only for open/public text (`bulk`) or public skeptic audits. When in doubt, use GLM.
 5. **Muse latency.** Budget 23-45s TTFT. Never use Muse for `quick`, `research-scout`, or interactive review loops.
-6. **Quota watch.** When DeepSeek quota runs low, fall back `analyze`, `research-deep`, `quant` to `glm-5.3-flash#high` (`#max` in `quality`) and apply Rule 3. GLM speed varies by backend (43-454 t/s): pin a fast provider for latency-sensitive tasks.
+6. **Quota watch.** When DeepSeek quota runs low, fall back `analyze`, `research-deep`, `quant` to `opencode-go/glm-5.3-flash#high` (`#max` in `quality`) and apply Rule 3. GLM speed varies by backend (43-454 t/s): pin a fast provider for latency-sensitive tasks.
 7. **Tie-break.** Prefer the cheaper model unless the user explicitly asked for maximum quality.
 
 ## 5. Session Reuse
