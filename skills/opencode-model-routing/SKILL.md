@@ -1,6 +1,6 @@
 ---
 name: opencode-model-routing
-description: Resolve role-to-model mappings and execution tiers before dispatching subagents. Trigger on subagent spawn, dispatch, delegate, worker assignment, REVIEW_PLAN, REVIEW_WORK, or whenever determining the optimal LLM for code, review, analysis, or testing tasks.
+description: Resolve role-to-model mappings and execution tiers before dispatching subagents. Trigger on subagent spawn, dispatch, delegate, worker assignment, or whenever determining the optimal LLM for code, review, analysis, or testing tasks.
 ---
 
 # Model Routing

@@ -1,5 +1,5 @@
 ---
-description: Read-only reviewer for the planner. REVIEW_PLAN critiques a draft plan against the codebase; REVIEW_WORK verifies the working-tree diff against an approved plan.
+description: Read-only reviewer for the planner. Verifies the working-tree diff against an approved plan (REVIEW_WORK).
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: ask }
@@ -19,27 +19,17 @@ permissions:
 
 ## Context
 
-Plan format is defined by skill `writing-plans`; load it before any review and treat its Mandatory Rules, Partitioning Rules, and Template as the standard.
-
-The dispatcher states the mode in the task: `REVIEW_PLAN` or `REVIEW_WORK`. If the mode or the plan is missing, return `Verdict: BLOCKED` with `BlockingQuestions`.
+The dispatcher provides the plan and scope to review finished work against the plan (`REVIEW_WORK`). If the plan is missing, return `Verdict: BLOCKED` with `BlockingQuestions`.
 
 ### Output Schema (`ReviewResult`)
-- `Mode`: `REVIEW_PLAN | REVIEW_WORK`
 - `Verdict`: `PASS | CHANGES_REQUIRED | BLOCKED` (closed enum)
 - `Findings`: list of `{Severity: BLOCKER | MAJOR | MINOR, Location: file:line, Issue, Evidence, RequiredChange}`
-- `PlanCoverage`: per `TaskUnit`, status `DONE | PARTIAL | MISSING` (`REVIEW_WORK` only)
+- `PlanCoverage`: per `TaskUnit`, status `DONE | PARTIAL | MISSING`
 - `AcceptanceStatus`: per acceptance criterion, `MET | UNMET | UNVERIFIABLE`
-- `OutOfScopeChanges`: files changed but not in `AffectedFiles` (`REVIEW_WORK` only)
+- `OutOfScopeChanges`: files changed but not in `AffectedFiles`
 - `BlockingQuestions` (required when `Verdict = BLOCKED`)
 
 ## Workflow
-
-### REVIEW_PLAN
-1. Verify each `AffectedFiles` entry and `LineRange` against the real code.
-2. Check conformance to skill `writing-plans`: required sections present, no placeholders, `Open Questions` resolved, valid Mermaid diagram.
-3. Check parallel safety against its Partitioning Rules: disjoint unit `Files`, acyclic and necessary `DependsOn`, no file missing from or extra in `AffectedFiles`.
-4. Check feasibility: specs that conflict with existing invariants, callers, or conventions; unhandled callers, tests, or config.
-5. Check that every acceptance criterion is observable and covered by some `Verify` step.
 
 ### REVIEW_WORK
 1. Read the plan, then run `git status` and `git diff`.
