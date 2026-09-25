@@ -61,18 +61,7 @@ description: >-
 | `quick` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` |
 | `bulk` | `opencode-go/muse-spark-1.3-contributor#low` (public only); else `opencode-go/glm-5.3-flash#low` | same as `cheap` |
 
-## 4. Rules
-
-1. **Default to `cheap`.** Start from the cheap column; escalate only on an explicit quality trigger: "high accuracy", "critical", "production", "security-grade", "cần chính xác cao", "đừng sai".
-2. **Escalate per role.** Raise only the role that decides the final deliverable; supporting roles (`code-cheap`, `bulk-edit`, `research-scout`) stay cheap.
-3. **Family diversity for verifiers.**
-   - `review` MUST NOT share a model family with the generator (`code` / `code-cheap`).
-   - `skeptic` and `validation` SHOULD use a different family from the generator.
-   - Table defaults assume a GLM generator. If the generator runs on DeepSeek (e.g. `quality` `code`/`refactor`/`test`), swap the verifier to `opencode-go/glm-5.3-flash#high` (`#max` in `quality`); `review` in `quality` stays on MiMo.
-4. **Data-governance gate (hard veto, both modes).** NEVER send proprietary or sensitive data (private codebase, incident logs, PII, internal docs) to `opencode-go/muse-spark-1.3-contributor`. Use Muse only for open/public text (`bulk`) or public skeptic audits. When in doubt, use GLM.
-5. **Muse latency.** Budget 23-45s TTFT. Never use Muse for `quick`, `research-scout`, or interactive review loops.
-6. **Quota watch.** When DeepSeek quota runs low, fall back `analyze`, `research-deep`, `quant` to `opencode-go/glm-5.3-flash#high` (`#max` in `quality`) and apply Rule 3. GLM speed varies by backend (43-454 t/s): pin a fast provider for latency-sensitive tasks.
-7. **Tie-break.** Prefer the cheaper model unless the user explicitly asked for maximum quality.
+**Default to `cheap`.** Start from the cheap column; escalate only on an explicit quality trigger: "high accuracy", "critical", "production", "security-grade", "cần chính xác cao".
 
 ## 5. Session Reuse
 
