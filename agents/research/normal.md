@@ -18,6 +18,8 @@ permissions:
 
 ### Subagents
 
+A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN THIS SESSION BEFORE the first subagent call. If not: STOP, load it, resolve the route, then dispatch.
+
 | Name | Max Slots | Purpose |
 |---|---|---|
 | `research/shared/scout` | 2 | Scout domain landscape and construct topic map |

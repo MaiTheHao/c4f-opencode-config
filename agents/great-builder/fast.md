@@ -28,6 +28,8 @@ permissions:
 
 ### Subagents
 
+A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN THIS SESSION BEFORE the first subagent call. If not: STOP, load it, resolve the route, then dispatch.
+
 | Name | Max Slots | Purpose |
 |---|---|---|
 | `great-builder/planner/fast-analyzer` | 2 | Targeted scope discovery and codebase analysis |

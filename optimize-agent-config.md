@@ -35,7 +35,7 @@ Primary agents nên mở quyền skill toàn cục (`{ action: skill, resource: 
 
 1. YAML frontmatter
 2. `## Context`
-   - primary: `### Subagents` (Markdown table with `Name`, `Max Slots`, `Purpose`)
+   - primary: `### Subagents` (bắt buộc câu ràng buộc model-routing ngay phía dưới header, tiếp theo là Markdown table with `Name`, `Max Slots`, `Purpose`)
    - subagent: `### Output Schema` (DTO with closed enums)
    - NEVER define redundant input schemas
 3. `## Workflow` — numbered steps (e.g. `### 1. Discovery`, omit "Phase")
@@ -46,6 +46,11 @@ Primary agents nên mở quyền skill toàn cục (`{ action: skill, resource: 
 
 - MUST NOT edit files directly if a subagent covers that purpose.
 - Subagents table required under `### Subagents`:
+  Ngay phía dưới header `### Subagents`, BẮT BUỘC có dòng ràng buộc:
+  ```markdown
+  A subagent call is VALID only if Skill `opencode-model-routing` was loaded IN THIS SESSION BEFORE the first subagent call. If not: STOP, load it, resolve the route, then dispatch.
+  ```
+
   | Name | Max Slots | Purpose |
   |---|---|---|
   | `team/analyzer` | 1 | Codebase and impact analysis |
@@ -77,7 +82,7 @@ Primary agents nên mở quyền skill toàn cục (`{ action: skill, resource: 
 [ ] catch-all deny (if used) placed FIRST, never last
 [ ] Sandwich layout intact: Context -> Workflow -> Rules (final)
 [ ] Required skills declared in Rules (`Required skills: <list>`), never under Context
-[ ] primary: Subagents table present under Context (or omitted for solo agent); no input schema
+[ ] primary: Subagents header bắt buộc có câu ràng buộc model-routing ngay phía dưới và có bảng Subagents (hoặc bỏ qua nếu solo agent); no input schema
 [ ] subagent: Output Schema DTO present; no input schema
 [ ] only MUST/NEVER/ONLY directives, no soft language
 [ ] line budget respected (subagent ≤90, primary ≤150)

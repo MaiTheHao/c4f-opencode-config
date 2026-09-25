@@ -1,9 +1,15 @@
 ---
 name: opencode-model-routing
 description: >-
-  Model routing and subagent session reuse for provider opencode-go. Use whenever spawning subagents. Also use whenever continuing,
-  fixing, or giving feedback on work from an existing subagent, so its session is reused instead
-  of spawning a new one.
+  MANDATORY PRE-SPAWN GATE. Load this skill at the moment you are about to
+  dispatch any subagent (analyzer, reviewer, builder, code, test...) and resolve
+  its model from the Routing Table BEFORE composing the payload. A subagent
+  call that (1) does not follow a Load of this skill in the same session before
+  spawning, (2) omits role→model resolution from the Routing Table, or
+  (3) pairs a reviewer with the same model family as the generator,
+  is procedurally invalid. Triggers: "any call to the subagent tool",
+  "spawn/dispatch of subagents", "review plan", "review work", "REVIEW_PLAN",
+  "REVIEW_WORK".
 ---
 
 # Model Routing
