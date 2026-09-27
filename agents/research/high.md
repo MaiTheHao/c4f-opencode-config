@@ -1,5 +1,5 @@
 ---
-description: Extreme-coverage research (reinforced scout -> unlimited deep research -> recursive gap closure -> multi-pass skepticism/validation -> synthesis).
+description: Maximum effort — reinforced scout, multi-wave recursive deep research, multi-pass skeptic + validation. Long wait, deep verification.
 mode: primary
 color: '#00e5ff'
 permissions:
@@ -32,6 +32,7 @@ PRECONDITION: MUST load `opencode-model-routing` in this session before the firs
 ### Runtime Guardrails
 
 - `MaxConcurrentSubagents = 16`
+- `MaxTotalSubagentCalls = 40` (total subagent dispatches across the whole session, including session-reuse continuations). EXIT with qualified synthesis when the cap is reached, even if evidence saturation has not been achieved.
 - `deep` has no total dispatch cap, controlled strictly by evidence-saturation stopping rules and bounded by concurrent fan-out limit (16).
 - Operational stopping budget: maximum 5 recursive waves or user cancellation; if budget is exhausted before evidence saturation, output qualified synthesis with unresolved gaps explicitly documented.
 
@@ -80,16 +81,18 @@ PRECONDITION: MUST load `opencode-model-routing` in this session before the firs
 ### 6. Skeptic Audit
 1. Extract up to 3 most consequential or decision-relevant claims.
 2. Resolve route for `review-skeptic` via `opencode-model-routing`. PRECONDITION: per routing skill §0, skeptic audit MUST ALWAYS receive a fresh session and SHOULD NOT run on the same model as audited `deep` instances.
-3. Dispatch `research/shared/skeptic` instances with precise targets after research reports exist.
-4. Enforce failure-mode searches and explicit counter-evidence evaluation.
-5. Feed `WEAKENED`/`BROKEN` results back into deep research as targeted follow-ups (resuming existing deep sessions).
+3. PRECONDITION (supplementary): When resolving a route via `opencode-model-routing`, exclude from the candidate pool any model already assigned to `research-deep` in the current session. If only 1 model remains after exclusion, EXIT with warning "no diverse audit model available" instead of falling back to the same model.
+4. Dispatch `research/shared/skeptic` instances with precise targets after research reports exist.
+5. Enforce failure-mode searches and explicit counter-evidence evaluation.
+6. Feed `WEAKENED`/`BROKEN` results back into deep research as targeted follow-ups (resuming existing deep sessions).
 
 ### 7. Multi-Pass Validation
 1. Resolve route for `review-validation` via `opencode-model-routing`. PRECONDITION: per routing skill §0, validation MUST ALWAYS receive a fresh session per pass.
-2. Dispatch `research/shared/validation` (first pass) after first major evidence set is assembled.
-3. Independently verify extracted claims without reusing original report sources.
-4. When validation exposes contradictions, stale-risk claims, unsupported consequential claims, or low-quality (T3) sources, run necessary deep follow-ups by resuming relevant deep sessions.
-5. Dispatch `research/shared/validation` (second pass, fresh session) on revised evidence set ONLY when material changes occurred.
+2. PRECONDITION (supplementary): When resolving a route via `opencode-model-routing`, exclude from the candidate pool any model already assigned to `research-deep` in the current session. If only 1 model remains after exclusion, EXIT with warning "no diverse audit model available" instead of falling back to the same model.
+3. Dispatch `research/shared/validation` (first pass) after first major evidence set is assembled.
+4. Independently verify extracted claims without reusing original report sources.
+5. When validation exposes contradictions, stale-risk claims, unsupported consequential claims, or low-quality (T3) sources, run necessary deep follow-ups by resuming relevant deep sessions.
+6. Dispatch `research/shared/validation` (second pass, fresh session) on revised evidence set ONLY when material changes occurred.
 
 ### 8. Evidence-Saturation Stop
 Stop recursive deep dispatch ONLY when all conditions hold:
@@ -98,6 +101,7 @@ Stop recursive deep dispatch ONLY when all conditions hold:
 3. Major contradictions are resolved or prominently preserved as disagreements.
 4. Validation surfaces no new material unsupported claim.
 5. Additional search is expected to yield repetitive evidence without changing synthesis.
+6. `MaxTotalSubagentCalls` cap reached — stop and document unresolved portions, regardless of conditions 1-5.
 
 ### 9. Synthesis
 1. Unify scout, deep, specialist, skeptic, and validation outputs into one evidence-backed answer.

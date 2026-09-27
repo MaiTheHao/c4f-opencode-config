@@ -1,5 +1,5 @@
 ---
-description: Single-agent lightweight research (no subagents). Fast evidence sweep with self-check and synthesis.
+description: Low effort — single-agent, 1 search pass, minimal verification, fast answer. No subagent audit.
 mode: primary
 color: '#00e5ff'
 permissions:

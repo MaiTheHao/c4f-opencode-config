@@ -54,7 +54,7 @@ Names follow `{group}-{function}`, so the group is self-evident without a lookup
 
 ### 2a. Free-Tier Self-Detection & Delegation (overrides §3 entirely)
 
-If you (the agent executing this skill) are currently running on a **FREE model** (free tier / quota miễn phí):
+If you (the agent executing this skill) are currently running on a **FREE model** (free tier / free quota):
 
 - **Self-Inventory:** MUST inspect the runtime environment / provider catalog to list all active, usable **FREE** models before delegating any task.
 - **Strict Free Delegation:** NEVER dispatch, spawn, or escalate subagents to paid/chargeable models. All child sessions and subagent delegations MUST strictly use verified free-tier models.
@@ -65,21 +65,21 @@ If you (the agent executing this skill) are currently running on a **FREE model*
 
 ## 3. Routing Table (paid tiers — see §2a if running free)
 
-| Role | `cheap` (default) | `quality` (opt-in) |
-|---|---|---|
-| `code-implement` | `opencode-go/glm-5.3-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
-| `code-apply-step` | `opencode-go/glm-5.3-flash#low` | `opencode-go/deepseek-v4.1-flash#low` |
-| `code-bulk-edit` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` |
-| `code-refactor` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
-| `code-test` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
-| `research-scout` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
-| `research-deep` | `opencode-go/muse-spark-1.3-contributor#medium` | `opencode-go/muse-spark-1.3-contributor#xhigh` |
-| `research-timeline` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` |
-| `analysis-root-cause` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
-| `analysis-quant` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` |
-| `review-quality` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/mimo-v2.6-pro` |
-| `review-skeptic` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/muse-spark-1.3-contributor#xhigh` (public data only) else `opencode-go/mimo-v2.6-pro` |
-| `review-validation` | `opencode-go/mimo-v2.6-pro` | `opencode-go/mimo-v2.6-pro` |
-| `general-quick` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` |
+| Role | `cheap` (default) | `quality` (opt-in) | `ExcludeIfUsedByRole` |
+|---|---|---|---|
+| `code-implement` | `opencode-go/glm-5.3-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
+| `code-apply-step` | `opencode-go/glm-5.3-flash#low` | `opencode-go/deepseek-v4.1-flash#low` | — |
+| `code-bulk-edit` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` | — |
+| `code-refactor` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
+| `code-test` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
+| `research-scout` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
+| `research-deep` | `opencode-go/muse-spark-1.3-contributor#medium` | `opencode-go/muse-spark-1.3-contributor#xhigh` | — |
+| `research-timeline` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
+| `analysis-root-cause` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` | — |
+| `analysis-quant` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` | — |
+| `review-quality` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/mimo-v2.6-pro` | — |
+| `review-skeptic` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/muse-spark-1.3-contributor#xhigh` (public data only) else `opencode-go/mimo-v2.6-pro` | `research-deep` |
+| `review-validation` | `opencode-go/mimo-v2.6-pro` | `opencode-go/mimo-v2.6-pro` | `research-deep` |
+| `general-quick` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` | — |
 
-**Default `cheap`.** Escalate to `quality` only on explicit trigger: "high accuracy", "critical", "production", "security-grade", "cần chính xác cao".
+**Default `cheap`.** Escalate to `quality` only on explicit trigger: "high accuracy", "critical", "production", "security-grade", "need high accuracy".

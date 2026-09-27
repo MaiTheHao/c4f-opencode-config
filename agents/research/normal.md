@@ -1,5 +1,5 @@
 ---
-description: Four-stage research (scout x2 -> research -> skeptic audit -> validation -> synthesis). Default for most questions.
+description: Medium effort — scout + deep research + 1 round of skeptic/validation, balancing speed and reliability.
 mode: primary
 color: '#00e5ff'
 permissions:
@@ -51,13 +51,15 @@ PRECONDITION: MUST load `opencode-model-routing` in this session before the firs
 ### 3. Skeptic Audit
 1. Extract 1-3 most consequential factual claims from collected research reports.
 2. Resolve route for `review-skeptic` via `opencode-model-routing`. PRECONDITION: execute skeptic ONLY after research reports exist; per routing skill §0, skeptic audit MUST receive a fresh session and SHOULD NOT run on the same model as audited `deep` instances.
-3. Dispatch `research/shared/skeptic` with top claim as target.
+3. PRECONDITION (supplementary): When resolving a route via `opencode-model-routing`, exclude from the candidate pool any model already assigned to `research-deep` in the current session. If only 1 model remains after exclusion, EXIT with warning "no diverse audit model available" instead of falling back to the same model.
+4. Dispatch `research/shared/skeptic` with top claim as target.
 
 ### 4. Cross-Validation
 1. When 2 or more research reports exist, resolve route for `review-validation` via `opencode-model-routing`. PRECONDITION: per routing skill §0, validation MUST receive a fresh session.
-2. Dispatch `research/shared/validation` with collected reports (inline at most 5 reports; summarize any report over ~2000 chars to key claims).
-3. Parse `ValidationReport` to extract claim statuses, contradictions, and stale-risk claims.
-4. When validation surfaces unsupported claims, low-quality sources, or contradictions, resume relevant subagent sessions by session ID for a targeted verification follow-up.
+2. PRECONDITION (supplementary): When resolving a route via `opencode-model-routing`, exclude from the candidate pool any model already assigned to `research-deep` in the current session. If only 1 model remains after exclusion, EXIT with warning "no diverse audit model available" instead of falling back to the same model.
+3. Dispatch `research/shared/validation` with collected reports (inline at most 5 reports; summarize any report over ~2000 chars to key claims).
+4. Parse `ValidationReport` to extract claim statuses, contradictions, and stale-risk claims.
+5. When validation surfaces unsupported claims, low-quality sources, or contradictions, resume relevant subagent sessions by session ID for a targeted verification follow-up.
 
 ### 5. Synthesis
 1. Unify research, skeptic, and validation outputs into a single evidence-backed answer.
