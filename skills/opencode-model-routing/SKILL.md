@@ -61,8 +61,8 @@ A tier MAY contain more than one model — see §2c for when to use one vs. spli
 |---|---|---|---|---|
 | `opencode-go/glm-5.3-flash` | T-fast | primary (general use) | `low`, `high` | Strongest factual reliability in roster; default for anything in T-fast |
 | `opencode-go/gpt-6-luna` | T-fast | **restricted secondary** | `none`, `low` only | Only when *all* apply: no reasoning needed, single/small file, context well under long-range recall risk. Never `high`/`xhigh`/`max` here — at that point it's slower and no stronger than the primary |
-| `opencode-go/deepseek-v4.1-flash` | T-core | primary (sole member) | `low`, `high`, `max` | `max` reserved for analysis roles at `quality`; `low` never for root-cause/quant/deep-research |
-| `opencode-go/muse-spark-1.3-contributor` | T-deep | primary (sole member) | `medium`, `xhigh` | Ceiling `xhigh`, no `max` |
+| `opencode-go/deepseek-v4.1-flash` | T-core | primary (sole member) | `low`, `high`, `max` | `max` reserved for analysis roles at `quality`; `low` never for root-cause/quant/deep-research. Pricing doubles during peak hours (Mon–Fri 01:00–04:00 & 06:00–10:00 UTC) — avoid scheduling heavy batch work in that window if it can wait |
+| `opencode-go/muse-spark-1.3-contributor` | T-deep | primary (sole member) | `medium`, `xhigh` | Ceiling `xhigh`, no `max`. Provider uses prompts/completions for model training (not zero-data-retention) — don't route proprietary/sensitive code here without sign-off |
 | `opencode-go/mimo-v2.6-flash` | T-cross | primary | — (route by ID, no suffix) | — |
 | `opencode-go/qwen3.8-flash` | T-cross | secondary (second independent family for validation) | `low`, `medium` | — |
 
