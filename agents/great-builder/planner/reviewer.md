@@ -1,11 +1,12 @@
 ---
-description: Read-only reviewer for the planner. Verifies the working-tree diff against an approved plan (REVIEW_WORK).
+description: Read-only reviewer. Verifies the working-tree diff against an approved plan (REVIEW_WORK). Dispatched by builder.md's REVIEW flow, or usable standalone.
 mode: subagent
 permissions:
-  - { action: '*', resource: '*', effect: ask }
+  - { action: '*', resource: '*', effect: deny }
+  - { action: subagent, resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
-  - { action: list, resource: '*', effect: allow }
+  - { action: read, resource: '*.env.*', effect: deny }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
   - { action: shell, resource: 'ls *', effect: allow }
