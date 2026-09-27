@@ -20,7 +20,7 @@ This check runs on **every** spawn/dispatch/delegate action, with no exceptions,
 
 ## 1. Roles
 
-Names follow `{group}-{function}`, so the group is self-evident without a lookup — reduces role-pick ambiguity for the dispatching LLM.
+Names follow `{group}-{function}`, so the group is self-evident without a lookup.
 
 | Role | Group | Task | Trigger |
 |---|---|---|---|
@@ -39,47 +39,75 @@ Names follow `{group}-{function}`, so the group is self-evident without a lookup
 | `review-validation` | Review | Cross-check for contradictions | "do these agree" |
 | `general-quick` | General | Low-latency small task | classify, commit message |
 
-**Legacy alias map** (old → new, 1:1, for any config still referencing old names): `code`→`code-implement`, `code-cheap`→`code-apply-step`, `bulk-edit`→`code-bulk-edit`, `refactor`→`code-refactor`, `test`→`code-test`, `analyze`→`analysis-root-cause`, `quant`→`analysis-quant`, `review`→`review-quality`, `skeptic`→`review-skeptic`, `validation`→`review-validation`, `quick`→`general-quick`, `timeline`→`research-timeline`. (`research-scout`, `research-deep` unchanged.)
+**Legacy alias map** (old → new, 1:1): `code`→`code-implement`, `code-cheap`→`code-apply-step`, `bulk-edit`→`code-bulk-edit`, `refactor`→`code-refactor`, `test`→`code-test`, `analyze`→`analysis-root-cause`, `quant`→`analysis-quant`, `review`→`review-quality`, `skeptic`→`review-skeptic`, `validation`→`review-validation`, `quick`→`general-quick`, `timeline`→`research-timeline`. (`research-scout`, `research-deep` unchanged.)
 
-## 2. Models, Variants & Tier Constraints
+## 2. Capability Tiers (classify by fit, not cost)
 
-> **Provider Prefix Mandate:** Every subagent dispatch/resume payload MUST format `model` as `providerID/modelID` or `providerID/modelID#variant` (e.g. `opencode-go/deepseek-v4.1-flash#low`). Omitting the provider prefix causes runtime syntax errors (`Invalid model...`).
+Paid roster only — free-tier delegation is handled entirely by §4, not by any tier here.
+A tier MAY contain more than one model — see §2c for when to use one vs. split across members.
 
-| Model (Catalog ID) | Variants | Cap / Note |
+| Tier | Fit | Characteristics to look for |
 |---|---|---|
-| `opencode-go/glm-5.3-flash` | `low`, `high` | `max` never used |
-| `opencode-go/deepseek-v4.1-flash` | `low`, `high`, `max` | `max` never used except `analysis-root-cause`/`analysis-quant` quality; `low` never for `analysis-root-cause`/`research-deep`/`analysis-quant` (scout/timeline only) |
-| `opencode-go/mimo-v2.6-pro` | — | route by ID, no suffix |
-| `opencode-go/muse-spark-1.3-contributor` | `medium`, `xhigh` | ceiling `xhigh` (no `max`) |
+| **T-fast** | Mechanical, low-ambiguity, or low-rigor recon | Low latency, reliable instruction-following, fine-grained effort levels for cost control |
+| **T-core** | Default agentic workhorse — most coding/research/analysis | Balanced reasoning + speed, reliable tool-use, has a `low/high/max`-style effort knob |
+| **T-deep** | High-rigor single-question reasoning | Strongest chain-of-thought / effort scaling in roster, even if slower |
+| **T-cross** | Cross-check & adversarial review | Different model family from whatever produced the artifact being reviewed — diversity matters more than raw capability here |
 
-### 2a. Free-Tier Self-Detection & Delegation (overrides §3 entirely)
+### 2a. Current roster → tier mapping
+
+> Update only this table when the model lineup changes. Everything in §3 references tiers, so edits here propagate everywhere.
+
+| Model (Catalog ID) | Tier | Slot role | Variants used |
+|---|---|---|---|
+| `opencode-go/glm-5.3-flash` | T-fast | primary | `low`, `high` |
+| `opencode-go/gpt-6-luna` | T-fast | secondary (parallel slot / fine-grained effort) | `low`, `medium`, `high` |
+| `opencode-go/deepseek-v4.1-flash` | T-core | primary (sole member) | `low`, `high`, `max` (`max` reserved for analysis roles at `quality`; `low` never for root-cause/quant/deep-research) |
+| `opencode-go/muse-spark-1.3-contributor` | T-deep | primary (sole member) | `medium`, `xhigh` (ceiling `xhigh`, no `max`) |
+| `opencode-go/mimo-v2.6-flash` | T-cross | primary | — (route by ID, no suffix) |
+| `opencode-go/qwen3.8-flash` | T-cross | secondary (second independent family for validation) | `low`, `medium` |
+
+### 2b. Substitution rule
+
+If a model in 2a becomes unavailable or the roster changes, replace it with another model matching the **same tier characteristics** (§2), not whatever happens to be cheapest. `T-cross` members must each stay a different family from `T-core`/`T-deep` *and* from each other. Free/preview models never enter this table — they belong in §4 only.
+
+### 2c. Multi-model tiers & slot-splitting
+
+When a tier has more than one member:
+
+- **Single-slot dispatch** (most roles): always use the tier's `primary` member. Never rotate to `secondary` just for variety — that only adds inconsistency.
+- **Multi-slot dispatch** (a role explicitly configured for N parallel workers, e.g. `research-scout` or `code-bulk-edit` fanned out across a large diff): split slots round-robin across **all** members of the assigned tier — this is the whole reason a tier has more than one member. Never send all parallel slots to the same model.
+- **Validation/skeptic roles requiring independent consensus**: MUST use two *different* members — never let both cross-check slots resolve to the same model, even if only one T-cross member is configured for a given dispatch.
+
+## 3. Routing Table (by tier, not fixed model — resolve via 2a)
+
+| Role | `cheap` (default) | `quality` (opt-in) | `ExcludeIfUsedByRole` |
+|---|---|---|---|
+| `code-implement` | T-fast · low | T-core · high | — |
+| `code-apply-step` | T-fast · low | T-core · low | — |
+| `code-bulk-edit` | T-fast · low | T-fast · high | — |
+| `code-refactor` | T-core · low | T-core · high | — |
+| `code-test` | T-core · low | T-core · high | — |
+| `research-scout` | T-fast · low | T-core · high | — |
+| `research-deep` | T-deep · medium | T-deep · xhigh | — |
+| `research-timeline` | T-fast · low | T-core · high | — |
+| `analysis-root-cause` | T-core · high | T-core · max | — |
+| `analysis-quant` | T-core · high | T-core · max | — |
+| `review-quality` | T-core · high | T-cross | — |
+| `review-skeptic` | T-core · high | T-deep · xhigh (public data only) else T-cross | `research-deep` |
+| `review-validation` | T-cross | T-cross | `research-deep` |
+| `general-quick` | T-fast · low | T-fast · high | — |
+
+**Resolution:** look up the tier in this table, then resolve tier → concrete `provider/model#variant` via §2a at dispatch time (§2c decides single vs. multi-member use for tiers with more than one model). **Default `cheap`.** Escalate to `quality` only on explicit trigger: "high accuracy", "critical", "production", "security-grade", "need high accuracy".
+
+## 4. Free-Tier Self-Detection & Delegation (overrides §3 entirely)
 
 If you (the agent executing this skill) are currently running on a **FREE model** (free tier / free quota):
 
 - **Self-Inventory:** MUST inspect the runtime environment / provider catalog to list all active, usable **FREE** models before delegating any task.
-- **Strict Free Delegation:** NEVER dispatch, spawn, or escalate subagents to paid/chargeable models. All child sessions and subagent delegations MUST strictly use verified free-tier models.
-- **Adaptive Capability Allocation:** distribute roles across discovered free models by complexity:
-  - Higher-capability / reasoning free models → `code-implement`, `analysis-root-cause`, `review-quality`, `research-deep`.
-  - Lightweight / faster free models → `research-scout`, `research-timeline`, `general-quick`, `code-apply-step`.
-- **Cost Guard:** if no compatible free model exists for an essential role, STOP and report `BLOCKED` with the missing free capability — never leak into paid models.
+- **Strict Free Delegation:** NEVER dispatch, spawn, or escalate subagents to paid/chargeable models. All child sessions and subagent delegations MUST strictly use verified free-tier models — no cherry-picking, use whatever free models are actually available regardless of how they'd otherwise be tiered.
+- **Adaptive Capability Allocation:** map discovered free models to the §2 tier definitions by observed capability (not by cost), then distribute roles the same way §3 does:
+  - Model behaves like T-core/T-deep → `code-implement`, `analysis-root-cause`, `review-quality`, `research-deep`.
+  - Model behaves like T-fast → `research-scout`, `research-timeline`, `general-quick`, `code-apply-step`.
+- **Cost Guard:** if no compatible free model exists for an essential tier, STOP and report `BLOCKED` with the missing tier — never leak into paid models.
 
-## 3. Routing Table (paid tiers — see §2a if running free)
-
-| Role | `cheap` (default) | `quality` (opt-in) | `ExcludeIfUsedByRole` |
-|---|---|---|---|
-| `code-implement` | `opencode-go/glm-5.3-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
-| `code-apply-step` | `opencode-go/glm-5.3-flash#low` | `opencode-go/deepseek-v4.1-flash#low` | — |
-| `code-bulk-edit` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` | — |
-| `code-refactor` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
-| `code-test` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
-| `research-scout` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
-| `research-deep` | `opencode-go/muse-spark-1.3-contributor#medium` | `opencode-go/muse-spark-1.3-contributor#xhigh` | — |
-| `research-timeline` | `opencode-go/deepseek-v4.1-flash#low` | `opencode-go/deepseek-v4.1-flash#high` | — |
-| `analysis-root-cause` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` | — |
-| `analysis-quant` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/deepseek-v4.1-flash#max` | — |
-| `review-quality` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/mimo-v2.6-pro` | — |
-| `review-skeptic` | `opencode-go/deepseek-v4.1-flash#high` | `opencode-go/muse-spark-1.3-contributor#xhigh` (public data only) else `opencode-go/mimo-v2.6-pro` | `research-deep` |
-| `review-validation` | `opencode-go/mimo-v2.6-pro` | `opencode-go/mimo-v2.6-pro` | `research-deep` |
-| `general-quick` | `opencode-go/glm-5.3-flash#low` | `opencode-go/glm-5.3-flash#high` | — |
-
-**Default `cheap`.** Escalate to `quality` only on explicit trigger: "high accuracy", "critical", "production", "security-grade", "need high accuracy".
+> **Provider Prefix Mandate:** Every subagent dispatch/resume payload MUST format `model` as `providerID/modelID` or `providerID/modelID#variant` (e.g. `opencode-go/deepseek-v4.1-flash#low`). Omitting the provider prefix causes runtime syntax errors (`Invalid model...`).
