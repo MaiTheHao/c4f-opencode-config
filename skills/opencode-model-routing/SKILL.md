@@ -44,38 +44,38 @@ Names follow `{group}-{function}`, so the group is self-evident without a lookup
 ## 2. Capability Tiers (classify by fit, not cost)
 
 Paid roster only — free-tier delegation is handled entirely by §4, not by any tier here.
-A tier MAY contain more than one model — see §2c for when to use one vs. split across members.
+A tier MAY contain more than one model — see §2c for when to use one vs. split across members, including **restricted members** that only qualify for a narrow slice of a tier's tasks.
 
 | Tier | Fit | Characteristics to look for |
 |---|---|---|
 | **T-fast** | Mechanical, low-ambiguity, or low-rigor recon | Low latency, reliable instruction-following, fine-grained effort levels for cost control |
 | **T-core** | Default agentic workhorse — most coding/research/analysis | Balanced reasoning + speed, reliable tool-use, has a `low/high/max`-style effort knob |
 | **T-deep** | High-rigor single-question reasoning | Strongest chain-of-thought / effort scaling in roster, even if slower |
-| **T-cross** | Cross-check & adversarial review | Different model family from whatever produced the artifact being reviewed — diversity matters more than raw capability here |
+| **T-cross** | Cross-check & adversarial review | Different model family from whatever produced the artifact being reviewed — diversity matters more than raw capability here; factual reliability weighs heavier than in any other tier |
 
 ### 2a. Current roster → tier mapping
 
 > Update only this table when the model lineup changes. Everything in §3 references tiers, so edits here propagate everywhere.
 
-| Model (Catalog ID) | Tier | Slot role | Variants used |
-|---|---|---|---|
-| `opencode-go/glm-5.3-flash` | T-fast | primary | `low`, `high` |
-| `opencode-go/gpt-6-luna` | T-fast | secondary (parallel slot / fine-grained effort) | `low`, `medium`, `high` |
-| `opencode-go/deepseek-v4.1-flash` | T-core | primary (sole member) | `low`, `high`, `max` (`max` reserved for analysis roles at `quality`; `low` never for root-cause/quant/deep-research) |
-| `opencode-go/muse-spark-1.3-contributor` | T-deep | primary (sole member) | `medium`, `xhigh` (ceiling `xhigh`, no `max`) |
-| `opencode-go/mimo-v2.6-flash` | T-cross | primary | — (route by ID, no suffix) |
-| `opencode-go/qwen3.8-flash` | T-cross | secondary (second independent family for validation) | `low`, `medium` |
+| Model (Catalog ID) | Tier | Slot role | Variants used | Notes |
+|---|---|---|---|---|
+| `opencode-go/glm-5.3-flash` | T-fast | primary (general use) | `low`, `high` | Strongest factual reliability in roster; default for anything in T-fast |
+| `opencode-go/gpt-6-luna` | T-fast | **restricted secondary** | `none`, `low` only | Only when *all* apply: no reasoning needed, single/small file, context well under long-range recall risk. Never `high`/`xhigh`/`max` here — at that point it's slower and no stronger than the primary |
+| `opencode-go/deepseek-v4.1-flash` | T-core | primary (sole member) | `low`, `high`, `max` | `max` reserved for analysis roles at `quality`; `low` never for root-cause/quant/deep-research |
+| `opencode-go/muse-spark-1.3-contributor` | T-deep | primary (sole member) | `medium`, `xhigh` | Ceiling `xhigh`, no `max` |
+| `opencode-go/mimo-v2.6-flash` | T-cross | primary | — (route by ID, no suffix) | — |
+| `opencode-go/qwen3.8-flash` | T-cross | secondary (second independent family for validation) | `low`, `medium` | — |
 
 ### 2b. Substitution rule
 
-If a model in 2a becomes unavailable or the roster changes, replace it with another model matching the **same tier characteristics** (§2), not whatever happens to be cheapest. `T-cross` members must each stay a different family from `T-core`/`T-deep` *and* from each other. Free/preview models never enter this table — they belong in §4 only.
+If a model in 2a becomes unavailable or the roster changes, replace it with another model matching the **same tier characteristics** (§2), not whatever happens to be cheapest. `T-cross` members must each stay a different family from `T-core`/`T-deep` *and* from each other. A **restricted member** (like `gpt-6-luna`) can only be replaced by another model that beats it on the specific axis it was restricted for (cost + variant granularity) — it must not be promoted to unrestricted just because it's convenient. Free/preview models never enter this table — they belong in §4 only.
 
 ### 2c. Multi-model tiers & slot-splitting
 
 When a tier has more than one member:
 
-- **Single-slot dispatch** (most roles): always use the tier's `primary` member. Never rotate to `secondary` just for variety — that only adds inconsistency.
-- **Multi-slot dispatch** (a role explicitly configured for N parallel workers, e.g. `research-scout` or `code-bulk-edit` fanned out across a large diff): split slots round-robin across **all** members of the assigned tier — this is the whole reason a tier has more than one member. Never send all parallel slots to the same model.
+- **Single-slot dispatch** (most roles): always use the tier's `primary` member. Never rotate to a restricted member just for variety.
+- **Multi-slot dispatch** (a role explicitly configured for N parallel workers, e.g. `research-scout` or `code-bulk-edit` fanned out across a large diff): split slots round-robin across the tier's **unrestricted** members only. A restricted member (§2a) is added to the rotation *only* for the specific slots whose subtask matches its restriction (no reasoning, small/single-file context) — never as a blind round-robin participant, since that reintroduces exactly the long-context/reliability risk it was restricted to avoid.
 - **Validation/skeptic roles requiring independent consensus**: MUST use two *different* members — never let both cross-check slots resolve to the same model, even if only one T-cross member is configured for a given dispatch.
 
 ## 3. Routing Table (by tier, not fixed model — resolve via 2a)
@@ -84,7 +84,7 @@ When a tier has more than one member:
 |---|---|---|---|
 | `code-implement` | T-fast · low | T-core · high | — |
 | `code-apply-step` | T-fast · low | T-core · low | — |
-| `code-bulk-edit` | T-fast · low | T-fast · high | — |
+| `code-bulk-edit` | T-fast · low (see §2c for restricted-member slots) | T-fast · high | — |
 | `code-refactor` | T-core · low | T-core · high | — |
 | `code-test` | T-core · low | T-core · high | — |
 | `research-scout` | T-fast · low | T-core · high | — |
@@ -97,7 +97,7 @@ When a tier has more than one member:
 | `review-validation` | T-cross | T-cross | `research-deep` |
 | `general-quick` | T-fast · low | T-fast · high | — |
 
-**Resolution:** look up the tier in this table, then resolve tier → concrete `provider/model#variant` via §2a at dispatch time (§2c decides single vs. multi-member use for tiers with more than one model). **Default `cheap`.** Escalate to `quality` only on explicit trigger: "high accuracy", "critical", "production", "security-grade", "need high accuracy".
+**Resolution:** look up the tier in this table, then resolve tier → concrete `provider/model#variant` via §2a at dispatch time (§2c decides single vs. multi-member use for tiers with more than one model, including restricted members). **Default `cheap`.** Escalate to `quality` only on explicit trigger: "high accuracy", "critical", "production", "security-grade", "need high accuracy".
 
 ## 4. Free-Tier Self-Detection & Delegation (overrides §3 entirely)
 
