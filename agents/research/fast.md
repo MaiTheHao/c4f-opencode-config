@@ -31,15 +31,17 @@ permissions:
 
 ### 3. Self-Check
 1. Separate sourced facts from inference.
-2. Verify time-sensitive claims for freshness against the current question context.
-3. Explicitly surface contradictions and unresolved source gaps.
-4. NEVER infer or assert facts unsupported by retrieved evidence.
+2. Evaluate source quality against tiers (`T1`: primary/official, `T2`: authoritative secondary, `T3`: low-credibility/SEO/unverified). Discard or severely discount claims relying exclusively on T3 sources.
+3. Verify time-sensitive claims for freshness against the current question context.
+4. Explicitly surface contradictions, weak/low-quality sources, and unresolved source gaps.
+5. NEVER infer or assert facts unsupported by retrieved evidence.
 
 ### 4. Synthesis
 1. Lead with direct answer to the user question.
-2. Include ONLY evidence material to the conclusion.
-3. Surface uncertainty and disagreements directly.
-4. Match user language and render markdown tables and bullet lists.
+2. Include ONLY evidence material to the conclusion; tag source quality tiers where ambiguity exists.
+3. Surface uncertainty, disagreements, and low-confidence claims directly.
+4. Never exceed the confidence level of the weakest supporting claim (Weakest-Link rule).
+5. Match user language and render markdown tables and bullet lists.
 
 ### 5. Final Reporting
 1. Present final synthesized response directly to user in chat.
