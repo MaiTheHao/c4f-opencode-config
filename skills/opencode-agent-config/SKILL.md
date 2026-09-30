@@ -156,9 +156,9 @@ For each action in the workflow, record:
 
 | Profile | Required skills retained from samples |
 |---|---|
-| Builder normal | `brainstorming`, `opencode-model-routing` |
-| Planner | `brainstorming`, `writing-plans`, `opencode-model-routing` |
-| Research normal / extra | `opencode-model-routing` |
+| Builder normal | `brainstorming`, `opencode-routing-dev` |
+| Planner | `brainstorming`, `writing-plans`, `opencode-routing-dev` |
+| Research normal / extra | `opencode-routing-research` |
 | Research fast | None mandatory in the supplied file |
 
 These skills were not attached. Their internals, path requirements, and any custom routing API remain `UNVERIFIED`. Do not manufacture their contents or turn their names into native OpenCode features.
@@ -169,7 +169,7 @@ These skills were not attached. Their internals, path requirements, and any cust
 
 `PROJECT`: prefer the string selector in handwritten agents. Preserve a single routing precondition immediately after `### Subagents`:
 
-> PRECONDITION: MUST load `opencode-model-routing` in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
+> PRECONDITION: MUST load `opencode-routing-dev` or `opencode-routing-research` (matching agent domain) in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 The supplied “every dispatch/resume MUST pass a `model`” instruction is **not established by the documented tool contract**. Do not require that argument until the installed tool schema or a documented extension proves support. A resolved route must be applied through a supported configuration/session/tool mechanism and checked against the actual child model. If none is available, block the affected dispatch rather than pretending prompt text changes the model.
 
@@ -336,7 +336,7 @@ All supplied YAML frontmatters use the native ordered `permissions` shape and an
 | `great-builder/planner/analyzer`, `great-builder/planner/reviewer` | Referenced; definitions absent | Verify IDs, modes, own permissions, and output contracts |
 | `general` | Built-in ID referenced; effective override unknown | Verify installed effective configuration and implementation report contract |
 | `research/shared/{scout,deep,timeline,quant,skeptic,validation}` | Custom IDs referenced; definitions absent | Verify every child; do not substitute a nonexistent built-in scout |
-| `brainstorming`, `writing-plans`, `opencode-model-routing` | Referenced; bodies absent | Verify discovery, loading, references, and compatibility |
+| `brainstorming`, `writing-plans`, `opencode-routing-dev`, `opencode-routing-research` | Referenced; bodies absent | Verify discovery, loading, references, and compatibility |
 | Per-call/resume `model` argument | Required by sample prose; not verified | Inspect actual schema or supported routing extension |
 | `execute` dependency | No sample grants it | Verify direct-tool exposure before deciding whether it is required |
 | No-delegation / research read-only | Parent prose only for unseen custom children | Inspect and test effective child permissions |

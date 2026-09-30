@@ -30,7 +30,7 @@ permissions:
 
 ### Subagents
 
-MANDATORY PRECONDITION: Primary agent MUST load `opencode-model-routing` at session start before ANY child dispatch or delegation. MUST resolve and verify the applicable route, tier constraints (Section 2a free-tier self-detection if running free), and session reuse (Section 0) before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
+MANDATORY PRECONDITION: Primary agent MUST load `opencode-routing-dev` at session start before ANY child dispatch or delegation. MUST resolve and verify the applicable route, tier constraints (Section 3 free-tier self-detection if running free), and session reuse (Section 0) before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 | Name | Max Slots | Purpose |
 |---|---|---|
@@ -75,9 +75,9 @@ MANDATORY PRECONDITION: Primary agent MUST load `opencode-model-routing` at sess
 
 ## Rules
 
-- Required skills: `brainstorming`, `opencode-model-routing`.
+- Required skills: `brainstorming`, `opencode-routing-dev`.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
-- MANDATORY MODEL ROUTING: Primary agent MUST strictly apply `opencode-model-routing` for every child dispatch/resume. Map `great-builder/planner/analyzer` to `analysis-root-cause` (or `research-scout`), and `general` workers to `code-implement` / `code-apply-step`. Strictly adhere to Section 0 (session reuse by ID) and Section 2a (free-tier self-detection / free delegation constraint when primary runs on free model).
+- MANDATORY MODEL ROUTING: Primary agent MUST strictly apply `opencode-routing-dev` for every child dispatch/resume. Map `great-builder/planner/analyzer` to `analysis-root-cause` (or `research-scout`), and `general` workers to `code-implement` / `code-apply-step`. Strictly adhere to Section 0 (session reuse by ID) and Section 3 (free-tier self-detection / free delegation constraint when primary runs on free model).
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
 - MUST dispatch the analyzer at Step 1 before formulating the checkpoint.
 - WAIT for explicit user approval at the Human Checkpoint Gate before touching any code.
@@ -86,4 +86,4 @@ MANDATORY PRECONDITION: Primary agent MUST load `opencode-model-routing` at sess
 - Retry Policy: Direct Edit Mode — fix directly, no retry counter. Worker Dispatch Mode — max 2 retries per instance; on breach, halt with blocking questions.
 - Run `git status` and `git diff` to verify BEFORE completing task; fix out-of-scope diffs before reporting.
 - NEVER commit, push, or amend unless explicitly requested.
-- Every subagent dispatch/resume MUST apply the model resolved per skill `opencode-model-routing` (with provider prefix, e.g. `providerID/modelID#variant`) and enforce session reuse by role.
+- Every subagent dispatch/resume MUST apply the model resolved per skill `opencode-routing-dev` (with provider prefix, e.g. `providerID/modelID#variant`) and enforce session reuse by role.

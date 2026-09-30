@@ -44,7 +44,7 @@ Bundled skills in external repo:
 - `git-commit`: Conventional commit analysis and staging.
 - `mermaid`: Workflow and architectural diagrams.
 
-*Note: Model routing (`skills/opencode-model-routing`) remains in this repo to handle provider-specific routing and subagent session reuse.*
+*Note: Model routing (`skills/opencode-routing-dev` and `skills/opencode-routing-research`) remains in this repo to handle provider-specific routing and subagent session reuse.*
 
 ## Installation
 
@@ -100,7 +100,8 @@ npm install
 │       └── shared/          # Research subagents (scout, deep, quant, skeptic, validation)
 ├── changelogs/              # Change history
 ├── skills/                  # Local repo skills
-│   └── opencode-model-routing/ # Model routing & session reuse
+│   ├── opencode-routing-dev/ # Model routing & session reuse for dev agents
+│   └── opencode-routing-research/ # Model routing & session reuse for research agents
 ├── optimize-agent-config.md # Agent configuration specification
 └── opencode.jsonc           # OpenCode main config
 ```

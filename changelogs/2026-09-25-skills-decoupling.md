@@ -36,6 +36,6 @@ Users and developers running OpenCode configurations must now pull skills into `
 
 - **Skills Structure**:
   - Removed duplicate workflow skills from local config to avoid divergence across environments.
-  - Retained `skills/opencode-model-routing` locally to handle provider-specific model resolution rules and subagent session reuse logic.
+  - Retained model routing skills locally (`skills/opencode-routing-dev`, `skills/opencode-routing-research`) to handle provider-specific model resolution rules and subagent session reuse logic.
 - **Documentation**:
   - Updated [README.md](../README.md) to outline external skills setup, clean up directory structure, and document agent roles.
