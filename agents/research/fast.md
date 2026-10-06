@@ -4,6 +4,7 @@ mode: primary
 color: '#00e5ff'
 permissions:
   - { action: '*', resource: '*', effect: deny }
+  - { action: edit, resource: 'local/agents/research-artifacts/*', effect: ask }
   - { action: question, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
   - { action: webfetch, resource: '*', effect: allow }

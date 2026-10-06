@@ -5,6 +5,7 @@ color: '#00e5ff'
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
+  - { action: edit, resource: 'local/agents/research-artifacts/*', effect: ask }
   - { action: subagent, resource: 'research/shared/scout', effect: allow }
   - { action: subagent, resource: 'research/shared/deep', effect: allow }
   - { action: subagent, resource: 'research/shared/timeline', effect: allow }
