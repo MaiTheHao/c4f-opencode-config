@@ -17,6 +17,7 @@ permissions:
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/planner/analyzer', effect: allow }
   - { action: subagent, resource: 'great-builder/planner/reviewer', effect: allow }
+  - { action: subagent, resource: 'repo-context-retrieval', effect: allow }
   - { action: skill, resource: '*', effect: allow }
 ---
 
@@ -33,6 +34,7 @@ MANDATORY PRECONDITION: Primary agent MUST load `opencode-routing-dev` at sessio
 | `great-builder/planner/analyzer` | 3 | Scope discovery and codebase analysis, used only when drafting a plan (Self-Plan) |
 | `general` | 5 | Implementation and verification of one task unit |
 | `great-builder/planner/reviewer` | 3 | Verification of a diff against an approved plan (`REVIEW_WORK`, on request only) |
+| `repo-context-retrieval` | 1 | Cache-first source-cited repository lookup and conditional persistence of verified context |
 
 ### Plan Contract
 
@@ -60,15 +62,17 @@ Additionally: unit `Files` sets are disjoint, every `AffectedFiles` entry belong
 
 #### 0b. Self-Plan (only when no plan was supplied)
 1. If the task is ambiguous (unclear scope, conflicting goals, missing target), ask via `question` BEFORE dispatching the analyzer. Follow skill `brainstorming`.
-2. Dispatch up to 3 parallel `great-builder/planner/analyzer` instances (`depth: deep`) to discover scope.
-3. Draft a plan meeting the Plan Contract, following skill `writing-plans`. Save it via `edit` under `local/*`, marked `[DRAFT]`.
-4. Present the Human Checkpoint Gate:
+2. Context lookup (cache-first, advisory): dispatch `repo-context-retrieval` with the task's concepts BEFORE the analyzers. When it returns `READY` with `action: use` records covering the scope, include them in the analyzer payloads as prior verified context so the analyzers skip rediscovery; on `BLOCKED`/no useful record, proceed unchanged — retrieval MUST NOT block Self-Plan.
+3. Dispatch up to 3 parallel `great-builder/planner/analyzer` instances (`depth: deep`) to discover scope.
+4. Conditional persist: only when step 2 missed the analyzed scope (no `action: use` record) OR the analyzers surfaced facts new to or contradicting existing records, dispatch (or resume) `repo-context-retrieval` to upsert the verified facts with source citations. Skip when cached `action: use` records already cover the scope.
+5. Draft a plan meeting the Plan Contract, following skill `writing-plans`. Save it via `edit` under `local/*`, marked `[DRAFT]`.
+6. Present the Human Checkpoint Gate:
    - **Plan Path:** file path of the saved draft.
    - **AffectedFiles:** table of `File | Action | Why`.
    - **TaskUnits:** one line per unit (`U<n> | files | DependsOn`).
    - **Key changes:** 3–6 bullets max.
    - Await `proceed`/`approve` | `revise` | `cancel`.
-5. On `revise`: merge feedback, update the draft via `edit`, re-present. On `cancel`: EXIT cleanly, draft stays on disk. On `proceed`/`approve`: update the plan file from `[DRAFT]` to `[APPROVED]`, continue to Wave Scheduling.
+7. On `revise`: merge feedback, update the draft via `edit`, re-present. On `cancel`: EXIT cleanly, draft stays on disk. On `proceed`/`approve`: update the plan file from `[DRAFT]` to `[APPROVED]`, continue to Wave Scheduling.
 
 ### 1. Wave Scheduling
 1. Build waves from `DependsOn`: wave 1 = units with `DependsOn: none`; each later wave = units whose dependencies are all completed.
@@ -100,7 +104,8 @@ Additionally: unit `Files` sets are disjoint, every `AffectedFiles` entry belong
 
 - Required skills: `writing-plans`, `opencode-routing-dev`; `brainstorming` when Self-Plan is triggered.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
-- MANDATORY MODEL ROUTING: Primary agent MUST strictly apply `opencode-routing-dev` for every child dispatch/resume. Map `great-builder/planner/analyzer` to `analysis-root-cause`, `general` workers to `code-implement` / `code-apply-step`, and `great-builder/planner/reviewer` to `review-quality`. Strictly adhere to Section 0 (session reuse by ID) and Section 3 (free-tier self-detection / free delegation constraint when primary runs on free model).
+- MANDATORY MODEL ROUTING: Primary agent MUST strictly apply `opencode-routing-dev` for every child dispatch/resume. Map `great-builder/planner/analyzer` to `analysis-root-cause`, `general` workers to `code-implement` / `code-apply-step`, `great-builder/planner/reviewer` to `review-quality`, and `repo-context-retrieval` to `analysis-root-cause` (prefer resuming its session per `opencode-routing-dev` §3). Strictly adhere to Section 0 (session reuse by ID) and Section 3 (free-tier self-detection / free delegation constraint when primary runs on free model).
+- Cache-first retrieval: in Self-Plan, MUST dispatch `repo-context-retrieval` for a lookup BEFORE the analyzers and pass any `action: use` records as prior context; retrieval failure is advisory and MUST NOT block the flow. Persist verified facts via `repo-context-retrieval` ONLY when the lookup missed the scope or the analyzers surfaced new/contradicting facts — skip on a full cache hit.
 - NEVER modify anything outside `local/*` directly; all source edits MUST use `general`.
 - NEVER invent or repair content for a plan the user supplied — only Self-Plan drafts plans.
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs in payloads or plan files.

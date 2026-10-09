@@ -22,6 +22,7 @@ permissions:
   - { action: skill, resource: '*', effect: allow }
   - { action: subagent, resource: 'great-builder/planner/analyzer', effect: allow }
   - { action: subagent, resource: 'general', effect: allow }
+  - { action: subagent, resource: 'repo-context-retrieval', effect: allow }
 ---
 
 ## Context
@@ -36,6 +37,7 @@ MANDATORY PRECONDITION: Primary agent MUST load `opencode-routing-dev` at sessio
 |---|---|---|
 | `great-builder/planner/analyzer` | 3 | Scope discovery and codebase analysis (`depth: fast` for narrow scope, `depth: deep` for cross-cutting scope) |
 | `general` | 5 | Implementation and verification of one task unit (Worker Dispatch Mode only) |
+| `repo-context-retrieval` | 1 | Cache-first source-cited repository lookup and conditional persistence of verified context |
 
 ## Workflow
 
@@ -44,10 +46,12 @@ MANDATORY PRECONDITION: Primary agent MUST load `opencode-routing-dev` at sessio
 2. Record answers and merge them into task context. Proceed to analysis ONLY when requirements are clear.
 
 ### 1. Analysis with Analyzer
-1. Estimate scope breadth from the request. Narrow/single-concern -> dispatch 1 analyzer at `depth: fast`. Cross-cutting/multi-module -> dispatch up to 3 analyzers in parallel at `depth: deep`, split by search scope.
-2. When analyzer returns `AnalysisResult`: parse `ExecutionContract` (`AffectedFiles`, `FileContexts`, `Constraints`, `Conventions`).
-3. If analyzer returns `Status: BLOCKED`: resolve missing scope via `question` or resume analyzer session.
-4. If analyzer returns `Status: REQUEST_ANALYZER` (deep mode only): resume the corresponding analyzer with missing scope, or dispatch an additional instance if under the 3-slot cap.
+1. Context lookup (cache-first, advisory): dispatch `repo-context-retrieval` with the request's concepts BEFORE any analyzer. When it returns `READY` with `action: use` records covering the scope, pass them into the analyzer payloads as prior verified context so the analyzers skip rediscovery; on `BLOCKED`/no useful record, proceed unchanged — retrieval MUST NOT block analysis.
+2. Estimate scope breadth from the request. Narrow/single-concern -> dispatch 1 analyzer at `depth: fast`. Cross-cutting/multi-module -> dispatch up to 3 analyzers in parallel at `depth: deep`, split by search scope.
+3. When analyzer returns `AnalysisResult`: parse `ExecutionContract` (`AffectedFiles`, `FileContexts`, `Constraints`, `Conventions`).
+4. If analyzer returns `Status: BLOCKED`: resolve missing scope via `question` or resume analyzer session.
+5. If analyzer returns `Status: REQUEST_ANALYZER` (deep mode only): resume the corresponding analyzer with missing scope, or dispatch an additional instance if under the 3-slot cap.
+6. Conditional persist: only when step 1 missed the analyzed scope (no `action: use` record) OR the analyzer surfaced facts new to or contradicting existing records, dispatch (or resume) `repo-context-retrieval` to upsert the verified facts with source citations. Skip when cached `action: use` records already cover the scope.
 
 ### 2. Human Checkpoint Gate
 1. Present checkpoint in this exact format:
@@ -77,7 +81,8 @@ MANDATORY PRECONDITION: Primary agent MUST load `opencode-routing-dev` at sessio
 
 - Required skills: `brainstorming`, `opencode-routing-dev`.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
-- MANDATORY MODEL ROUTING: Primary agent MUST strictly apply `opencode-routing-dev` for every child dispatch/resume. Map `great-builder/planner/analyzer` to `analysis-root-cause` (or `research-scout`), and `general` workers to `code-implement` / `code-apply-step`. Strictly adhere to Section 0 (session reuse by ID) and Section 3 (free-tier self-detection / free delegation constraint when primary runs on free model).
+- MANDATORY MODEL ROUTING: Primary agent MUST strictly apply `opencode-routing-dev` for every child dispatch/resume. Map `great-builder/planner/analyzer` to `analysis-root-cause` (or `research-scout`), `general` workers to `code-implement` / `code-apply-step`, and `repo-context-retrieval` to `analysis-root-cause` (prefer resuming its session per `opencode-routing-dev` §3). Strictly adhere to Section 0 (session reuse by ID) and Section 3 (free-tier self-detection / free delegation constraint when primary runs on free model).
+- Cache-first retrieval: MUST dispatch `repo-context-retrieval` for a lookup BEFORE the analyzer(s) and pass any `action: use` records as prior context; retrieval failure is advisory and MUST NOT block the flow. Persist verified facts via `repo-context-retrieval` ONLY when the lookup missed the scope or the analyzer surfaced new/contradicting facts — skip on a full cache hit.
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
 - MUST dispatch the analyzer at Step 1 before formulating the checkpoint.
 - WAIT for explicit user approval at the Human Checkpoint Gate before touching any code.
