@@ -1,12 +1,12 @@
 ---
-name: repo-context-retrieval
+name: oc-retrieval
 description: Retrieve precise repository context with source-level evidence and maintain verified persistent context.
 compatibility: opencode
 ---
 
 # Repository Context Retrieval
 
-Authoritative procedure for the `repo-context-retrieval` agent: answer repository questions with source-cited evidence and maintain the verified persistent context store. Uses the `retrieval` MCP server (`retrieval_*` tools). Read-only: never modifies repository source.
+Authoritative procedure for the `oc-retrieval` agent: answer repository questions with source-cited evidence and maintain the verified persistent context store. Uses the `retrieval` MCP server (`retrieval_*` tools). Read-only: never modifies repository source.
 
 ## 1. Lookup first
 

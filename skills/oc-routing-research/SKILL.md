@@ -1,5 +1,5 @@
 ---
-name: opencode-routing-research
+name: oc-routing-research
 description: Model routing and maximal subagent session reuse (resume) for the RESEARCH agent team (recon, deep dives, timelines, quantitative audits, skeptic and validation review). Use whenever dispatching or selecting LLM profiles for read-only research work that never edits project files.
 ---
 
@@ -9,6 +9,8 @@ Researchers are read-only: they never edit or create project files; findings ret
 
 Core principle: **RESUME FIRST, SPAWN LAST.** Every dispatch reuses an existing session whenever allowed. A new session is the exception, never the default. (Research method and evidence standards are handled by other instructions; this skill only decides *which model* and *which session*.)
 
+The same routing applies on Go and Go Plus: token prices match, and Go Plus only raises per-model monthly limits (each model's limit is its own allowance, not a shared pool).
+
 ## 1. Model Roster
 
 All IDs are sent with prefix `opencode-go/` (e.g. `opencode-go/deepseek-v4.1-flash#high`). Omitting the prefix causes `Invalid model...` errors.
@@ -17,9 +19,9 @@ All IDs are sent with prefix `opencode-go/` (e.g. `opencode-go/deepseek-v4.1-fla
 |---|---|---|---|---|---|
 | `glm-5.3-flash` | T-fast | primary | `low`, `high` | Low-rigor recon, timelines, small tasks | Strongest factual reliability in roster |
 | `deepseek-v4.1-flash` | T-core | primary (sole) | `low`, `high`, `max` | Default workhorse: scouting at quality, quant audits, skeptic review | `max` only for `analysis-quant` at `quality`. Never `low` for quant/deep research. Price doubles Mon–Fri 01:00–04:00 & 06:00–10:00 UTC → defer heavy batches |
-| `muse-spark-1.3-contributor` | T-deep | primary (sole) | `medium`, `xhigh` | High-rigor single-question reasoning (`research-deep`); strongest effort scaling | No `max`. NOT zero-data-retention: no proprietary/sensitive material without sign-off |
-| `mimo-v2.6-flash` | T-cross | primary | none (by ID) | Independent cross-check / validation | Different family from T-core and T-deep |
-| `qwen3.8-flash` | T-cross | secondary | `low`, `medium` | Second independent family for validation | Must differ from the other T-cross member when two reviewers are needed |
+| `muse-spark-1.3-contributor` | T-deep | primary (sole) | `medium`, `xhigh` | High-rigor single-question reasoning (`research-deep`); strongest effort scaling | No `max`. Region-limited availability, and Contributor terms permit training use of prompts/completions with non-zero retention → no proprietary, confidential, or sensitive material without explicit approval. This restriction applies to every research role, not only `research-deep` |
+| `mimo-v2.6-flash` | T-cross | primary | none (by ID) | Standard independent cross-check / validation | Cheap input/output (`$0.14/$0.28` per 1M), no DeepSeek peak window, not used for training and zero-day retention. Must differ from T-core and T-deep, and from the other reviewer when two run |
+| `qwen3.8-flash` | T-cross | secondary | `low`, `medium` | Second independent family for validation | Used when the two reviewers must be different models; must differ from the other T-cross member |
 
 Tiers: **T-fast** low-rigor recon · **T-core** default workhorse (`low/high/max`) · **T-deep** high-rigor single question · **T-cross** different family from whatever produced the finding.
 
@@ -31,12 +33,20 @@ Tiers: **T-fast** low-rigor recon · **T-core** default workhorse (`low/high/max
 | `research-deep` | one sub-question, high rigor | `muse-spark-1.3-contributor#medium` | `muse-spark-1.3-contributor#xhigh` |
 | `research-timeline` | historical / temporal evolution | `glm-5.3-flash#low` | `deepseek-v4.1-flash#high` |
 | `analysis-quant` | numbers / benchmark audit | `deepseek-v4.1-flash#high` | `deepseek-v4.1-flash#max` |
-| `review-skeptic` | adversarial claim-challenge | `deepseek-v4.1-flash#high` | `muse-spark-1.3-contributor#xhigh` (public data only), else `mimo-v2.6-flash` |
+| `review-skeptic` | adversarial claim-challenge | `deepseek-v4.1-flash#high` | `muse-spark-1.3-contributor#xhigh` (public data only) |
 | `review-validation` | cross-check for contradictions | `mimo-v2.6-flash` | `mimo-v2.6-flash` |
 | `general-quick` | classify, summarize | `glm-5.3-flash#low` | `glm-5.3-flash#high` |
 
-- **Exclude rule:** `review-skeptic` and `review-validation` must not use a model that `research-deep` used on the same finding (e.g. if `research-deep` ran on Muse, the skeptic falls back to `mimo-v2.6-flash`).
-- **Independent consensus:** when both `review-skeptic` and `review-validation` run, they MUST use two different models, never the same one twice (use `qwen3.8-flash#medium` as the second T-cross member when needed).
+The two reviewer roles (`review-skeptic`, `review-validation`) additionally obey the mandatory selection rules below.
+
+### Mandatory reviewer selection rules
+
+1. `review-skeptic` must not use the model that `research-deep` used for the same finding. If its default DeepSeek lane conflicts with the producer, use `mimo-v2.6-flash`. Use Muse at `quality` only for public data and only when the producer did not use Muse; otherwise use MiMo.
+2. `review-skeptic` and `review-validation` must be different models if both run. If skeptic uses MiMo, move validation to `qwen3.8-flash#medium`; if validation uses MiMo, skeptic must use a compliant alternative such as DeepSeek or, where allowed, Muse.
+3. When two reviewers are run, each reviewer must also differ from the producer's model family. If no allowed independent model remains, report the conflict instead of silently using the same model.
+4. Muse availability is region-limited and its Contributor terms permit training use of prompts/completions. Apply this restriction to every research role, not only `research-deep`.
+
+Other rules:
 - Escalate to `quality` only on explicit trigger: "high accuracy", "critical", "production", "security-grade".
 - Legacy aliases: `quant`→`analysis-quant`, `skeptic`→`review-skeptic`, `validation`→`review-validation`, `timeline`→`research-timeline`, `quick`→`general-quick`.
 - Unavailable model → substitute same tier traits (T-cross stays a different family from T-core/T-deep and from each other; free/preview models never enter the table).
@@ -50,7 +60,7 @@ Keep a registry in working notes: `laneKey | sessionID | dispatches | fails | su
 
 1. **Continue:** idle session, same laneKey, task continues/deepens/corrects its own sub-question → RESUME.
 2. **Reuse:** idle session, same laneKey, new sub-question → RESUME (researchers are read-only, so there is no file conflict).
-3. **Tier-up reuse:** no idle session of the exact laneKey, but an idle session of a *stronger* allowed laneKey for this role exists → RESUME it. Never reuse a weaker one. Respect §1 restrictions (never `low` for quant/deep, `max` only for quant at `quality`, no Muse for proprietary/sensitive data, never reuse a session that breaks the exclude/independence rules in §2).
+3. **Tier-up reuse:** no idle session of the exact laneKey, but an idle session of a *stronger* allowed laneKey for this role exists → RESUME it. Never reuse a weaker one. Respect §1 restrictions (never `low` for quant/deep, `max` only for quant at `quality`, no Muse for proprietary/sensitive data, never reuse a session that breaks the reviewer selection rules in §2).
 4. **Parallel:** no idle session at all, <3 sessions for this laneKey → spawn one more. At 3 busy → wait and RESUME the first that frees up; never exceed 3.
 5. **First of its kind:** no session for this laneKey exists → spawn and register.
 

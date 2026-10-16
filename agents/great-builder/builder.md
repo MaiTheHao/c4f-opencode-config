@@ -25,7 +25,7 @@ permissions:
 
 ### Subagents
 
-MANDATORY PRECONDITION: Primary agent MUST load `opencode-routing-dev` at session start before ANY child dispatch or delegation. MUST resolve and verify the applicable route, tier constraints (Section 3 free-tier self-detection if running free), and session reuse (Section 0) before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
+MANDATORY PRECONDITION: Primary agent MUST load `oc-routing-dev` at session start before ANY child dispatch or delegation. MUST resolve and verify the applicable route, tier constraints (Section 3 free-tier self-detection if running free), and session reuse (Section 0) before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 | Name | Max Slots | Purpose |
 |---|---|---|
@@ -97,9 +97,9 @@ Additionally: unit `Files` sets are disjoint, every `AffectedFiles` entry belong
 
 ## Rules
 
-- Required skills: `writing-plans`, `opencode-routing-dev`; `brainstorming` when Self-Plan is triggered.
+- Required skills: `writing-plans`, `oc-routing-dev`; `brainstorming` when Self-Plan is triggered.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
-- MANDATORY MODEL ROUTING: Primary agent MUST strictly apply `opencode-routing-dev` for every child dispatch/resume. Map `great-builder/planner/analyzer` to `analysis-root-cause`, `general` workers to `code-implement` / `code-apply-step`, and `great-builder/planner/reviewer` to `review-quality`. Strictly adhere to Section 0 (session reuse by ID) and Section 3 (free-tier self-detection / free delegation constraint when primary runs on free model).
+- MANDATORY MODEL ROUTING: Primary agent MUST strictly apply `oc-routing-dev` for every child dispatch/resume. Map `great-builder/planner/analyzer` to `analysis-root-cause`, `general` workers to `code-implement` / `code-apply-step`, and `great-builder/planner/reviewer` to `review-quality`. Strictly adhere to Section 0 (session reuse by ID) and Section 3 (free-tier self-detection / free delegation constraint when primary runs on free model).
 - NEVER modify anything outside `local/*` directly; all source edits MUST use `general`.
 - NEVER invent or repair content for a plan the user supplied — only Self-Plan drafts plans.
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs in payloads or plan files.
@@ -109,4 +109,4 @@ Additionally: unit `Files` sets are disjoint, every `AffectedFiles` entry belong
 - Retry Policy: max 2 retries per worker/reviewer instance; on breach, halt with blocking questions.
 - Final Reporting requires ALL units `SUCCESS` AND a clean verification diff.
 - NEVER commit, push, or amend unless explicitly requested.
-- Every subagent dispatch/resume MUST apply the model resolved per skill `opencode-routing-dev` (with provider prefix, e.g. `providerID/modelID#variant`) and enforce session reuse by role.
+- Every subagent dispatch/resume MUST apply the model resolved per skill `oc-routing-dev` (with provider prefix, e.g. `providerID/modelID#variant`) and enforce session reuse by role.

@@ -35,9 +35,9 @@ For each action in the workflow, record:
 
 | Profile | Required skills retained from samples |
 |---|---|
-| Builder normal | `brainstorming`, `opencode-routing-dev` |
-| Planner | `brainstorming`, `writing-plans`, `opencode-routing-dev` |
-| Research normal / extra | `opencode-routing-research` |
+| Builder normal | `brainstorming`, `oc-routing-dev` |
+| Planner | `brainstorming`, `writing-plans`, `oc-routing-dev` |
+| Research normal / extra | `oc-routing-research` |
 | Research fast | None mandatory in the supplied file |
 
 These skills were not supplied with the sample set, so their internals, path requirements, and any custom routing API remain `UNVERIFIED`. Do not manufacture their contents or turn their names into native OpenCode features.
@@ -46,7 +46,7 @@ These skills were not supplied with the sample set, so their internals, path req
 
 `PROJECT`: prefer the string selector in handwritten agents. Preserve this precondition immediately after `### Subagents` on delegating primaries:
 
-> PRECONDITION: MUST load `opencode-routing-dev` or `opencode-routing-research` (matching agent domain) in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
+> PRECONDITION: MUST load `oc-routing-dev` or `oc-routing-research` (matching agent domain) in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 The supplied "every dispatch/resume MUST pass a `model`" instruction is **not established by the documented tool contract**. Do not require that argument until the installed tool schema or a documented extension proves support. A resolved route must be applied through a supported configuration/session/tool mechanism and checked against the actual child model. If none is available, block the affected dispatch rather than pretending prompt text changes the model.
 

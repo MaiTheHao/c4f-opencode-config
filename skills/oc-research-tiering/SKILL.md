@@ -1,5 +1,5 @@
 ---
-name: opencode-research-source-tiering
+name: oc-research-tiering
 description: Canonical evidence-tier rubric (T1/T2/T3) shared by scout, skeptic, validation subagents.
 ---
 

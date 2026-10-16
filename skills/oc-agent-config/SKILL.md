@@ -1,5 +1,5 @@
 ---
-name: opencode-agent-config
+name: oc-agent-config
 description: "Authoritative engineering specification, validation rules, and authoring guidelines for configuring, auditing, or migrating native OpenCode V2 Markdown agents in this repository. Triggers whenever authoring or modifying agent files (.opencode/agents/*.md), reviewing agent permissions/frontmatter, auditing delegation lifecycles, or resolving schema/tool contracts."
 ---
 

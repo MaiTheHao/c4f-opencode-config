@@ -2,7 +2,7 @@
 
 Custom agent definitions, model routing policies, and configuration optimized for OpenCode 2.x.
 
-> **OpenCode 2.x Compatibility**: Agent configs adhere to V2 specification (ordered permissions, action renaming `shell`/`subagent`/`edit`, native reasoning settings). The authoring standard, validator, and acceptance procedure live in [`skills/opencode-agent-config/`](skills/opencode-agent-config/).
+> **OpenCode 2.x Compatibility**: Agent configs adhere to V2 specification (ordered permissions, action renaming `shell`/`subagent`/`edit`, native reasoning settings). The authoring standard, validator, and acceptance procedure live in [`skills/oc-agent-config/`](skills/oc-agent-config/).
 
 ---
 
@@ -45,7 +45,7 @@ Bundled skills in external repo:
 - `mermaid`: Workflow and architectural diagrams.
 - `skill-creator`: Skill creation, iteration, and evaluation workflow.
 
-*Note: Model routing (`skills/opencode-routing-dev` and `skills/opencode-routing-research`) remains in this repo to handle provider-specific routing and subagent session reuse.*
+*Note: Model routing (`skills/oc-routing-dev` and `skills/oc-routing-research`) remains in this repo to handle provider-specific routing and subagent session reuse.*
 
 ## Installation
 
@@ -101,10 +101,10 @@ npm install
 │       └── shared/          # Research subagents (scout, deep, quant, skeptic, validation, timeline)
 ├── changelogs/              # Change history
 ├── skills/                  # Local repo skills
-│   ├── opencode-agent-config/            # Agent authoring spec, validator, and references
-│   ├── opencode-research-source-tiering/ # Shared T1/T2/T3 evidence rubric
-│   ├── opencode-routing-dev/             # Model routing & session reuse for dev agents
-│   └── opencode-routing-research/        # Model routing & session reuse for research agents
+│   ├── oc-agent-config/            # Agent authoring spec, validator, and references
+│   ├── oc-research-tiering/ # Shared T1/T2/T3 evidence rubric
+│   ├── oc-routing-dev/             # Model routing & session reuse for dev agents
+│   └── oc-routing-research/        # Model routing & session reuse for research agents
 └── opencode.jsonc           # OpenCode main config (local, gitignored)
 ```
 
@@ -131,7 +131,7 @@ npm install
 Static-check every agent file after editing it:
 
 ```bash
-python3 skills/opencode-agent-config/scripts/validate_agent.py \
+python3 skills/oc-agent-config/scripts/validate_agent.py \
   agents/great-builder/*.md agents/great-builder/planner/*.md \
   agents/research/*.md agents/research/shared/*.md
 ```

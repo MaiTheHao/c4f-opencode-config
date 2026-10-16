@@ -27,12 +27,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# retrieval_tools.py is owned by the repo-context-retrieval skill. Prefer a
+# retrieval_tools.py is owned by the oc-retrieval skill. Prefer a
 # sibling copy, then fall back to the skill's scripts directory.
 _HERE = Path(__file__).resolve().parent
 _SCRIPT_DIRS = (
     _HERE,
-    _HERE.parents[1] / "skills" / "repo-context-retrieval" / "scripts",
+    _HERE.parents[1] / "skills" / "oc-retrieval" / "scripts",
 )
 for _script_dir in _SCRIPT_DIRS:
     if (_script_dir / "retrieval_tools.py").is_file():
