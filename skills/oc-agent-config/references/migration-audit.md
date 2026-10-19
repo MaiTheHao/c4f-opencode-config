@@ -18,7 +18,7 @@ All supplied YAML frontmatters use the native ordered `permissions` shape and an
 
 | Dependency | Observed status | Acceptance requirement |
 |---|---|---|
-| `great-builder/planner/analyzer`, `great-builder/planner/reviewer` | Referenced; definitions absent | Verify IDs, modes, own permissions, and output contracts |
+| `great-builder/sub/analyzer`, `great-builder/sub/reviewer` | Installed; static checks pass and runtime discovery confirmed | Verify IDs, modes, own permissions, and output contracts |
 | `general` | Built-in ID referenced; effective override unknown | Verify installed effective configuration and implementation report contract |
 | `research/shared/{scout,deep,timeline,quant,skeptic,validation}` | Custom IDs referenced; definitions absent | Verify every child; do not substitute a nonexistent built-in scout |
 | `brainstorming`, `writing-plans`, `oc-routing-dev`, `oc-routing-research` | Referenced; bodies absent | Verify discovery, loading, references, and compatibility |

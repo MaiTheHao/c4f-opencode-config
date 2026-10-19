@@ -41,7 +41,7 @@ PRECONDITION: MUST load `oc-routing-research` in this session before the first c
 
 ### 1. Reinforced Discovery
 
-1. Resolve routes via skill `oc-routing-research` (Section 0 session check & Section 2/3 role mapping).
+1. Resolve routes via skill `oc-routing-research` (resolve the model, lane, session, and role mapping before dispatch).
 2. Dispatch up to 5 concurrent `research/shared/scout` instances with `Depth = HIGH` and distinct analytical angles:
    - `Landscape`: map domain and competing explanations.
    - `PrimarySource`: trace claims to original/first-party sources.

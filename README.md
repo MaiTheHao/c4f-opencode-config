@@ -86,12 +86,12 @@ npm install
 
 ```text
 .
-├── AGENTS.md                # Global agent-authoring instructions (loaded by OpenCode V2)
 ├── agents/                  # OpenCode agent definitions
-│   ├── great-builder/       # Implementation & planning pipelines
-│   │   ├── quick.md         # Primary: direct edits or orchestrated parallel implementation
-│   │   ├── builder.md       # Primary: plan-driven execution with parallel workers
-│   │   └── planner/         # Read-only planner subagents
+│   ├── great-builder/       # Implementation pipelines, split by effort
+│   │   ├── build-low.md     # Primary: direct edit of one small change (≤2 files)
+│   │   ├── build-medium.md  # Primary: analyzer, one checkpoint, direct edit or ≤5 workers
+│   │   ├── build-high.md    # Primary: plan-driven waves, up to 5 workers, review on request
+│   │   └── sub/             # Read-only specialist subagents
 │   │       ├── analyzer.md  # Scope discovery and codebase analysis
 │   │       └── reviewer.md  # Verifies the working-tree diff against an approved plan
 │   └── research/            # Web research pipelines
@@ -99,12 +99,12 @@ npm install
 │       ├── normal.md        # Medium effort research orchestrator
 │       ├── high.md          # Maximum effort research orchestrator
 │       └── shared/          # Research subagents (scout, deep, quant, skeptic, validation, timeline)
-├── changelogs/              # Change history
 ├── skills/                  # Local repo skills
-│   ├── oc-agent-config/            # Agent authoring spec, validator, and references
+│   ├── gb-core/             # Shared dispatch, worker, verify, and report protocol
+│   ├── oc-agent-config/     # Agent authoring spec, validator, and references
 │   ├── oc-research-tiering/ # Shared T1/T2/T3 evidence rubric
-│   ├── oc-routing-dev/             # Model routing & session reuse for dev agents
-│   └── oc-routing-research/        # Model routing & session reuse for research agents
+│   ├── oc-routing-dev/      # Model routing & session reuse for dev agents
+│   └── oc-routing-research/ # Model routing & session reuse for research agents
 └── opencode.jsonc           # OpenCode main config (local, gitignored)
 ```
 
@@ -113,10 +113,20 @@ npm install
 ## Agents Summary
 
 ### 1. Great Builder (`agents/great-builder/`)
-- `quick`: Unified primary for single-file fixes through multi-file parallel implementation, behind one human checkpoint.
-- `builder`: Plan-driven primary; drafts or consumes a plan and executes it with up to 5 parallel workers.
-- `planner/analyzer`: Read-only, depth-adjustable codebase analyzer.
-- `planner/reviewer`: Read-only reviewer of the working-tree diff against an approved plan.
+
+Installed IDs are namespaced: `great-builder/build-low`, `great-builder/build-medium`,
+`great-builder/build-high`, `great-builder/sub/analyzer`, and
+`great-builder/sub/reviewer`.
+
+| Agent | Effort | Flow | Use |
+|---|---|---|---|
+| `great-builder/build-low` | Low (green) | Direct edit, no subagents or checkpoint | ≤2 files, clear change |
+| `great-builder/build-medium` | Medium (yellow) | Analyzer → one checkpoint → direct edit or ≤5 workers | Feature or fix across a few files |
+| `great-builder/build-high` | High (red) | Existing plan or Self-Plan → approval → dependency waves → verify; review on request | Large or high-risk change |
+
+- `sub/analyzer`: Read-only, depth-adjustable codebase analyzer.
+- `sub/reviewer`: Read-only reviewer of the working-tree diff against an approved plan.
+- `gb-core`: Shared dispatch, worker, verify, and report protocol used by medium and high.
 
 ### 2. Research Pipelines (`agents/research/`)
 - `fast`: Low effort — one search pass, minimal verification, no subagent audit.
@@ -132,7 +142,7 @@ Static-check every agent file after editing it:
 
 ```bash
 python3 skills/oc-agent-config/scripts/validate_agent.py \
-  agents/great-builder/*.md agents/great-builder/planner/*.md \
+  agents/great-builder/*.md agents/great-builder/sub/*.md \
   agents/research/*.md agents/research/shared/*.md
 ```
 
