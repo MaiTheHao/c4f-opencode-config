@@ -6,6 +6,7 @@ permissions:
   - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
+  - { action: skill, resource: 'oc-research-tiering', effect: allow }
 ---
 
 ## Context
@@ -21,19 +22,20 @@ permissions:
 
 ### 1. Chronology Building
 1. Identify point-in-time claims and historic changes.
-2. Build sourced, dated chronology sequence of key events.
+2. Build a sourced, dated chronology of key events.
+3. Tier each source per `oc-research-tiering`.
 
 ### 2. Current State Verification & Output
-1. Search for most recent published sources using `websearch`.
-2. Pin down current state as of latest verified date.
-3. Evaluate `StalenessRisk` based on topic velocity.
-4. Assign `Confidence` (`HIGH` requires source within recency window; older sources cap confidence at `MEDIUM`).
+1. Search for the most recent published sources using `websearch`.
+2. Pin down current state as of the latest verified date.
+3. Evaluate `StalenessRisk` from topic velocity.
+4. Set `Confidence` via the rubric's Confidence Composition Rule, then cap it at `MEDIUM` when the newest source is outside the recency window.
 5. Format final response conforming strictly to `TimelineReport` schema.
 
 ## Rules
 
+- Required skills: `oc-research-tiering`.
 - Attach publication or last-updated date to every source.
-- Cap current state confidence at `MEDIUM` when relying on older sources.
-- Format final response adhering to `TimelineReport` output schema.
+- Cap current-state confidence at `MEDIUM` when relying on older sources.
 - NEVER treat historical claims as current-state facts.
 - NEVER read local files or execute system scripts.

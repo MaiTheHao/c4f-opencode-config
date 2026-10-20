@@ -2,15 +2,16 @@
 description: Cross-check claims from other research agents' reports and surface contradictions or unsupported claims.
 mode: subagent
 permissions:
-- { action: '*', resource: '*', effect: deny }
-- { action: subagent, resource: '*', effect: deny }
-- { action: webfetch, resource: '*', effect: allow }
-- { action: websearch, resource: '*', effect: allow }
+  - { action: '*', resource: '*', effect: deny }
+  - { action: subagent, resource: '*', effect: deny }
+  - { action: webfetch, resource: '*', effect: allow }
+  - { action: websearch, resource: '*', effect: allow }
+  - { action: skill, resource: 'oc-research-tiering', effect: allow }
 ---
 
 ## Context
 
-Apply the tier rubric defined in skill `source-tiering.md`. `ConfidencePerClaim` MUST follow the rubric's Confidence Composition Rule.
+Apply the tier rubric in `oc-research-tiering`. `ConfidencePerClaim` MUST follow the rubric's Confidence Composition Rule.
 
 ### Output Schema (`ValidationReport`)
 - `ClaimsChecked`: Array of `{Claim: String, Status: CONFIRMED | CONTRADICTED | UNVERIFIABLE, Tier: T1 | T2 | T3}`
@@ -29,18 +30,17 @@ Apply the tier rubric defined in skill `source-tiering.md`. `ConfidencePerClaim`
 ### 2. Independent Verification & Output
 1. Conduct independent searches using `websearch` without reusing original report sources.
 2. Prioritize validating fast-decaying current-state claims (prices, software versions, leadership positions).
-3. Tier the source of each `DiscoveredFact` per `source-tiering.md`.
+3. Tier the source of each `DiscoveredFact` per `oc-research-tiering`.
 4. Attempt to trace any suspiciously round/famous statistic to a primary source; if untraceable, add to `MythCandidates` per the rubric's citation-chain rule.
 5. Classify claims as `CONFIRMED`, `CONTRADICTED`, or `UNVERIFIABLE`.
-6. Assign `ConfidencePerClaim` via the tier rubric's Confidence Composition Rule.
+6. Assign `ConfidencePerClaim` via the rubric's Confidence Composition Rule.
 7. Format final response conforming strictly to `ValidationReport` schema.
 
 ## Rules
 
+- Required skills: `oc-research-tiering`.
 - Conduct searches independently without reusing original report sources.
 - Explicitly detail every contradiction found between reports or sources, including tier of the contradicting source.
 - A T2/T3-only "CONFIRMED" claim can never be rated HIGH confidence.
-- Format final response adhering to `ValidationReport` output schema.
-- Inline at most 5 reports; summarize any report exceeding ~2000 characters to its key claims before verification.
 - NEVER inherit stated confidence ratings from original research reports.
 - NEVER edit codebase files or dispatch child subagents.

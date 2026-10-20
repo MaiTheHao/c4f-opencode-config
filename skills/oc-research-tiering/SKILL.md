@@ -47,3 +47,14 @@ description: Canonical evidence-tier rubric (T1/T2/T3) shared by scout, skeptic,
 
 ## Overclaim Check
 When citing a T1 source, verify the claim's SCOPE matches the source's actual wording (e.g. "often 100x" is not "always 100x"). Mismatch -> flag `OVERCLAIM`, cite the source's own hedge/caveat.
+
+## Synthesis Schema (`ResearchReport`)
+
+Every orchestrator returns this shape; no material claim may appear outside `Claims`.
+
+- `Question`, `Answer`, `AsOf`
+- `Claims`: Array of `{Claim, Sources, Tier, Confidence, Status, CounterEvidence}` where `Status` is `CONFIRMED | CONTRADICTED | UNVERIFIABLE | INFERENCE`
+- `Disagreements`, `SourceGaps`, `UnresolvedQuestions`
+- `OverallConfidence`: Weakest-Link of the material `Claims`
+
+A claim whose only support is T3 is `UNVERIFIABLE`; an inference is `INFERENCE` and never carries T1/T2 confidence.

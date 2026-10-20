@@ -7,6 +7,13 @@ description: Picks the model and reusable session lane for read-only RESEARCH su
 
 **RESUME FIRST, SPAWN LAST.** Researchers are read-only; findings return in the message. This skill decides only the model and the session. One level only, no cheap/quality split. Send model IDs with prefix `opencode-go/` (e.g. `opencode-go/glm-5.3-flash#low`); without it the call fails with `Invalid model`.
 
+## 0. Resume-first (binding on every dispatch)
+
+- Resume an idle session of the right laneKey before spawning. Never spawn for a "clean context".
+- A resume continuation still counts as one dispatch against the caller's call budget.
+- Send the full preamble once per session, then only the delta.
+- Orchestrators point here; they never restate these rules.
+
 ## Models
 
 | Role | Model | Variants | Notes |
@@ -39,8 +46,14 @@ Defaults, overridable per run: `CAP`=10 sessions per laneKey (read-only, so no f
    4. Grow: fewer than `CAP` sessions → spawn and register.
    5. Queue: all busy → queue; RESUME the first lane that frees. Never exceed `CAP`.
 4. **Fan-out.** For many batches of one role, round-robin over idle lanes so none starves.
-5. **Reviewers.** Never review a finding in the session that produced it. Use the model in Models and RESUME any idle reviewer lane that did not produce that finding; if every idle lane did, Grow or Queue.
+5. **Reviewers.** Follow §6 for audit sessions and producer-model exclusion.
 6. **Rate limit or 429.** Halve `CAP`, queue the overflow, restore after one clean wave.
+
+## 6. Audit sessions (binding on skeptic and validation)
+
+- An auditor never runs in the session that produced the finding, and SHOULD NOT run on the producer's model.
+- "Fresh" means fresh relative to the producer, never "newly spawned": RESUME any idle lane that did not produce the finding. Grow or Queue only when every idle lane did.
+- Producer-model exclusion: drop the producer's model from the candidate pool. If one model remains, use it — a single diverse candidate is valid. EXIT only when the sole remaining candidate is the producer's model.
 
 ## Habits
 

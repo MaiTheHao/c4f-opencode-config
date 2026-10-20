@@ -93,7 +93,7 @@ npm install
 │   │   ├── build-high.md    # Primary: plan-driven waves, up to 5 workers, review on request
 │   │   └── sub/             # Read-only specialist subagents
 │   │       ├── analyzer.md  # Scope discovery and codebase analysis
-│   │       └── reviewer.md  # Verifies the working-tree diff against an approved plan
+│   │       └── reviewer.md  # Verifies the diff or commit against an approved plan
 │   └── research/            # Web research pipelines
 │       ├── fast.md          # Low effort research orchestrator
 │       ├── normal.md        # Medium effort research orchestrator
@@ -125,11 +125,11 @@ Installed IDs are namespaced: `great-builder/build-low`, `great-builder/build-me
 | `great-builder/build-high` | High (red) | Existing plan or Self-Plan → approval → dependency waves → verify; review on request | Large or high-risk change |
 
 - `sub/analyzer`: Read-only, depth-adjustable codebase analyzer.
-- `sub/reviewer`: Read-only reviewer of the working-tree diff against an approved plan.
+- `sub/reviewer`: Read-only reviewer of the diff or commit against an approved plan.
 - `gb-core`: Shared dispatch, worker, verify, and report protocol used by medium and high.
 
 ### 2. Research Pipelines (`agents/research/`)
-- `fast`: Low effort — one search pass, minimal verification, no subagent audit.
+- `fast`: Low effort — solo researcher, 1-2 search passes, inline self-check, no subagent audit.
 - `normal`: Medium effort — scout, deep research, one round of skeptic/validation.
 - `high`: Maximum effort — reinforced scout, multi-wave recursive deep research, multi-pass skeptic + validation.
 - `shared/*`: Subagents for reconnaissance (`scout`), deep dives (`deep`), quantitative checks (`quant`), counter-evidence (`skeptic`), cross-checking (`validation`), and timelines (`timeline`).

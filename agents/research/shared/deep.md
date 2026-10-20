@@ -6,6 +6,7 @@ permissions:
   - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
+  - { action: skill, resource: 'oc-research-tiering', effect: allow }
 ---
 
 ## Context
@@ -28,16 +29,16 @@ permissions:
 3. Incorporate prior findings when provided to target gaps instead of repeating known evidence.
 
 ### 2. Analysis & Output
-1. Rank sources by tier (`T1` authoritative, `T2` reputable secondary, `T3` unverified).
+1. Rank sources by tier per `oc-research-tiering`.
 2. Label inferences explicitly to distinguish them from sourced facts.
 3. Surface source disagreements without picking sides.
-4. Assign `Confidence` (`HIGH` requires convergent Tier 1 sources; `MEDIUM` if 2+ independent sources; `LOW` if 1 source).
+4. Set `Confidence` via the rubric's Confidence Composition Rule, never by gut feel.
 5. Format final response conforming strictly to `DeepReport` schema.
 
 ## Rules
 
+- Required skills: `oc-research-tiering`.
 - Assign explicit `SourceTier` (`T1`/`T2`/`T3`) to every evidence item.
 - NEVER substitute Tier 3 sources for missing Tier 1 evidence without flagging the gap in `SourceGaps`.
 - Adhere strictly to search depth caps; NEVER exceed 4 search rounds.
-- Format final response adhering to `DeepReport` output schema.
 - NEVER read local files or execute shell commands.
