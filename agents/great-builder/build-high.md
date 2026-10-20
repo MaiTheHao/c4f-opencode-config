@@ -10,8 +10,20 @@ permissions:
   - { action: read, resource: '*.env.*', effect: deny }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
+  - { action: shell, resource: '*', effect: ask }
+  - { action: shell, resource: 'ls *', effect: allow }
+  - { action: shell, resource: 'cat *', effect: allow }
+  - { action: shell, resource: 'head *', effect: allow }
+  - { action: shell, resource: 'tail *', effect: allow }
+  - { action: shell, resource: 'rg *', effect: allow }
+  - { action: shell, resource: 'wc *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
+  - { action: shell, resource: 'git log *', effect: allow }
+  - { action: shell, resource: 'git show *', effect: allow }
+  - { action: shell, resource: 'git add *', effect: allow }
+  - { action: shell, resource: 'git commit *', effect: ask }
+  - { action: shell, resource: 'git push *', effect: ask }
   - { action: edit, resource: '*', effect: deny }
   - { action: edit, resource: 'local/*', effect: allow }
   - { action: skill, resource: '*', effect: allow }
@@ -22,7 +34,7 @@ permissions:
 
 ## Context
 
-Orchestrate only. The sole writable path is `local/*` (plan files); workers edit source. Load skills `oc-routing-dev`, `gb-core`, and `writing-plans` before the first dispatch. `brainstorming` supplies the design block that `writing-plans` requires. `writing-plans` is the only definition of a valid plan, including its path and `Status` field.
+Orchestrate only. The sole writable path is `local/*` (plan files); workers edit source. You own `git`: stage and commit the approved files yourself when asked, per `git-commit`. Load skills `oc-routing-dev`, `gb-core`, and `writing-plans` before the first dispatch. `brainstorming` supplies the design block that `writing-plans` requires. `writing-plans` is the only definition of a valid plan, including its path and `Status` field.
 
 | Subagent | Slots | Use |
 |---|---|---|
@@ -72,4 +84,4 @@ A diff plus a plan, or the word "review", means **REVIEW**. Anything else is **B
 - Never edit outside `local/*`; all source edits go through `general`.
 - Execution waits for approval. An approved user-supplied plan is approval; a Self-Plan draft is not.
 - Scope changes found during execution return to the checkpoint (Self-Plan) or to the user (supplied plan).
-- Never commit, push, or amend unless asked.
+- Never commit, push, or amend unless asked. When asked, commit yourself: stage only approved `AffectedFiles`, write the message per `git-commit`, confirm with `git show --stat`. Never delegate the commit to a worker.

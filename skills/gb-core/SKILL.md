@@ -38,7 +38,7 @@ At most 5 concurrent workers. Units never share a file: merge them or run them i
 ## Verify
 
 1. Run `git status` and `git diff` yourself.
-2. Compare changed files with the approved `AffectedFiles`; check each unit's `Verify` and `Acceptance` from worker reports.
+2. Compare changed files with the approved `AffectedFiles`; check each unit's `Verify` and `Acceptance` from worker reports. After a commit the working tree is clean, so verify the commit itself with `git show --stat` or `git log -1 --stat` instead of `git diff`.
 3. For out-of-scope, missing, or unmet items, resume the matching worker with a corrective task, then re-verify.
 
 ## Report

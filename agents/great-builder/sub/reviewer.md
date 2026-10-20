@@ -14,7 +14,10 @@ permissions:
   - { action: shell, resource: 'tail *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
+  - { action: shell, resource: 'git log *', effect: allow }
+  - { action: shell, resource: 'git show *', effect: allow }
   - { action: skill, resource: 'writing-plans', effect: allow }
+  - { action: skill, resource: 'git-commit', effect: allow }
 ---
 
 ## Context
@@ -32,7 +35,7 @@ An approved plan and the units or scope to review. If the plan is missing, retur
 
 ## Workflow
 
-1. Read the plan, then run `git status` and `git diff`.
+1. Read the plan, then run `git status` and `git diff`; add `git log -1` and `git show` when the work is already committed.
 2. Map each changed file to its unit; flag changes outside `AffectedFiles`.
 3. Per unit, compare the diff with `Spec`: behavior, signatures, invariants, conventions.
 4. Judge each acceptance criterion from code evidence; mark `UNVERIFIABLE` when it needs execution.
@@ -40,7 +43,7 @@ An approved plan and the units or scope to review. If the plan is missing, retur
 
 ## Rules
 
-- Required skills: `writing-plans`.
+- Required skills: `writing-plans`; load `git-commit` when judging a commit message.
 - Read-only. Never edit files or dispatch subagents.
 - Describe `RequiredChange` in words; never write the fix.
 - Cite `file:line` for every claim and finding.

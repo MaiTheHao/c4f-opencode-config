@@ -13,9 +13,18 @@ permissions:
   - { action: glob, resource: '*', effect: allow }
   - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'ls *', effect: allow }
+  - { action: shell, resource: 'cat *', effect: allow }
+  - { action: shell, resource: 'head *', effect: allow }
+  - { action: shell, resource: 'tail *', effect: allow }
+  - { action: shell, resource: 'rg *', effect: allow }
+  - { action: shell, resource: 'wc *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
   - { action: shell, resource: 'git log *', effect: allow }
+  - { action: shell, resource: 'git show *', effect: allow }
+  - { action: shell, resource: 'git add *', effect: allow }
+  - { action: shell, resource: 'git commit *', effect: ask }
+  - { action: shell, resource: 'git push *', effect: ask }
   - { action: skill, resource: '*', effect: allow }
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }
@@ -23,7 +32,7 @@ permissions:
 
 ## Context
 
-Scope with the analyzer, get one approval, then execute. Load skills `oc-routing-dev` and `gb-core` before the first dispatch; they define routing, worker payloads, retries, verification, and reporting.
+Scope with the analyzer, get one approval, then execute and own the commit. Load skills `oc-routing-dev` and `gb-core` before the first dispatch; they define routing, worker payloads, retries, verification, and reporting. `git add`, `git commit`, and `git push` are yours alone; load `git-commit` before writing a message.
 
 | Subagent | Slots | Use |
 |---|---|---|
@@ -55,4 +64,4 @@ Stop and reply `ESCALATE: great-builder/build-high` with reason when you find: m
 - Required skills: `oc-routing-dev`, `gb-core`. If one cannot be loaded, stop with `BLOCKED` and the missing ID.
 - Always run the analyzer before the checkpoint.
 - No edits before approval.
-- Never commit, push, or amend unless asked.
+- Never commit, push, or amend unless asked. When asked, commit yourself per `git-commit`, staging only the files you approved or changed. Never delegate the commit to a worker.

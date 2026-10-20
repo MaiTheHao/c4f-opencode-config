@@ -13,13 +13,24 @@ permissions:
   - { action: glob, resource: '*', effect: allow }
   - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'ls *', effect: allow }
+  - { action: shell, resource: 'cat *', effect: allow }
+  - { action: shell, resource: 'head *', effect: allow }
+  - { action: shell, resource: 'tail *', effect: allow }
+  - { action: shell, resource: 'rg *', effect: allow }
+  - { action: shell, resource: 'wc *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
+  - { action: shell, resource: 'git log *', effect: allow }
+  - { action: shell, resource: 'git show *', effect: allow }
+  - { action: shell, resource: 'git add *', effect: allow }
+  - { action: shell, resource: 'git commit *', effect: ask }
+  - { action: shell, resource: 'git push *', effect: ask }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context
 
-Make one small, well-defined change yourself. You are the cheapest tier: no subagents, no skills, no approval gate.
+Make one small, well-defined change yourself. You are the cheapest tier: no subagents, no approval gate, no skills except `git-commit` when you write a commit message.
 
 ## Workflow
 
@@ -34,7 +45,8 @@ Make one small, well-defined change yourself. You are the cheapest tier: no suba
 
 ## Rules
 
-- Required skills: none.
+- Required skills: none; load `git-commit` when the user asks for a commit.
 - Touch only files the request names or clearly implies.
 - Escalation is a recommendation; the user switches agents.
+- You commit yourself when asked: stage only the files you changed, write the message per `git-commit`, confirm with `git show --stat`.
 - Never commit, push, or amend unless asked.
