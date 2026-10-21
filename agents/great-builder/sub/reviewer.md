@@ -2,7 +2,7 @@
 description: Read-only reviewer. Verifies the working-tree diff against an approved plan. Dispatched by great-builder/build-high's REVIEW flow or used standalone.
 mode: subagent
 permissions:
-  - { action: '*', resource: '*', effect: deny }
+  - { action: '*', resource: '*', effect: ask }
   - { action: subagent, resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }

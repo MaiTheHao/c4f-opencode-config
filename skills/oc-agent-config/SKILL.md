@@ -22,7 +22,6 @@ This file is the entry point: the authority model, the non-negotiable contract, 
 | `references/project-authoring.md` | Writing/reviewing an agent body: instruction design, capability checks, required skills, routing, layout, size, contracts, delegation |
 | `references/project-permissions.md` | Authoring/reviewing a permission profile, or copying a reusable fragment |
 | `references/project-workflow.md` | Authoring workflow/approval gates, verification/reporting, or research budgets |
-| `references/migration-audit.md` | Migrating or auditing the supplied agent family and its cross-file dependencies |
 | `references/acceptance.md` | Before declaring any agent change complete; running the acceptance procedure |
 
 ## 2. Authority model

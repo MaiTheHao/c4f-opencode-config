@@ -2,7 +2,7 @@
 description: Read-only codebase analyzer. depth fast for narrow scope, deep for cross-file reasoning. Returns an execution contract with exact file:line evidence.
 mode: subagent
 permissions:
-  - { action: '*', resource: '*', effect: deny }
+  - { action: '*', resource: '*', effect: ask }
   - { action: subagent, resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
