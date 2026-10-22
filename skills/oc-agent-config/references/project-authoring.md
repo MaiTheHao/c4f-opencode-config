@@ -32,21 +32,22 @@ For each action in the workflow, record:
 - MUST check supporting-file and execution permissions. A primary with only `skill` permission may load a body but remain unable to follow references or execute scripts.
 - MUST return `BLOCKED` with the missing ID, denied capability, or incompatible requirement when a mandatory dependency cannot be used. Never claim it was loaded.
 - MUST record dependencies required by children in the child's contract; a parent's skill load is not proof of child-session readiness.
+- Required non-skill references (for example `references/research/oc-research-tiering.md`) are declared the same way, read from the agent's own reference root before first use, and covered by a `read` rule — plus `external_directory` when that root sits outside the active location.
 
-| Profile | Required skills retained from samples |
+| Profile | Required skills / references retained from samples |
 |---|---|
-| Builder normal | `brainstorming`, `oc-routing-dev` |
-| Planner | `brainstorming`, `writing-plans`, `oc-routing-dev` |
-| Research normal / extra | `oc-routing-research` |
-| Research fast | None mandatory in the supplied file |
+| Builder normal | `brainstorming`, `oc-routing` |
+| Planner | `brainstorming`, `writing-plans`, `oc-routing` |
+| Research normal / high | `oc-routing` plus the agent's embedded `### Routing` lanes, and internal reference `oc-research-tiering.md` |
+| Research fast | Internal reference `references/research/oc-research-tiering.md` |
 
 These skills were not supplied with the sample set, so their internals, path requirements, and any custom routing API remain `UNVERIFIED`. Do not manufacture their contents or turn their names into native OpenCode features.
 
 ## 4. Model routing precondition
 
-`PROJECT`: prefer the string selector in handwritten agents. Preserve this precondition immediately after `### Subagents` on delegating primaries:
+`PROJECT`: prefer the string selector in handwritten agents. Preserve this precondition as the first line of the agent's `### Routing` section, which follows the `### Subagents` table on delegating primaries:
 
-> PRECONDITION: MUST load `oc-routing-dev` or `oc-routing-research` (matching agent domain) in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
+> PRECONDITION: MUST load skill `oc-routing` and apply the agent's embedded `### Routing` lanes in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
 
 The supplied "every dispatch/resume MUST pass a `model`" instruction is **not established by the documented tool contract**. Do not require that argument until the installed tool schema or a documented extension proves support. A resolved route must be applied through a supported configuration/session/tool mechanism and checked against the actual child model. If none is available, block the affected dispatch rather than pretending prompt text changes the model.
 
@@ -61,7 +62,7 @@ For resumed children, verify whether the route is still valid; do not assume con
 
 | Kind | Required Context content | Exemptions |
 |---|---|---|
-| Delegating primary | `### Subagents`, routing precondition, `Name / Max Slots / Purpose` table | No redundant input DTO |
+| Delegating primary | `### Subagents` with its `Name / Max Slots / Purpose` table, then `### Routing` with its precondition | No redundant input DTO |
 | Solo primary | Explicit single-agent scope | No Subagents table or routing prerequisite |
 | Specialist subagent | `### Output Schema` with types, closed status enums, conditional fields | No redundant input DTO |
 

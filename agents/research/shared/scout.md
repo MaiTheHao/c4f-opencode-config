@@ -6,12 +6,16 @@ permissions:
   - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
-  - { action: skill, resource: 'oc-research-tiering', effect: allow }
+  - { action: read, resource: 'references/research/*', effect: allow }
+  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
+  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
 ---
 
 ## Context
 
-Apply the tier rubric in `oc-research-tiering` to every source encountered during reconnaissance.
+Reference root: `~/.config/opencode/references/research/`.
+
+Apply the tier rubric in `oc-research-tiering.md` to every source encountered during reconnaissance.
 
 ### Output Schema (`ScoutReport`)
 - `TopicMap`: Array of `{SubQuestion: String, Aspects: Array<String>, SearchQueries: Array<String>}`
@@ -26,12 +30,12 @@ Apply the tier rubric in `oc-research-tiering` to every source encountered durin
 ### 1. Reconnaissance
 1. Interpret topic and determine search queries based on depth.
 2. Execute searches via `websearch` and retrieve relevant pages via `webfetch`.
-3. Classify each source against `oc-research-tiering`; populate `SourceTierMap`.
+3. Classify each source against `oc-research-tiering.md`; populate `SourceTierMap`.
 4. Synthesize findings into structured `ScoutReport`.
 
 ## Rules
 
-- Required skills: `oc-research-tiering`.
+- Required reference: `oc-research-tiering.md`; read it from the reference root before classifying any source.
 - Read-only web reconnaissance: NEVER execute edit, write, or file modifications.
 - Tier every source before including it in `Sources` — untiered sources are not permitted in the report.
 - Apply the citation-chain rule: a claim traced through repeated secondary sources with no traceable primary is T3, however many outlets repeat it.

@@ -6,10 +6,14 @@ permissions:
   - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
-  - { action: skill, resource: 'oc-research-tiering', effect: allow }
+  - { action: read, resource: 'references/research/*', effect: allow }
+  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
+  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
 ---
 
 ## Context
+
+Reference root: `~/.config/opencode/references/research/`.
 
 ### Output Schema (`TimelineReport`)
 - `Timeline`: Array of `{Date: String, Event: String, Source: String}`
@@ -23,7 +27,7 @@ permissions:
 ### 1. Chronology Building
 1. Identify point-in-time claims and historic changes.
 2. Build a sourced, dated chronology of key events.
-3. Tier each source per `oc-research-tiering`.
+3. Tier each source per `oc-research-tiering.md`.
 
 ### 2. Current State Verification & Output
 1. Search for the most recent published sources using `websearch`.
@@ -34,8 +38,8 @@ permissions:
 
 ## Rules
 
-- Required skills: `oc-research-tiering`.
+- Required reference: `oc-research-tiering.md`; read it from the reference root before classifying any source.
 - Attach publication or last-updated date to every source.
 - Cap current-state confidence at `MEDIUM` when relying on older sources.
 - NEVER treat historical claims as current-state facts.
-- NEVER read local files or execute system scripts.
+- NEVER read local files outside the reference root, and NEVER execute system scripts.

@@ -217,8 +217,11 @@ def validate_file(path: Path) -> Result:
         if last_heading and not last_heading[1].strip().endswith("Rules"):
             result.fail(f"final body section must be '## Rules', found {last_heading[1].strip()!r}")
 
-    if "Required skill" not in body and "required skill" not in body:
-        result.warn("no 'Required skill' bullet found in body Rules")
+    if not any(
+        token in body
+        for token in ("Required skill", "required skill", "Required reference", "required reference")
+    ):
+        result.warn("no 'Required skill' or 'Required reference' bullet found in body Rules")
 
     # Line budget
     line_count = len(text.splitlines())

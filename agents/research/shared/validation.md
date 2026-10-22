@@ -6,12 +6,16 @@ permissions:
   - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
-  - { action: skill, resource: 'oc-research-tiering', effect: allow }
+  - { action: read, resource: 'references/research/*', effect: allow }
+  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
+  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
 ---
 
 ## Context
 
-Apply the tier rubric in `oc-research-tiering`. `ConfidencePerClaim` MUST follow the rubric's Confidence Composition Rule.
+Reference root: `~/.config/opencode/references/research/`.
+
+Apply the tier rubric in `oc-research-tiering.md`. `ConfidencePerClaim` MUST follow the rubric's Confidence Composition Rule.
 
 ### Output Schema (`ValidationReport`)
 - `ClaimsChecked`: Array of `{Claim: String, Status: CONFIRMED | CONTRADICTED | UNVERIFIABLE, Tier: T1 | T2 | T3}`
@@ -30,7 +34,7 @@ Apply the tier rubric in `oc-research-tiering`. `ConfidencePerClaim` MUST follow
 ### 2. Independent Verification & Output
 1. Conduct independent searches using `websearch` without reusing original report sources.
 2. Prioritize validating fast-decaying current-state claims (prices, software versions, leadership positions).
-3. Tier the source of each `DiscoveredFact` per `oc-research-tiering`.
+3. Tier the source of each `DiscoveredFact` per `oc-research-tiering.md`.
 4. Attempt to trace any suspiciously round/famous statistic to a primary source; if untraceable, add to `MythCandidates` per the rubric's citation-chain rule.
 5. Classify claims as `CONFIRMED`, `CONTRADICTED`, or `UNVERIFIABLE`.
 6. Assign `ConfidencePerClaim` via the rubric's Confidence Composition Rule.
@@ -38,7 +42,7 @@ Apply the tier rubric in `oc-research-tiering`. `ConfidencePerClaim` MUST follow
 
 ## Rules
 
-- Required skills: `oc-research-tiering`.
+- Required reference: `oc-research-tiering.md`; read it from the reference root before classifying any source.
 - Conduct searches independently without reusing original report sources.
 - Explicitly detail every contradiction found between reports or sources, including tier of the contradicting source.
 - A T2/T3-only "CONFIRMED" claim can never be rated HIGH confidence.

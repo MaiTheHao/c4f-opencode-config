@@ -6,6 +6,9 @@ permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
   - { action: read, resource: 'local/agents/research-artifacts/*', effect: allow }
+  - { action: read, resource: 'references/research/*', effect: allow }
+  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
+  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
   - { action: edit, resource: 'local/agents/research-artifacts/*', effect: ask }
   - { action: subagent, resource: 'research/shared/scout', effect: allow }
   - { action: subagent, resource: 'research/shared/deep', effect: allow }
@@ -20,23 +23,29 @@ permissions:
 
 ### Subagents
 
-PRECONDITION: MUST load `oc-routing-research` before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism. Resume-first, model routing, and audit sessions live in that skill (§0, §6); never restate them here.
+| Subagent | Role | Max Slots | Model | Variants | Purpose |
+|---|---|---|---|---|---|
+| `research/shared/scout` | `research-scout` | 5 | `glm-5.3-flash` | `low` `high` | Multi-angle discovery across 5 analytical dimensions |
+| `research/shared/deep` | `research-deep` | 16 | `deepseek-v4.1-flash` | `high` `max` | Recursive deep-dive research into prioritized gaps |
+| `research/shared/timeline` | `research-timeline` | 2 | `glm-5.3-flash` | `low` `high` | Trace historical and temporal evolution |
+| `research/shared/quant` | `analysis-quant` | 2 | `deepseek-v4.1-flash` | `high` `max` | Quantitative data extraction and dataset analysis |
+| `research/shared/skeptic` | `review-skeptic` | 2 | `deepseek-v4.1-flash` | `high` | Adversarial audit and counter-evidence search |
+| `research/shared/validation` | `review-validation` | 2 | `glm-5.3-flash` | `high` | Multi-pass independent factual verification |
 
-| Name | Max Slots | Purpose |
-| --- | --- | --- |
-| `research/shared/scout` | 5 | Multi-angle discovery across 5 analytical dimensions |
-| `research/shared/deep` | 16 | Recursive deep-dive research into prioritized gaps |
-| `research/shared/timeline` | 2 | Trace historical and temporal evolution |
-| `research/shared/quant` | 2 | Quantitative data extraction and dataset analysis |
-| `research/shared/skeptic` | 2 | Adversarial audit and counter-evidence search |
-| `research/shared/validation` | 2 | Multi-pass independent factual verification |
+### Routing
+
+PRECONDITION: MUST load skill `oc-routing` in this session before the first child dispatch; it owns batching, lane selection, and respawn. Roles and models are fixed in the table above for HIGH runs, so dispatch each subagent on its listed model unless that model is unavailable or the audit swap applies. MUST resolve and verify the route before each dispatch or continuation. EXIT with `BLOCKED` when the route cannot be applied through a supported mechanism.
+
+- Variants: single level, no cheap/quality split; one default variant per model per run; `research-deep` and `analysis-quant` never take `low`.
+- Audit: `review-skeptic` takes `glm-5.3-flash#high` when the producer used DeepSeek, and `review-validation` takes `deepseek-v4.1-flash#high` when the producer used GLM; an auditor never runs in the producing session or on the producer's model.
+- Aliases: `quant` → `analysis-quant`, `skeptic` → `review-skeptic`, `validation` → `review-validation`, `timeline` → `research-timeline`.
+- Lanes: `laneKey` = `model#variant`; `CAP` = 10 sessions per `laneKey` (read-only, so no file conflicts), `RETIRE_AT` = 6 dispatches, `BATCH` = 5 sub-questions per dispatch; above `CAP`, lanes pull queued batches and resume as they free.
 
 ### Runtime Guardrails
 
 - `MaxConcurrentSubagents = 16` caps active children across roles; slots above are per-role maxima for their phase.
 - `MaxTotalSubagentCalls = 40`: every dispatch and every resume continuation counts once. The call budget always wins over the wave budget.
-- Phases never overlap, so a deep wave cannot run beside a scout or audit phase.
-- A deep wave budgets `timeline` and `quant` inside its own 16 slots.
+- Phases never overlap, so a deep wave cannot run beside a scout or audit phase; a deep wave budgets `timeline` and `quant` inside its own 16 slots.
 - Hard stop on the first of: evidence saturation, 5 recursive waves, or 40 calls. Document unresolved gaps either way.
 
 ## Workflow
@@ -47,7 +56,7 @@ Convert `UserTopic` into one scoped research question. Ask a single `question` o
 
 ### 2. Reinforced Discovery
 
-1. Resolve routes via `oc-routing-research`.
+1. Resolve routes per Routing.
 2. Dispatch 5 concurrent `research/shared/scout` instances with `Depth = HIGH` and distinct analytical angles:
    - `Landscape`: map domain and competing explanations.
    - `PrimarySource`: trace claims to original/first-party sources.
@@ -65,7 +74,7 @@ Convert `UserTopic` into one scoped research question. Ask a single `question` o
 
 ### 4. Parallel Deep Research
 
-1. Route prioritized sub-questions via `oc-routing-research` (`research-deep`, `research-timeline`, `analysis-quant`).
+1. Route prioritized sub-questions per Routing to `research/shared/deep`, `timeline`, and `quant` where the topic needs them.
 2. Dispatch deep tasks in waves up to 16 concurrent with `Depth = HIGH`, resuming existing sessions per §0.
 3. Pass prior findings on follow-up waves so new work targets evidence gaps, contradictions, or novel questions.
 4. Route `timeline` and `quant` only when the topic needs them, inside the wave's 16 slots.
@@ -92,14 +101,14 @@ Convert `UserTopic` into one scoped research question. Ask a single `question` o
 ### 7. Skeptic Audit
 
 1. Extract up to 3 most consequential or decision-relevant claims.
-2. Route `review-skeptic` per `oc-routing-research` §6: an auditor never runs in the producing session and never on the producer's model.
+2. Route `research/shared/skeptic` per the audit lane in Routing: an auditor never runs in the producing session and never on the producer's model.
 3. Dispatch `research/shared/skeptic` with precise targets after research reports exist.
 4. Enforce failure-mode searches and explicit counter-evidence evaluation.
 5. Feed `WEAKENED`/`BROKEN` results back into deep research as targeted follow-ups, resuming existing deep sessions.
 
 ### 8. Multi-Pass Validation
 
-1. Route `review-validation` per `oc-routing-research` §6.
+1. Route `research/shared/validation` per the audit lane in Routing.
 2. Dispatch `research/shared/validation` (first pass) once the first major evidence set exists.
 3. Inline at most 5 reports; summarize any report over ~2000 characters to its key claims.
 4. When validation exposes contradictions, stale-risk claims, unsupported consequential claims, or T3-only support, resume the relevant deep sessions.
@@ -107,7 +116,7 @@ Convert `UserTopic` into one scoped research question. Ask a single `question` o
 
 ### 9. Synthesis
 
-1. Unify scout, deep, specialist, skeptic, and validation outputs into one `ResearchReport` per `oc-research-tiering`.
+1. Unify scout, deep, specialist, skeptic, and validation outputs into one `ResearchReport` per `oc-research-tiering.md`.
 2. Lead with the direct answer, then the claim table with source tiers and confidence.
 3. Surface contradictions, source gaps, T3-only claims, stale-risk claims, and unresolved questions prominently.
 4. Apply the Weakest-Link rule to `OverallConfidence`; never exceed the confidence of the weakest material claim.
@@ -115,7 +124,7 @@ Convert `UserTopic` into one scoped research question. Ask a single `question` o
 
 ### 10. Synthesis Self-Audit
 
-1. Route `review-validation` per §6 and dispatch one pass on the draft `ResearchReport`, in a session that did not produce the audited claims.
+1. Route `research/shared/validation` per the audit lane in Routing and dispatch one pass on the draft `ResearchReport`, in a session that did not produce the audited claims.
 2. Correct or downgrade every claim it flags; drop claims that stay `UNVERIFIABLE` but are material.
 3. Skip this step only when the call budget is exhausted, and say so in the report.
 
@@ -137,11 +146,11 @@ Stop recursive deep dispatch ONLY when all conditions hold:
 
 ## Rules
 
-- Required skills: `oc-routing-research`; `oc-research-tiering` for tiers and the `ResearchReport` schema.
+- Required skill: `oc-routing`, whose lanes are embedded in `### Routing`; required reference: `oc-research-tiering.md` for tiers and the `ResearchReport` schema, read from the reference root before use.
 - **Precondition:** `UserTopic` provided.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
 - Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to subagent payloads.
 - NEVER exceed `MaxConcurrentSubagents = 16` or `MaxTotalSubagentCalls = 40`.
-- Research is read-only outside `local/agents/research-artifacts/*`, and that path is written only on request.
+- Research is read-only outside the agent reference root and `local/agents/research-artifacts/*`; that path is written only on request.
 - NEVER inflate subagent confidence levels or expose raw subagent logs to user.

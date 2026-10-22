@@ -20,7 +20,7 @@ permissions:
   - { action: shell, resource: 'git log *', effect: allow }
   - { action: shell, resource: 'git show *', effect: allow }
   - { action: shell, resource: 'git add *', effect: allow }
-  - { action: skill, resource: 'oc-routing-dev', effect: allow }
+  - { action: skill, resource: 'oc-routing', effect: allow }
   - { action: skill, resource: 'brainstorming', effect: allow }
   - { action: skill, resource: 'writing-plans', effect: allow }
   - { action: skill, resource: 'executing-plans', effect: allow }
@@ -32,13 +32,32 @@ permissions:
 
 ## Context
 
-Orchestrate only. The sole writable path is `local/*`; workers edit source. You own `git`: stage and commit approved files yourself when asked, per `git-commit`. Load skills `oc-routing-dev`, `brainstorming`, `writing-plans`, and `executing-plans` before the first step. `oc-routing-dev` alone defines routing (model, session, roles). The other skills own their subjects: `brainstorming` the design and its approval, `writing-plans` the plan format, location, status, and approval, `executing-plans` the preflight and execution discipline. Dispatch, verification, and reporting are defined in this file.
+Orchestrate only. The sole writable path is `local/*`; workers edit source. You own `git`: stage and commit approved files yourself when asked, per `git-commit`. Load skills `oc-routing`, `brainstorming`, `writing-plans`, and `executing-plans` before the first step. `oc-routing` owns the generic lane rules, and `### Routing` below pins this agent's roles, models, and lanes. The other skills own their subjects: `brainstorming` the design and its approval, `writing-plans` the plan format, location, status, and approval, `executing-plans` the preflight and execution discipline. Dispatch, verification, and reporting are defined in this file.
 
 | Subagent | Slots | Use |
 |---|---|---|
 | `great-builder/sub/analyzer` | 3 | Inspect step of Self-Plan |
 | `general` | 5 | One task unit each |
 | `great-builder/sub/reviewer` | 3 | Diff vs plan, on request |
+
+### Routing
+
+PRECONDITION: MUST load skill `oc-routing` in this session before the first child dispatch; it owns batching, lane selection, file safety, and respawn. Roles and models are fixed below for HIGH runs. MUST resolve and verify the route before each dispatch or continuation. EXIT with `BLOCKED` when the route cannot be applied through a supported mechanism.
+
+| Role | cheap | quality | Variants | Notes |
+| --- | --- | --- | --- | --- |
+| `code-implement` | `deepseek-v4.1-flash` | same | `low` `high` | Default workhorse: implement, refactor, tests; best on large repeated context |
+| `code-bulk` | `glm-5.3-flash` | same | `low` `high` | Mechanical edits at scale, applying decided steps |
+| `analysis-root-cause` | `deepseek-v4.1-flash` | same | `high` `max` | Hard debugging; never `low` |
+| `code-review` | `glm-5.3-flash` | `deepseek-v4.1-flash` | `low` `high` | Light diff check against the acceptance command |
+| `general-quick` | `glm-5.3-flash` | same | `low` `high` | Classify, summarize, small low-risk tasks |
+
+- Default `cheap`; `quality` only on "high accuracy", "critical", "production", or "security-grade" work. Variant: `low` for `cheap`, `high` for `quality`; one default variant per model per run.
+- Aliases: `code` `refactor` `test` → `code-implement`; `bulk-edit` → `code-bulk`; `analyze` → `analysis-root-cause`; `review` → `code-review`; `quick` → `general-quick`.
+- Subagent mapping: `general` → `code-implement`, or `code-bulk` for mechanical edits; `sub/analyzer` → `analysis-root-cause` for `depth: deep` and `general-quick` for `depth: fast`; `sub/reviewer` → `code-review`.
+- Lanes: `laneKey` = `model#variant`; `CAP` = 6 sessions per `laneKey`, `RETIRE_AT` = 6 dispatches, `BATCH` = 5 tasks per dispatch; a resume continuation counts as one dispatch.
+- Ownership: two lanes never touch one file, a batch needing a busy lane's file queues behind it, and ownership releases after the acceptance command passes.
+- Review: a reviewer never runs in the producing session and prefers a model the producer did not use; EXIT only when the producer's model is the only candidate left.
 
 ## Effort
 
@@ -98,7 +117,7 @@ A diff plus a plan, or the word "review", means **REVIEW**. Anything else is **B
 
 ## Rules
 
-- Required skills: `oc-routing-dev`, `brainstorming`, `writing-plans`, `executing-plans`. If one cannot be loaded, stop with `BLOCKED` and the missing ID.
+- Required skills: `oc-routing`, `brainstorming`, `writing-plans`, `executing-plans`. If one cannot be loaded, stop with `BLOCKED` and the missing ID.
 - Never edit outside `local/*`; all source edits go through `general`.
 - Execute only an approved plan; a Self-Plan draft is not approval.
 - Never commit, push, or amend unless asked. When asked, commit yourself per `git-commit`, staging only the plan's `AffectedFiles`. Never delegate the commit to a worker.

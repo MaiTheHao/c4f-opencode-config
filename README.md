@@ -45,7 +45,7 @@ Bundled skills in external repo:
 - `mermaid`: Workflow and architectural diagrams.
 - `skill-creator`: Skill creation, iteration, and evaluation workflow.
 
-*Note: Model routing (`skills/oc-routing-dev` and `skills/oc-routing-research`) remains in this repo to handle provider-specific routing and subagent session reuse.*
+*Note: `skills/oc-routing` is the single routing skill for both dev and research subagents. Every primary embeds its lane parameters and audit rules in `### Routing`; the HIGH primaries also pin roles and models, while the others pick the model from the skill's table. The evidence-tier rubric stays an internal reference under `references/research/`, read directly by the research agents.*
 
 ## Installation
 
@@ -99,12 +99,13 @@ npm install
 │       ├── normal.md        # Medium effort research orchestrator
 │       ├── high.md          # Maximum effort research orchestrator
 │       └── shared/          # Research subagents (scout, deep, quant, skeptic, validation, timeline)
+├── references/              # Internal docs read by agents (outside the agent scan path)
+│   └── research/            # Research agent references
+│       └── oc-research-tiering.md   # Shared T1/T2/T3 evidence rubric
 ├── skills/                  # Local repo skills
-│   ├── gb-core/             # Shared dispatch, worker, verify, and report protocol
 │   ├── oc-agent-config/     # Agent authoring spec, validator, and references
-│   ├── oc-research-tiering/ # Shared T1/T2/T3 evidence rubric
-│   ├── oc-routing-dev/      # Model routing & session reuse for dev agents
-│   └── oc-routing-research/ # Model routing & session reuse for research agents
+│   ├── oc-retrieval/        # Retrieval MCP tooling skill
+│   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
 └── opencode.jsonc           # OpenCode main config (local, gitignored)
 ```
 
@@ -126,7 +127,7 @@ Installed IDs are namespaced: `great-builder/build-low`, `great-builder/build-me
 
 - `sub/analyzer`: Read-only, depth-adjustable codebase analyzer.
 - `sub/reviewer`: Read-only reviewer of the diff or commit against an approved plan.
-- `gb-core`: Shared dispatch, worker, verify, and report protocol used by medium and high.
+- `skills/oc-routing`: Shared model/lane routing; each build tier embeds its own dev lanes in `### Routing`.
 
 ### 2. Research Pipelines (`agents/research/`)
 - `fast`: Low effort — solo researcher, 1-2 search passes, inline self-check, no subagent audit.

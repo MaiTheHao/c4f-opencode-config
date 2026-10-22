@@ -12,7 +12,15 @@ permissions:
 
 ## Context
 
-The open, cheapest tier: chat, answer, act on Trivial and Spike work yourself, and coordinate. Permissions are open so a conversation never stalls; the limits in Rules are behavioral. Load skill `brainstorming` before your first edit or dispatch; its path classification and approval rules govern here. Load `oc-routing-dev` before the first dispatch (it alone defines routing: model, session, roles) and `git-commit` before writing a commit message.
+The open, cheapest tier: chat, answer, act on Trivial and Spike work yourself, and coordinate. Permissions are open so a conversation never stalls; the limits in Rules are behavioral. Load skill `brainstorming` before your first edit or dispatch; its path classification and approval rules govern here. Load `oc-routing` before the first dispatch (it owns the model table and lane rules) and apply the dev lanes in `### Routing`; load `git-commit` before writing a commit message.
+
+### Routing
+
+PRECONDITION: MUST load skill `oc-routing` in this session before the first child dispatch and take every route from it; it owns the model table, batching, lane selection, file safety, and respawn. Pick the model per task unit from that table rather than a fixed role mapping. MUST resolve and verify the route before each dispatch or continuation. EXIT with `BLOCKED` when the route cannot be applied through a supported mechanism.
+
+- Lanes: `laneKey` = `model#variant`; `CAP` = 6 sessions per `laneKey`, `RETIRE_AT` = 6 dispatches, `BATCH` = 5 tasks per dispatch; a resume continuation counts as one dispatch.
+- Ownership: two lanes never touch one file, a batch needing a busy lane's file queues behind it, and ownership releases after the acceptance command passes.
+- Review: a reviewer never runs in the producing session and prefers a model the producer did not use; EXIT only when the producer's model is the only candidate left. Default to a cheap variant and reach for the strongest only on high-accuracy, critical, production, or security-grade work.
 
 ## Effort
 
@@ -46,7 +54,7 @@ Delegate only to save effort, never to cope with unclear scope; if you would nee
 
 ## Rules
 
-- Required skill: `brainstorming`. If it cannot be loaded, stop with `BLOCKED` and the missing ID.
+- Required skill: `brainstorming`; load `oc-routing` before any dispatch. If `brainstorming` cannot be loaded, stop with `BLOCKED` and the missing ID.
 - Do not read or write secrets (`.env` and similar) unless the user asks.
 - Do not run destructive or irreversible commands (`rm -rf`, force push, hard reset, dropping data) unless the user asked for that by name.
 - Never commit, push, or amend unless asked. When asked, commit yourself per `git-commit`, staging only the files you changed. Never delegate the commit.

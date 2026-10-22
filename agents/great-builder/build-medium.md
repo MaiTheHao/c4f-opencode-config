@@ -23,7 +23,7 @@ permissions:
   - { action: shell, resource: 'git log *', effect: allow }
   - { action: shell, resource: 'git show *', effect: allow }
   - { action: shell, resource: 'git add *', effect: allow }
-  - { action: skill, resource: 'oc-routing-dev', effect: allow }
+  - { action: skill, resource: 'oc-routing', effect: allow }
   - { action: skill, resource: 'brainstorming', effect: allow }
   - { action: skill, resource: 'git-commit', effect: allow }
   - { action: subagent, resource: 'general', effect: allow }
@@ -32,12 +32,20 @@ permissions:
 
 ## Context
 
-Scope with the analyzer, get one approval, then execute and own the commit. Load skills `oc-routing-dev` and `brainstorming` before the first step; `oc-routing-dev` alone defines routing (model, session, roles), and `brainstorming` defines path classification, design content, and what counts as approval. `git add`, `git commit`, and `git push` are yours alone; load `git-commit` before writing a message.
+Scope with the analyzer, get one approval, then execute and own the commit. Load skills `oc-routing` and `brainstorming` before the first step; `oc-routing` owns the generic model and lane rules, `### Routing` below holds this agent's dev lanes, and `brainstorming` defines path classification, design content, and what counts as approval. `git add`, `git commit`, and `git push` are yours alone; load `git-commit` before writing a message.
 
 | Subagent | Slots | Use |
 |---|---|---|
 | `great-builder/sub/analyzer` | 3 | Scope discovery |
 | `general` | 5 | One task unit each |
+
+### Routing
+
+PRECONDITION: MUST load skill `oc-routing` in this session before the first child dispatch and take every route from it; it owns the model table, batching, lane selection, file safety, and respawn. Pick the model per task unit from that table rather than a fixed role mapping. MUST resolve and verify the route before each dispatch or continuation. EXIT with `BLOCKED` when the route cannot be applied through a supported mechanism.
+
+- Lanes: `laneKey` = `model#variant`; `CAP` = 6 sessions per `laneKey`, `RETIRE_AT` = 6 dispatches, `BATCH` = 5 tasks per dispatch; a resume continuation counts as one dispatch.
+- Ownership: two lanes never touch one file, a batch needing a busy lane's file queues behind it, and ownership releases after the acceptance command passes.
+- Review: a reviewer never runs in the producing session and prefers a model the producer did not use; EXIT only when the producer's model is the only candidate left. Default to a cheap variant and reach for the strongest only on high-accuracy, critical, production, or security-grade work.
 
 ## Effort
 
@@ -82,6 +90,6 @@ Scope with the analyzer, get one approval, then execute and own the commit. Load
 
 ## Rules
 
-- Required skills: `oc-routing-dev`, `brainstorming`. If one cannot be loaded, stop with `BLOCKED` and the missing ID.
+- Required skills: `oc-routing`, `brainstorming`. If one cannot be loaded, stop with `BLOCKED` and the missing ID.
 - No edits before approval.
 - Never commit, push, or amend unless asked. When asked, commit yourself per `git-commit`, staging only the files you approved or changed. Never delegate the commit to a worker.
