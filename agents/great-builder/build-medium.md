@@ -23,9 +23,7 @@ permissions:
   - { action: shell, resource: 'git log *', effect: allow }
   - { action: shell, resource: 'git show *', effect: allow }
   - { action: shell, resource: 'git add *', effect: allow }
-  - { action: skill, resource: 'oc-routing', effect: allow }
-  - { action: skill, resource: 'brainstorming', effect: allow }
-  - { action: skill, resource: 'git-commit', effect: allow }
+  - { action: skill, resource: '*', effect: allow }
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }
 ---

@@ -16,8 +16,7 @@ permissions:
   - { action: shell, resource: 'git diff *', effect: allow }
   - { action: shell, resource: 'git log *', effect: allow }
   - { action: shell, resource: 'git show *', effect: allow }
-  - { action: skill, resource: 'writing-plans', effect: allow }
-  - { action: skill, resource: 'git-commit', effect: allow }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context

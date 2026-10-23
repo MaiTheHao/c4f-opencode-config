@@ -4,10 +4,15 @@ mode: primary
 color: '#4ade80'
 permissions:
   # OpenCode's base policy, restated last so global rules cannot narrow this agent.
-  - { action: '*', resource: '*', effect: allow }
-  - { action: read, resource: '*.env', effect: ask }
-  - { action: read, resource: '*.env.*', effect: ask }
+  - { action: '*', resource: '*', effect: ask }
+  - { action: read, resource: '*', effect: allow }
+  - { action: read, resource: '*.env', effect: deny }
+  - { action: read, resource: '*.env.*', effect: deny }
   - { action: read, resource: '*.env.example', effect: allow }
+  - { action: edit, resource: '*.env', effect: deny }
+  - { action: edit, resource: '*.env.*', effect: deny }
+  - { action: edit, resource: '*.env.example', effect: allow }
+  - { action: external_directory, resource: '*', effect: ask }
 ---
 
 ## Context
