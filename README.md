@@ -45,7 +45,7 @@ Bundled skills in external repo:
 - `mermaid`: Workflow and architectural diagrams.
 - `skill-creator`: Skill creation, iteration, and evaluation workflow.
 
-*Note: `skills/oc-routing` is the single routing skill for both dev and research subagents. Every primary embeds its lane parameters and audit rules in `### Routing`; the HIGH primaries also pin roles and models, while the others pick the model from the skill's table. The evidence-tier rubric stays an internal reference under `references/research/`, read directly by the research agents.*
+*Note: `skills/oc-routing` is the single routing skill for both dev and research subagents. Every primary embeds its lane parameters and audit rules in `### Routing`; the HIGH primaries also pin roles and models, while the others pick the model from the skill's table. The evidence-tier rubric lives in `skills/oc-research-tiering`, loaded by every research agent through the `skill` tool before it classifies a source.*
 
 ## Installation
 
@@ -99,11 +99,9 @@ npm install
 │       ├── normal.md        # Medium effort research orchestrator
 │       ├── high.md          # Maximum effort research orchestrator
 │       └── shared/          # Research subagents (scout, deep, quant, skeptic, validation, timeline)
-├── references/              # Internal docs read by agents (outside the agent scan path)
-│   └── research/            # Research agent references
-│       └── oc-research-tiering.md   # Shared T1/T2/T3 evidence rubric
 ├── skills/                  # Local repo skills
 │   ├── oc-agent-config/     # Agent authoring spec, validator, and references
+│   ├── oc-research-tiering/ # T1/T2/T3 evidence rubric + ResearchReport schema
 │   ├── oc-retrieval/        # Retrieval MCP tooling skill
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
 └── opencode.jsonc           # OpenCode main config (local, gitignored)

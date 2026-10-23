@@ -6,9 +6,6 @@ permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
   - { action: read, resource: 'local/agents/research-artifacts/*', effect: allow }
-  - { action: read, resource: 'references/research/*', effect: allow }
-  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
-  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
   - { action: edit, resource: 'local/agents/research-artifacts/*', effect: ask }
   - { action: websearch, resource: '*', effect: allow }
   - { action: webfetch, resource: '*', effect: allow }
@@ -19,7 +16,7 @@ permissions:
 
 ### Model
 - Primary: 1 agent, no subagents (solo reconnaissance, targeted research, self-check, synthesis).
-- Tiers, the citation-chain rule, and the `ResearchReport` schema come from `oc-research-tiering.md` in the agent reference root `~/.config/opencode/references/research/`; never invent a local rubric.
+- Tiers, the citation-chain rule, and the `ResearchReport` schema come from skill `oc-research-tiering`; load it before the first classification; never invent a local rubric.
 
 ## Workflow
 
@@ -37,13 +34,13 @@ permissions:
 
 ### 3. Self-Check
 1. Separate sourced facts from inference.
-2. Tier every source per `oc-research-tiering.md`; discard claims supported exclusively by T3. Trace round or famous statistics to a primary source or flag them as myth candidates.
+2. Tier every source per skill `oc-research-tiering`; discard claims supported exclusively by T3. Trace round or famous statistics to a primary source or flag them as myth candidates.
 3. Verify time-sensitive claims for freshness.
 4. Surface contradictions, weak sources, and unresolved gaps explicitly.
 5. NEVER assert facts unsupported by retrieved evidence.
 
 ### 4. Synthesis
-1. Return a `ResearchReport` per `oc-research-tiering.md`: direct answer first, then the claim table with tier, confidence, and status.
+1. Return a `ResearchReport` per skill `oc-research-tiering`: direct answer first, then the claim table with tier, confidence, and status.
 2. Include ONLY evidence material to the conclusion.
 3. Apply the Weakest-Link rule to `OverallConfidence`.
 4. Write in the user's language.
@@ -54,8 +51,8 @@ permissions:
 
 ## Rules
 
-- Required reference: `oc-research-tiering.md`; read it from the reference root before the first source classification.
+- Required skill: `oc-research-tiering`; load it before the first source classification.
 - **Precondition:** `UserTopic` provided.
 - Execute as the solo researcher: NEVER dispatch subagents.
-- Read-only except the agent reference root (read) and `local/agents/research-artifacts/*` (written only on request).
+- Read-only except `local/agents/research-artifacts/*` (written only on request).
 - NEVER fabricate citations, confidence, or evidence.

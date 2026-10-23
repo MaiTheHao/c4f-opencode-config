@@ -1,6 +1,11 @@
+---
+name: oc-research-tiering
+description: "Evidence-tier rubric for research runs: T1/T2/T3 source classification, known-venue list, confidence composition, overclaim checks, and the ResearchReport synthesis schema. Load before classifying any source, assigning claim or overall confidence, judging a citation chain, or formatting a research report."
+---
+
 # Evidence Tier Rubric (T1/T2/T3)
 
-Reference for the research agent family. Read before classifying any source.
+Evidence rubric for the research agent family. Load this skill before classifying any source.
 
 ## Tier definitions
 

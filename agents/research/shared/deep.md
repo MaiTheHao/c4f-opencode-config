@@ -6,14 +6,12 @@ permissions:
   - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
-  - { action: read, resource: 'references/research/*', effect: allow }
-  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
-  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
+  - { action: skill, resource: 'oc-research-tiering', effect: allow }
 ---
 
 ## Context
 
-Reference root: `~/.config/opencode/references/research/`.
+Required skill: `oc-research-tiering`; load it in this session before the first source classification.
 
 ### Output Schema (`DeepReport`)
 - `Answer`: String
@@ -33,7 +31,7 @@ Reference root: `~/.config/opencode/references/research/`.
 3. Incorporate prior findings when provided to target gaps instead of repeating known evidence.
 
 ### 2. Analysis & Output
-1. Rank sources by tier per `oc-research-tiering.md`.
+1. Rank sources by tier per skill `oc-research-tiering`.
 2. Label inferences explicitly to distinguish them from sourced facts.
 3. Surface source disagreements without picking sides.
 4. Set `Confidence` via the rubric's Confidence Composition Rule, never by gut feel.
@@ -41,8 +39,8 @@ Reference root: `~/.config/opencode/references/research/`.
 
 ## Rules
 
-- Required reference: `oc-research-tiering.md`; read it from the reference root before classifying any source.
+- Required skill: `oc-research-tiering`; load it before classifying any source.
 - Assign explicit `SourceTier` (`T1`/`T2`/`T3`) to every evidence item.
 - NEVER substitute Tier 3 sources for missing Tier 1 evidence without flagging the gap in `SourceGaps`.
 - Adhere strictly to search depth caps; NEVER exceed 4 search rounds.
-- NEVER read local files outside the reference root, and NEVER execute shell commands.
+- NEVER read local files, and NEVER execute shell commands.

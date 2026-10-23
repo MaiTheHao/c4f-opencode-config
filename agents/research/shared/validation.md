@@ -6,16 +6,14 @@ permissions:
   - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
-  - { action: read, resource: 'references/research/*', effect: allow }
-  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
-  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
+  - { action: skill, resource: 'oc-research-tiering', effect: allow }
 ---
 
 ## Context
 
-Reference root: `~/.config/opencode/references/research/`.
+Required skill: `oc-research-tiering`; load it in this session before the first source classification.
 
-Apply the tier rubric in `oc-research-tiering.md`. `ConfidencePerClaim` MUST follow the rubric's Confidence Composition Rule.
+Apply the rubric in skill `oc-research-tiering`. `ConfidencePerClaim` MUST follow the rubric's Confidence Composition Rule.
 
 ### Output Schema (`ValidationReport`)
 - `ClaimsChecked`: Array of `{Claim: String, Status: CONFIRMED | CONTRADICTED | UNVERIFIABLE, Tier: T1 | T2 | T3}`
@@ -34,7 +32,7 @@ Apply the tier rubric in `oc-research-tiering.md`. `ConfidencePerClaim` MUST fol
 ### 2. Independent Verification & Output
 1. Conduct independent searches using `websearch` without reusing original report sources.
 2. Prioritize validating fast-decaying current-state claims (prices, software versions, leadership positions).
-3. Tier the source of each `DiscoveredFact` per `oc-research-tiering.md`.
+3. Tier the source of each `DiscoveredFact` per skill `oc-research-tiering`.
 4. Attempt to trace any suspiciously round/famous statistic to a primary source; if untraceable, add to `MythCandidates` per the rubric's citation-chain rule.
 5. Classify claims as `CONFIRMED`, `CONTRADICTED`, or `UNVERIFIABLE`.
 6. Assign `ConfidencePerClaim` via the rubric's Confidence Composition Rule.
@@ -42,7 +40,7 @@ Apply the tier rubric in `oc-research-tiering.md`. `ConfidencePerClaim` MUST fol
 
 ## Rules
 
-- Required reference: `oc-research-tiering.md`; read it from the reference root before classifying any source.
+- Required skill: `oc-research-tiering`; load it before classifying any source.
 - Conduct searches independently without reusing original report sources.
 - Explicitly detail every contradiction found between reports or sources, including tier of the contradicting source.
 - A T2/T3-only "CONFIRMED" claim can never be rated HIGH confidence.

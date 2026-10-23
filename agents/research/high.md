@@ -6,9 +6,6 @@ permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
   - { action: read, resource: 'local/agents/research-artifacts/*', effect: allow }
-  - { action: read, resource: 'references/research/*', effect: allow }
-  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
-  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
   - { action: edit, resource: 'local/agents/research-artifacts/*', effect: ask }
   - { action: subagent, resource: 'research/shared/scout', effect: allow }
   - { action: subagent, resource: 'research/shared/deep', effect: allow }
@@ -116,7 +113,7 @@ Convert `UserTopic` into one scoped research question. Ask a single `question` o
 
 ### 9. Synthesis
 
-1. Unify scout, deep, specialist, skeptic, and validation outputs into one `ResearchReport` per `oc-research-tiering.md`.
+1. Unify scout, deep, specialist, skeptic, and validation outputs into one `ResearchReport` per skill `oc-research-tiering`.
 2. Lead with the direct answer, then the claim table with source tiers and confidence.
 3. Surface contradictions, source gaps, T3-only claims, stale-risk claims, and unresolved questions prominently.
 4. Apply the Weakest-Link rule to `OverallConfidence`; never exceed the confidence of the weakest material claim.
@@ -146,11 +143,11 @@ Stop recursive deep dispatch ONLY when all conditions hold:
 
 ## Rules
 
-- Required skill: `oc-routing`, whose lanes are embedded in `### Routing`; required reference: `oc-research-tiering.md` for tiers and the `ResearchReport` schema, read from the reference root before use.
+- Required skills: `oc-routing`, whose lanes are embedded in `### Routing`, and `oc-research-tiering` for tiers and the `ResearchReport` schema; load each before its first use.
 - **Precondition:** `UserTopic` provided.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
 - Append literal suffix `"Respond ONLY in structured markdown adhering to your Output criteria."` to subagent payloads.
 - NEVER exceed `MaxConcurrentSubagents = 16` or `MaxTotalSubagentCalls = 40`.
-- Research is read-only outside the agent reference root and `local/agents/research-artifacts/*`; that path is written only on request.
+- Research is read-only outside `local/agents/research-artifacts/*`; that path is written only on request.
 - NEVER inflate subagent confidence levels or expose raw subagent logs to user.

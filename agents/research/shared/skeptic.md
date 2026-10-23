@@ -6,16 +6,14 @@ permissions:
   - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
-  - { action: read, resource: 'references/research/*', effect: allow }
-  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
-  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
+  - { action: skill, resource: 'oc-research-tiering', effect: allow }
 ---
 
 ## Context
 
-Reference root: `~/.config/opencode/references/research/`.
+Required skill: `oc-research-tiering`; load it in this session before the first source classification.
 
-Apply the tier rubric in `oc-research-tiering.md`. `Confidence` MUST follow the rubric's Confidence Composition Rule — never assign HIGH/MEDIUM/LOW by gut feel.
+Apply the rubric in skill `oc-research-tiering`. `Confidence` MUST follow the rubric's Confidence Composition Rule — never assign HIGH/MEDIUM/LOW by gut feel.
 
 ### Output Schema (`SkepticReport`)
 - `ClaimBeingTested`: String
@@ -33,7 +31,7 @@ Apply the tier rubric in `oc-research-tiering.md`. `Confidence` MUST follow the 
 
 ### 2. Dissent Audit & Output
 1. Search for counter-evidence using `websearch`.
-2. Tier each piece of dissent per `oc-research-tiering.md`; do not treat T3 dissent as equal to T1 dissent.
+2. Tier each piece of dissent per skill `oc-research-tiering`; do not treat T3 dissent as equal to T1 dissent.
 3. Check whether the ORIGINAL claim overclaims its own cited source's scope; log to `OverclaimFlags` if so.
 4. Determine `Assessment` (`SURVIVED`, `WEAKENED`, or `BROKEN`) with explicit evidence justification.
 5. Set `Confidence` via the rubric's Confidence Composition Rule.
@@ -41,8 +39,8 @@ Apply the tier rubric in `oc-research-tiering.md`. `Confidence` MUST follow the 
 
 ## Rules
 
-- Required reference: `oc-research-tiering.md`; read it from the reference root before classifying any source.
+- Required skill: `oc-research-tiering`; load it before classifying any source.
 - Search using failure-mode terms rather than confirmation keywords.
 - T3 dissent alone can WEAKEN a claim's phrasing but cannot BREAK it — BROKEN requires at least one T1/T2 contradiction.
 - NEVER create false equivalence for unsubstantiated fringe (T3) views.
-- NEVER read local workspace files outside the reference root, or execute shell operations.
+- NEVER read local workspace files or execute shell operations.

@@ -21,6 +21,7 @@ description: Subagent routing and orchestration for OpenCode Go models. Use when
 - Prefer `opencode-go/` model IDs when supported by the runtime.
 - Choose the weakest variant that reliably meets the task's quality requirements. Use stronger variants for difficult reasoning, ambiguous requirements, or repeated failures.
 - Use one default variant per model for a task sequence unless a deliberate quality or availability trade-off justifies changing it.
+- If user requests FULL FREE you may use free models all the time, but otherwise use them only when explicitly requested or when no other model is available.
 
 ## Core Rules
 

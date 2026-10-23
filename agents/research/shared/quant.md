@@ -6,14 +6,12 @@ permissions:
   - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
-  - { action: read, resource: 'references/research/*', effect: allow }
-  - { action: read, resource: '~/.config/opencode/references/research/*', effect: allow }
-  - { action: external_directory, resource: '~/.config/opencode/references/research/*', effect: allow }
+  - { action: skill, resource: 'oc-research-tiering', effect: allow }
 ---
 
 ## Context
 
-Reference root: `~/.config/opencode/references/research/`.
+Required skill: `oc-research-tiering`; load it in this session before the first source classification.
 
 ### Output Schema (`QuantReport`)
 - `NumbersFound`: Array of `{Value: String, Unit: String, Measures: String}`
@@ -27,7 +25,7 @@ Reference root: `~/.config/opencode/references/research/`.
 ### 1. Primary Source Locating
 1. Locate the original primary source of the numbers using `websearch`; do NOT cite secondary news summaries.
 2. Extract raw numbers and precise measurement definitions.
-3. Tier the primary source per `oc-research-tiering.md`.
+3. Tier the primary source per skill `oc-research-tiering`.
 
 ### 2. Methodology Scrutiny & Output
 1. Extract methodology parameters (sample size, measurement method, collection date, scope, margin of error).
@@ -37,8 +35,8 @@ Reference root: `~/.config/opencode/references/research/`.
 
 ## Rules
 
-- Required reference: `oc-research-tiering.md`; read it from the reference root before classifying any source.
+- Required skill: `oc-research-tiering`; load it before classifying any source.
 - Locate the original primary source of numbers.
 - Assign `LOW` confidence to any number lacking transparent methodology.
 - NEVER cite secondary articles without tracing the primary data source.
-- NEVER read local files outside the reference root or execute shell operations.
+- NEVER read local files or execute shell operations.

@@ -32,14 +32,14 @@ For each action in the workflow, record:
 - MUST check supporting-file and execution permissions. A primary with only `skill` permission may load a body but remain unable to follow references or execute scripts.
 - MUST return `BLOCKED` with the missing ID, denied capability, or incompatible requirement when a mandatory dependency cannot be used. Never claim it was loaded.
 - MUST record dependencies required by children in the child's contract; a parent's skill load is not proof of child-session readiness.
-- Required non-skill references (for example `references/research/oc-research-tiering.md`) are declared the same way, read from the agent's own reference root before first use, and covered by a `read` rule — plus `external_directory` when that root sits outside the active location.
+- Reusable rubric or spec text belongs in a skill, not a bare reference file. A required non-skill reference (an agent-owned doc outside `skills/`) is declared the same way, read from the agent's own reference root before first use, and covered by a `read` rule — plus `external_directory` when that root sits outside the active location.
 
 | Profile | Required skills / references retained from samples |
 |---|---|
 | Builder normal | `brainstorming`, `oc-routing` |
 | Planner | `brainstorming`, `writing-plans`, `oc-routing` |
-| Research normal / high | `oc-routing` plus the agent's embedded `### Routing` lanes, and internal reference `oc-research-tiering.md` |
-| Research fast | Internal reference `references/research/oc-research-tiering.md` |
+| Research normal / high | `oc-routing` plus the agent's embedded `### Routing` lanes, and `oc-research-tiering` for tiers and the `ResearchReport` schema |
+| Research fast | `oc-research-tiering` |
 
 These skills were not supplied with the sample set, so their internals, path requirements, and any custom routing API remain `UNVERIFIED`. Do not manufacture their contents or turn their names into native OpenCode features.
 
