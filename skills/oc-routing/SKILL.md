@@ -9,19 +9,19 @@ description: Subagent routing and orchestration for OpenCode Go models. Use when
 
 ## Models
 
-| Model ID | Variants | Cost tier | Preferred tasks |
+| Model ID | Variants | Cost tier | Best for |
 |---|---|---:|---|
-| `opencode-go/deepseek-v4.1-flash` | `low`, `high`, `max` | 1 | Implementation, refactoring, difficult debugging, complex analysis, research, quantitative reasoning |
-| `opencode-go/mimo-v2.6-flash` | `low`, `high` | 2 | Lightweight implementation, mechanical edits, secondary analysis, model-diverse review |
-| `opencode-go/glm-5.3-flash` | `low`, `high` | 3 | Repository reconnaissance, classification, summarization, factual checks, bulk edits, validation |
-| `*-free` | Provider-dependent | 0 | Use only when explicitly requested; quality and availability are unverified |
+| `deepseek-v4.1-flash` | `low`, `high`, `max` | 1 | Implementation, refactoring, hard debugging, complex analysis, research, quantitative reasoning |
+| `mimo-v2.6-flash` | `low`, `high` | 2 | Lightweight coding, mechanical edits, secondary analysis, independent review |
+| `glm-5.3-flash` | `low`, `high` | 3 | Repository exploration, classification, summarization, fact-checking, bulk edits, validation |
+| `*-free` | Provider-dependent | 0 | Free-tier tasks; availability and quality unverified |
 
-- Model availability, variant names, and pricing can change. Confirm against the active provider configuration.
+- Verify model availability, variants, and pricing against the active provider configuration.
 - Cost tiers are relative routing hints, not guaranteed per-request prices.
-- Prefer `opencode-go/` model IDs when supported by the runtime.
-- Choose the weakest variant that reliably meets the task's quality requirements. Use stronger variants for difficult reasoning, ambiguous requirements, or repeated failures.
-- Use one default variant per model for a task sequence unless a deliberate quality or availability trade-off justifies changing it.
-- If user requests FULL FREE you may use free models all the time, but otherwise use them only when explicitly requested or when no other model is available.
+- Use the cheapest variant that reliably meets quality requirements. Escalate for difficult reasoning, ambiguity, or repeated failures.
+- Keep one default variant per model throughout a task sequence unless quality or availability requires a change.
+- If an `opencode-go/` model fails with an `unpaid` error, switch to **FULL FREE**: use free models with the `opencode/` prefix whenever supported. 
+- If the user explicitly requests `FULL FREE`, use all available free models listed above or specified by the user. Otherwise, use free models only when requested or when no paid model is available.
 
 ## Core Rules
 
