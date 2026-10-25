@@ -19,7 +19,7 @@ import { createStore } from './lib/store.js';
 // (`<cwd>/local/agents/retrieval_agent/context.jsonl`) is deliberately NOT
 // migrated: this release starts each project with an empty store. Point
 // `options.contextFile` at an old file to read it, or copy its lines across.
-const DEFAULT_CONTEXT_PATH = 'local/agents/retrieval_context';
+const DEFAULT_CONTEXT_PATH = 'local/agents/retrieval_context.json';
 const NAMESPACE = 'retrieval';
 
 export default {
