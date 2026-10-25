@@ -34,7 +34,7 @@
 ## Acceptance record
 
 ```text
-SpecRevision: 2.1.0
+SpecRevision: 2.2.0
 RuntimeVersion: <actual version, or UNVERIFIED>
 AgentIDs: <resolved installed IDs>
 ChangedFiles: <paths and actions>

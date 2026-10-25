@@ -233,7 +233,7 @@ def _check_agents(find, allowed):
     if unpinned:
         preview = ", ".join(unpinned[:3]) + (" ..." if len(unpinned) > 3 else "")
         find("WARN", "agent-model",
-             "%d/%d agent(s) pin no model (%s); identity is advisory for them" % (
+             "%d/%d agent(s) pin no model (%s); a subagent inherits the parent session model" % (
                  len(unpinned), total, preview))
 
 

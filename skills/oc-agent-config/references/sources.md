@@ -54,4 +54,12 @@ On the review date, D6 linked to D7, but the fetched D7 exposed legacy `AgentCon
 
 **Resolution policy:** author agents only in v2 syntax. Do not migrate the global config, and do not rewrite agent `permissions` into `permission`, until the installed build's accepted surface is confirmed. Record the runtime version with any decision.
 
+## Resolved — model pinning is not a gate
+
+An earlier revision of this specification called a pinned `model` the "only enforceable model-identity gate". D1 contradicts that on two points: the run uses the subagent's configured model or the parent session's model, and a session stores its selected model separately from the selected agent. D6 adds that discovered project configuration takes precedence over global configuration.
+
+**Resolution:** pinning sets a default. Enforcement lives in credential scope and in not opening untrusted projects. Dispatch-time model selection by the orchestrator stays available by design and is not a violation.
+
+## Review environment
+
 No OpenCode executable was available in the review environment. Custom subagents, installed skills, live tool schemas, provider credentials, and merged agent configurations were not supplied. Their existence and behavior remain `UNVERIFIED`.

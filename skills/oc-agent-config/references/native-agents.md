@@ -47,7 +47,19 @@ Preserve the original project prohibition on configuring `temperature` or `top_p
 
 `UNVERIFIED` [S1]: `instructions: ["path", "glob/*.md"]` adds extra rule files to a configuration. JSONC root keys relevant to agents are `model`, `small_model`, `default_agent`, and `agent` (singular mapping keyed by agent ID). Do not author `agents` as a plural root key.
 
-`PROJECT`: pinning `model` under an agent entry is the only enforceable model-identity gate. A rule file such as `AGENTS.md` is advisory by construction: it describes policy but cannot force which model a session or subagent runs on. Do not present a rule-file check as enforcement.
+## Model resolution and pinning
+
+`NATIVE` [D1]: a subagent uses its configured `model`, or inherits the parent session's model when none is configured. A session stores its selected model separately, so selecting a primary agent by ID does not change that model: a `model` on a primary agent is the default for a new session, not a binding on a running one.
+
+`NATIVE` [D1] [D6]: agent definitions merge in configuration order and later scalar values replace earlier ones, and discovered project configuration takes precedence over global configuration. The effective model is therefore decided by the last layer that names it.
+
+`PROJECT`: pinning `model` is a default, never an enforcement gate. Three layers can change the effective model:
+
+1. the agent's own file, rewritten through `edit` or `shell`; configuration reloads without a restart
+2. any discovered project configuration that names the same agent ID, including a repository cloned from an untrusted source
+3. a dispatch-time model chosen by the orchestrating agent — intentional in this family, so the orchestrator can retarget a lane without editing files
+
+`PROJECT`: do not treat a dispatch-time model, or an override in a trusted project configuration, as a policy violation. Model enforcement belongs outside configuration: credential scope (no key, no run) and not opening untrusted projects. A rule-file check such as `AGENTS.md --check` stays advisory.
 
 ## MCP block shape
 
