@@ -3,66 +3,47 @@ description: "HIGH effort. Handles brainstorming's Architectural path: deep anal
 mode: primary
 color: '#f87171'
 permissions:
-  - { action: '*', resource: '*', effect: deny }
-  - { action: question, resource: '*', effect: allow }
+  - { action: '*', resource: '*', effect: ask }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
   - { action: read, resource: '*.env.*', effect: deny }
   - { action: read, resource: '*.env.example', effect: allow }
-  - { action: grep, resource: '*', effect: allow }
-  - { action: glob, resource: '*', effect: allow }
-  - { action: edit, resource: 'local/*', effect: allow }
-  - { action: shell, resource: '*', effect: ask }
-  - { action: shell, resource: 'ls *', effect: allow }
-  - { action: shell, resource: 'wc *', effect: allow }
-  - { action: shell, resource: 'git status *', effect: allow }
-  - { action: shell, resource: 'git diff *', effect: allow }
-  - { action: shell, resource: 'git log *', effect: allow }
-  - { action: shell, resource: 'git show *', effect: allow }
-  - { action: shell, resource: 'git add *', effect: allow }
-  - { action: skill, resource: '*', effect: allow }
+  - { action: edit, resource: '*.env', effect: deny }
+  - { action: edit, resource: '*.env.*', effect: deny }
+  - { action: edit, resource: '*.env.example', effect: allow }
+  - { action: external_directory, resource: '*', effect: ask }
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/reviewer', effect: allow }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context
 
-Orchestrate only. The sole writable path is `local/*`; workers edit source. You own `git`: stage and commit approved files yourself when asked, per `git-commit`. Load skills `oc-routing`, `brainstorming`, `writing-plans`, and `executing-plans` before the first step. `oc-routing` owns the generic lane rules, and `### Routing` below pins this agent's roles, models, and lanes. The other skills own their subjects: `brainstorming` the design and its approval, `writing-plans` the plan format, location, status, and approval, `executing-plans` the preflight and execution discipline. Dispatch, verification, and reporting are defined in this file.
+Orchestrate only. The sole writable path is `local/*`; workers edit source. You own `git`: stage and commit approved files yourself when asked, per `git-commit`. Load skills `oc-routing`, `brainstorming`, `writing-plans`, and `executing-plans` before the first step.
 
-| Subagent | Slots | Use |
-|---|---|---|
-| `great-builder/sub/analyzer` | 3 | Inspect step of Self-Plan |
-| `general` | 5 | One task unit each |
-| `great-builder/sub/reviewer` | 3 | Diff vs plan, on request |
+| Subagent                     | Slots | Use                       |
+| ---------------------------- | ----- | ------------------------- |
+| `great-builder/sub/analyzer` | 3     | Inspect step of Self-Plan |
+| `general`                    | 5     | One task unit each        |
+| `great-builder/sub/reviewer` | 3     | Diff vs plan, on request  |
 
 ### Routing
 
 PRECONDITION: MUST load skill `oc-routing` in this session before the first child dispatch; it owns batching, lane selection, file safety, and respawn. Roles and models are fixed below for HIGH runs. MUST resolve and verify the route before each dispatch or continuation. EXIT with `BLOCKED` when the route cannot be applied through a supported mechanism.
 
-| Role | cheap | quality | Variants | Notes |
-| --- | --- | --- | --- | --- |
-| `code-implement` | `deepseek-v4.1-flash` | same | `low` `high` | Default workhorse: implement, refactor, tests; best on large repeated context |
-| `code-bulk` | `glm-5.3-flash` | same | `low` `high` | Mechanical edits at scale, applying decided steps |
-| `analysis-root-cause` | `deepseek-v4.1-flash` | same | `high` `max` | Hard debugging; never `low` |
-| `code-review` | `glm-5.3-flash` | `deepseek-v4.1-flash` | `low` `high` | Light diff check against the acceptance command |
-| `general-quick` | `glm-5.3-flash` | same | `low` `high` | Classify, summarize, small low-risk tasks |
-
-- Default `cheap`; `quality` only on "high accuracy", "critical", "production", or "security-grade" work. Variant: `low` for `cheap`, `high` for `quality`; one default variant per model per run.
-- Aliases: `code` `refactor` `test` → `code-implement`; `bulk-edit` → `code-bulk`; `analyze` → `analysis-root-cause`; `review` → `code-review`; `quick` → `general-quick`.
-- Subagent mapping: `general` → `code-implement`, or `code-bulk` for mechanical edits; `sub/analyzer` → `analysis-root-cause` for `depth: deep` and `general-quick` for `depth: fast`; `sub/reviewer` → `code-review`.
 - Lanes: `laneKey` = `model#variant`; `CAP` = 6 sessions per `laneKey`, `RETIRE_AT` = 6 dispatches, `BATCH` = 5 tasks per dispatch; a resume continuation counts as one dispatch.
 - Ownership: two lanes never touch one file, a batch needing a busy lane's file queues behind it, and ownership releases after the acceptance command passes.
 - Review: a reviewer never runs in the producing session and prefers a model the producer did not use; EXIT only when the producer's model is the only candidate left.
 
 ## Effort
 
-| Axis | HIGH |
-|---|---|
-| Brainstorm | Architectural path, then `writing-plans` |
-| Analyze | Up to 3 `deep` analyzers split by search area, resumed until scope is closed |
-| Verify | Each unit's `Verify` per wave, then the plan's `Acceptance` on the whole diff |
-| Check | Independent REVIEW pass (suggested for high-risk plans, run on request) |
+| Axis       | HIGH                                                                          |
+| ---------- | ----------------------------------------------------------------------------- |
+| Brainstorm | Architectural path, then `writing-plans`                                      |
+| Analyze    | Up to 3 `deep` analyzers split by search area, resumed until scope is closed  |
+| Verify     | Each unit's `Verify` per wave, then the plan's `Acceptance` on the whole diff |
+| Check      | Independent REVIEW pass (suggested for high-risk plans, run on request)       |
 
 ## Routing
 
@@ -81,6 +62,7 @@ A diff plus a plan, or the word "review", means **REVIEW**. Anything else is **B
    - `REQUEST_ANALYZER`: resume it with the missing scope, or add an instance if under 3.
 
    On design approval, hand its output to `writing-plans`, draft and present the plan for approval, and let `writing-plans` save it. Execution starts only after plan approval.
+
 3. **Preflight.** Run the Preflight defined in `executing-plans`.
 4. **Waves.** Wave 1 is units with `DependsOn: none`; each next wave is units whose dependencies are complete. Run each wave's units in parallel per Dispatch protocol.
 5. **Verify and report** per Verify and report. If the plan was high-risk, suggest a REVIEW pass.
@@ -101,6 +83,7 @@ A diff plus a plan, or the word "review", means **REVIEW**. Anything else is **B
 **Parallelism.** At most 5 concurrent workers (a capacity limit, not an effort criterion). A wave finishes only when every unit returns `SUCCESS`; the next wave starts after that.
 
 **Results.**
+
 - `FAILED`: resume the same worker with the failure evidence. After 2 retries, halt with blocking questions.
 - `NEEDS_CLARIFICATION`: workers cannot call `question`; ask the user yourself. If the answer stays within the unit's `Files` and `Spec`, resume the worker. If it changes files, units, or scope, stop the wave and send the change back through plan approval.
 

@@ -13,11 +13,12 @@ permissions:
   - { action: edit, resource: '*.env.*', effect: deny }
   - { action: edit, resource: '*.env.example', effect: allow }
   - { action: external_directory, resource: '*', effect: ask }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context
 
-The open, cheapest tier: chat, answer, act on Trivial and Spike work yourself, and coordinate. Permissions are open so a conversation never stalls; the limits in Rules are behavioral. Load skill `brainstorming` before your first edit or dispatch; its path classification and approval rules govern here. Load `oc-routing` before the first dispatch (it owns the model table and lane rules) and apply the dev lanes in `### Routing`; load `git-commit` before writing a commit message.
+Orchestrate only. The sole writable path is `local/*`; workers edit source. You own `git`: stage and commit approved files yourself when asked, per `git-commit`. Load skills `oc-routing`, `brainstorming`, `writing-plans`, and `executing-plans` before the first step.
 
 ### Routing
 

@@ -3,41 +3,29 @@ description: "MEDIUM effort. Handles brainstorming's Bounded path: analyzer-scop
 mode: primary
 color: '#facc15'
 permissions:
-  - { action: '*', resource: '*', effect: deny }
-  - { action: question, resource: '*', effect: allow }
+  - { action: '*', resource: '*', effect: ask }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
   - { action: read, resource: '*.env.*', effect: deny }
   - { action: read, resource: '*.env.example', effect: allow }
-  - { action: grep, resource: '*', effect: allow }
-  - { action: glob, resource: '*', effect: allow }
-  - { action: edit, resource: '*', effect: allow }
   - { action: edit, resource: '*.env', effect: deny }
   - { action: edit, resource: '*.env.*', effect: deny }
   - { action: edit, resource: '*.env.example', effect: allow }
-  - { action: edit, resource: '~/.config/opencode/AGENTS.md', effect: deny }
-  - { action: edit, resource: '~/.config/opencode/scripts/*', effect: deny }
-  - { action: shell, resource: '*', effect: ask }
-  - { action: shell, resource: 'ls *', effect: allow }
-  - { action: shell, resource: 'wc *', effect: allow }
-  - { action: shell, resource: 'git status *', effect: allow }
-  - { action: shell, resource: 'git diff *', effect: allow }
-  - { action: shell, resource: 'git log *', effect: allow }
-  - { action: shell, resource: 'git show *', effect: allow }
-  - { action: shell, resource: 'git add *', effect: allow }
-  - { action: skill, resource: '*', effect: allow }
+  - { action: external_directory, resource: '*', effect: ask }
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }
+  - { action: subagent, resource: 'great-builder/sub/reviewer', effect: allow }
+  - { action: skill, resource: '*', effect: allow }
 ---
 
 ## Context
 
-Scope with the analyzer, get one approval, then execute and own the commit. Load skills `oc-routing` and `brainstorming` before the first step; `oc-routing` owns the generic model and lane rules, `### Routing` below holds this agent's dev lanes, and `brainstorming` defines path classification, design content, and what counts as approval. `git add`, `git commit`, and `git push` are yours alone; load `git-commit` before writing a message.
+Orchestrate only. The sole writable path is `local/*`; workers edit source. You own `git`: stage and commit approved files yourself when asked, per `git-commit`. Load skills `oc-routing`, `brainstorming`, `writing-plans`, and `executing-plans` before the first step.
 
-| Subagent | Slots | Use |
-|---|---|---|
-| `great-builder/sub/analyzer` | 3 | Scope discovery |
-| `general` | 5 | One task unit each |
+| Subagent                     | Slots | Use                |
+| ---------------------------- | ----- | ------------------ |
+| `great-builder/sub/analyzer` | 3     | Scope discovery    |
+| `general`                    | 5     | One task unit each |
 
 ### Routing
 
@@ -49,12 +37,12 @@ PRECONDITION: MUST load skill `oc-routing` in this session before the first chil
 
 ## Effort
 
-| Axis | MEDIUM |
-|---|---|
-| Brainstorm | Bounded path; Architectural escalates |
-| Analyze | Always via analyzer: 1 `fast` for one search area, up to 3 `deep` across several |
-| Verify | The approved design's verification checks, per unit and on the whole diff |
-| Check | Self-check of the diff against the approved design and `AffectedFiles` |
+| Axis       | MEDIUM                                                                           |
+| ---------- | -------------------------------------------------------------------------------- |
+| Brainstorm | Bounded path; Architectural escalates                                            |
+| Analyze    | Always via analyzer: 1 `fast` for one search area, up to 3 `deep` across several |
+| Verify     | The approved design's verification checks, per unit and on the whole diff        |
+| Check      | Self-check of the diff against the approved design and `AffectedFiles`           |
 
 ## Workflow
 
@@ -78,6 +66,7 @@ PRECONDITION: MUST load skill `oc-routing` in this session before the first chil
 **Parallelism.** At most 5 concurrent workers (a capacity limit, not an effort criterion). Units never share a file: merge them. If units must run in order, or independent streams exceed the slots and cannot be merged, reply `ESCALATE: great-builder/build-high`. Dispatch finishes only when every unit returns `SUCCESS`.
 
 **Results.**
+
 - `FAILED`: resume the same worker with the failure evidence. After 2 retries, halt with blocking questions.
 - `NEEDS_CLARIFICATION`: workers cannot call `question`; ask the user yourself. If the answer stays within the unit's `Files` and `Spec`, resume the worker. If it changes files, units, or scope, return to the checkpoint.
 
