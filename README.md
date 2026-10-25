@@ -104,6 +104,9 @@ npm install
 │   ├── oc-research-tiering/ # T1/T2/T3 evidence rubric + ResearchReport schema
 │   ├── oc-retrieval/        # Retrieval MCP tooling skill
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
+├── scripts/                 # Policy tooling (tracked)
+│   ├── show_models.py       # Model catalog query, allowlist check, routing table
+│   └── c4f.py               # protect (file modes) | audit | smoke | doctor
 └── opencode.jsonc           # OpenCode main config (not gitignored; commit it)
 ```
 
