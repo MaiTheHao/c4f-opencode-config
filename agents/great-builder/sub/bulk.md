@@ -3,7 +3,7 @@ description: "Fast direct-edit worker. Applies fully specified edits to the give
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
-  - { action: read, resource: './local/agents/*', effect: allow }
+  - { action: read, resource: 'local/agents/***', effect: allow }
   - { action: skill, resource: '*', effect: allow }
   - { action: execute, resource: '*', effect: allow }
   - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
