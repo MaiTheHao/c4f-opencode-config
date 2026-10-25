@@ -1,14 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "opencode-go/deepseek-v4.1-flash",
-  "permission": {
-    "edit": {
-      "*": "allow",
-      "~/.config/opencode/AGENTS.md": "deny",
-      "~/.config/opencode/scripts/*": "deny"
-    }
-  },
-
   "mcp": {
     "retrieval": {
       "type": "local",

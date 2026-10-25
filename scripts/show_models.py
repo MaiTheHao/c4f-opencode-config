@@ -12,7 +12,8 @@ Allowlist source of truth: allowed_models.json (same directory as this script).
   banned: list of ids, always refused
 
 Classification (pricing cache ~/.cache/opencode/models.json):
-  FREE   cost(input,output) == 0; no cost in cache -> id ends with "-free".
+  FREE   cost(input,output) == 0 in the cache; an unpriced id exposed by the
+         harness whose name ends with "-free" also counts as free.
          `opencode/big-pickle` is free without the suffix. "-contributor" alone is NOT free.
   PAIDED everything not FREE.
   ALL    everything.
@@ -22,7 +23,11 @@ Allowlist matching: base id only (provider prefix ignored, case-insensitive).
   BANNED           in "banned" (always wins)
   FREE             not listed but free; allowed like any other model
   UNAUTHORIZED     anything else
+`--check` additionally requires the id to be exposed by `opencode models`
+(a bare id resolves to its exposed provider id, `opencode-go/` first), so an
+unknown provider cannot claim an allowed base name.
 Allowlist errors (missing/invalid file) fail closed: exit code 1.
+Pricing cache or `opencode models` failure on a CLI query fails closed: exit code 1.
 
 Exit codes for --check: 0 AUTHORIZED or FREE (allowed), 1 BANNED/UNAUTHORIZED/error.
 Output (--routing): markdown table (or JSON with --format json) built from allowed_models.json.
@@ -35,8 +40,9 @@ import os
 import subprocess
 import sys
 
-FREE_SUFFIX = "-free"
 ALLOWED_FILE = "allowed_models.json"
+FREE_SUFFIX = "-free"
+PROVIDER_PREFERENCE = "opencode-go/"
 EXIT_BY_STATUS = {"AUTHORIZED": 0, "FREE": 0, "BANNED": 1, "UNAUTHORIZED": 1}
 ALLOWED_STATUSES = ("AUTHORIZED", "FREE")
 
@@ -48,23 +54,38 @@ def _pricing_cache_path():
     return os.path.join(root, "opencode", "models.json")
 
 
-def _load_pricing():
-    """{'provider/model': cost_dict}; empty if cache missing/invalid."""
+def _load_pricing(strict=False):
+    """{'provider/model': cost_dict}; {} if cache missing/invalid.
+
+    strict (CLI queries): unreadable/empty cache is a hard error, never an
+    empty map - an empty map would silently reclassify every model.
+    """
+    path = _pricing_cache_path()
     try:
-        with open(_pricing_cache_path()) as f:
+        with open(path) as f:
             data = json.load(f)
-    except (OSError, ValueError):
+        pricing = {}
+        for provider, info in data.items():
+            for model_id, meta in (info.get("models") or {}).items():
+                cost = meta.get("cost")
+                if isinstance(cost, dict) and cost:
+                    pricing["%s/%s" % (provider, model_id)] = cost
+    except (OSError, ValueError, AttributeError, TypeError) as e:
+        if strict:
+            raise SystemExit("PRICING CACHE ERROR (%s): %s: %s" % (path, type(e).__name__, e))
         return {}
-    pricing = {}
-    for provider, info in data.items():
-        for model_id, meta in (info.get("models") or {}).items():
-            cost = meta.get("cost")
-            if isinstance(cost, dict) and cost:
-                pricing["%s/%s" % (provider, model_id)] = cost
+    if strict and not pricing:
+        raise SystemExit("PRICING CACHE ERROR (%s): no priced models" % path)
     return pricing
 
 
 def _is_free(model_id, pricing):
+    """Known cost is 0 in and 0 out; an unpriced *-free id counts as free.
+
+    The suffix fallback is safe because every CLI path first requires the id to
+    appear in `opencode models` (_resolve), so an id the harness does not
+    expose is never classified free through the CLI.
+    """
     cost = pricing.get(model_id)
     if cost is not None:
         return float(cost.get("input", 1)) == 0 and float(cost.get("output", 1)) == 0
@@ -154,9 +175,36 @@ def classify(model_id, allowed, pricing):
 
 # ---------- querying ----------
 
-def _run_opencode_models():
-    result = subprocess.run(["opencode", "models"], capture_output=True, text=True)
-    return [l.strip() for l in result.stdout.splitlines() if l.strip() and "/" in l]
+def _run_opencode_models(strict=False):
+    """Model ids exposed by the harness. strict: failure/empty is a hard error."""
+    try:
+        result = subprocess.run(["opencode", "models"], capture_output=True, text=True)
+    except OSError as e:
+        if strict:
+            raise SystemExit("CATALOG ERROR (`opencode models`): %s: %s" % (type(e).__name__, e))
+        return []
+    ids = [l.strip() for l in result.stdout.splitlines() if l.strip() and "/" in l]
+    if (result.returncode != 0 or not ids) and strict:
+        detail = "exit %s" % result.returncode
+        err = (result.stderr or "").strip().splitlines()
+        if err:
+            detail = "%s: %s" % (detail, err[-1][:160])
+        raise SystemExit("CATALOG ERROR (`opencode models` %s)" % detail)
+    return ids
+
+
+def _resolve(model_id, catalog):
+    """Exposed id for model_id, or None when the harness does not expose it.
+
+    A full id must appear in the catalog verbatim; a bare id resolves to its
+    first exposed provider id, preferring opencode-go.
+    """
+    lowered = model_id.strip().lower()
+    if "/" in lowered:
+        return next((m for m in catalog if m.lower() == lowered), None)
+    candidates = [m for m in catalog if _base(m) == _base(model_id)]
+    return next((m for m in candidates if m.startswith(PROVIDER_PREFERENCE)),
+                candidates[0] if candidates else None)
 
 
 def query_models(limit=None, model_type="ALL", allowed_only=False):
@@ -164,8 +212,8 @@ def query_models(limit=None, model_type="ALL", allowed_only=False):
     if model_type not in ("ALL", "FREE", "PAIDED"):
         raise ValueError("model_type must be one of {ALL, FREE, PAIDED}, got: %r" % model_type)
 
-    model_ids = _run_opencode_models()
-    pricing = _load_pricing()
+    model_ids = _run_opencode_models(strict=True)
+    pricing = _load_pricing(strict=True)
 
     if model_type == "FREE":
         model_ids = [m for m in model_ids if _is_free(m, pricing)]
@@ -228,7 +276,13 @@ def main(argv=None):
         return 0
 
     if args.check:
-        status = classify(args.check, _load_allowed(), _load_pricing())
+        catalog = _run_opencode_models(strict=True)
+        pricing = _load_pricing(strict=True)
+        resolved = _resolve(args.check, catalog)
+        if resolved is None:
+            print("UNAUTHORIZED")
+            return EXIT_BY_STATUS["UNAUTHORIZED"]
+        status = classify(resolved, _load_allowed(), pricing)
         print(status)
         return EXIT_BY_STATUS[status]
 
