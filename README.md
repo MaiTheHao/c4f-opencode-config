@@ -179,7 +179,7 @@ npm install
 2. Ensure skills exist in `~/.agents/skills` (or `.opencode/skills/`).
 
 > [!WARNING]
-> `opencode.jsonc` is **not gitignored** — commit it. It carries the main OpenCode configuration.
+> `opencode.jsonc` is gitignored and holds machine-local configuration; it is never pushed. Keep a local backup.
 
 ---
 
@@ -191,9 +191,10 @@ npm install
 │   ├── great-builder/       # Implementation pipelines, split by effort
 │   │   ├── build-low.md     # Primary: direct edit of one small change (≤2 files)
 │   │   ├── build-medium.md  # Primary: analyzer, one checkpoint, direct edit or ≤5 workers
-│   │   ├── build-high.md    # Primary: plan-driven waves, up to 5 workers, review on request
+│   │   ├── build-high.md    # Primary: plan-driven waves, up to 5 workers, mandatory review before report
 │   │   └── sub/             # Read-only specialist subagents
 │   │       ├── analyzer.md  # Scope discovery and codebase analysis
+│   │       ├── bulk.md      # Mechanical, spec-complete edits
 │   │       └── reviewer.md  # Verifies the diff or commit against an approved plan
 │   └── research/            # Web research pipelines
 │       ├── fast.md          # Low effort research orchestrator
@@ -203,16 +204,14 @@ npm install
 ├── skills/                  # Local repo skills
 │   ├── oc-agent-config/     # Agent authoring spec, validator, and references
 │   ├── oc-research-tiering/ # T1/T2/T3 evidence rubric + ResearchReport schema
-│   ├── oc-retrieval/        # Retrieval MCP tooling skill
+│   ├── oc-retrieval/        # Retrieval skill (`c4f-retrieval` namespace tools)
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
 ├── plugins/                 # Native plugins (loaded by OpenCode)
-│   ├── c4f-model-policy/    # Runtime model filtering + `allowed_models` tool
+│   ├── c4f-model-policy/    # Runtime filtering + `allowed_models` (namespace `c4f-model-policy`)
 │   └── c4f-retrieval/       # Verified-context retrieval plugin
-├── mcps/                    # MCP servers
-│   └── retrieval/           # Repository context tools (`context_*`, `python_symbols`)
-├── AGENTS.md                # Model routing for this repo
+├── AGENTS.md                # Repo-level agent instructions (currently empty)
 ├── package.json             # Dependencies (@opencode/plugin, effect, typescript)
-└── opencode.jsonc           # OpenCode main config (not gitignored; commit it)
+└── opencode.jsonc           # Local OpenCode config (gitignored)
 ```
 
 ---
@@ -239,7 +238,7 @@ Installed agent IDs are **namespaced by directory** — e.g. `great-builder/buil
 |---|---|---|
 | Routing skill | `skills/oc-routing/` | Single routing skill for **dev + research** lanes; session reuse |
 | Tier rubric | `skills/oc-research-tiering/` | T1/T2/T3 evidence rubric + `ResearchReport` schema |
-| Retrieval | `skills/oc-retrieval/` | Retrieval MCP tooling |
+| Retrieval | `skills/oc-retrieval/` | `c4f-retrieval` namespace tooling |
 | Authoring spec | `skills/oc-agent-config/` | V2 spec, validator, references |
 
 **How routing resolves:**
@@ -278,12 +277,12 @@ Add `--json` for machine-readable output.
 
 | Surface | Purpose |
 |---|---|
-| `allowed_models` tool | Routing table: model, variants, cost tier, trigger |
-| retrieval MCP tools (`context_lookup`, `context_upsert`, `python_symbols`) | Verified repository context |
+| `tools['c4f-model-policy'].allowed_models` (`c4f-model-policy` namespace) | Routing table: model, provider, variants, routing tier, trigger |
+| `c4f-retrieval` tools (`context_lookup`, `context_upsert`, `context_invalidate`, `python_symbols`) | Verified repository context |
 | `python3 skills/oc-agent-config/scripts/validate_agent.py <files>` | Validate agent files |
 
 Enforcement lives in the `c4f-model-policy` plugin; routing data comes from the
-`allowed_models` tool, not a shell command.
+`tools['c4f-model-policy'].allowed_models` call in the `c4f-model-policy` namespace, not a shell command.
 
 ---
 

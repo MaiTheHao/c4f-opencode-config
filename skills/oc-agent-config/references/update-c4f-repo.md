@@ -18,8 +18,8 @@ Never let an update pipeline touch these, and never proactively move them:
 | Area | Status | Why it is protected |
 |---|---|---|
 | `cli.json`, `service.json`, `local/`, `node_modules`, `bun.lock`, `__pycache__/` | Gitignored (main repo) | Runtime config and credentials; not pushed, not updated, not backed up |
-| `opencode.jsonc` | NOT gitignored; untracked until committed | Main OpenCode config. `.gitignore` no longer excludes it, so it shows in `git status` and `git clean -fd` erases it — that flag skips ignored paths but removes untracked ones. Ignoring it was the only protection it had. Commit it to protect it, and never rewrite it as part of an update |
-| `plugins/c4f-model-policy/allowed_models.json` + `plugins/c4f-model-policy/` | Untracked in the main repo | The runtime model filter reads this allowlist; untracked files can be silently lost if anyone runs `git clean` |
+| `opencode.jsonc` | Gitignored (main repo) | Local OpenCode configuration; never pushed and never rewritten as part of an update. Keep a local backup |
+| `plugins/c4f-model-policy/allowed_models.json` + `plugins/c4f-model-policy/` | Tracked | Committed runtime allowlist and plugin. Edits are user customizations: never reset or replace them as part of an update |
 | Any ` M` (modified tracked) path | Tracked | User customizations of repo content; expected source of update conflicts by design |
 
 Hard rule: NEVER run `git checkout -- .`, `git reset --hard`, or `git clean` on either repo without the user explicitly approving every erased path. Do not edit `allowed_models.json` as part of an update.
@@ -56,7 +56,7 @@ Report the origin URL, branch, behind/ahead counts, and latest HEAD hash to the 
 
 ## Step 2 — Update a compatible tree
 
-If `master...origin/master` is fast-forwardable and the tree is clean (only gitignored paths differ; an uncommitted `opencode.jsonc` makes the tree dirty, so commit or stash it first):
+If `master...origin/master` is fast-forwardable and the tree is clean (only gitignored paths differ, which never blocks an update):
 
 ```bash
 git -C "$REPO" pull --ff-only origin master
@@ -71,7 +71,7 @@ Typical cause: the user edited agent files, skills, or added untracked scripts. 
 1. Inventory: `git -C "$REPO" status --porcelain` — ` M`/`MM`/`?` paths are user deltas; gitignored paths are irrelevant to the update.
 2. Preserve user work, exactly one of:
    - **Commit (recommended for durable customizations):** `git add <paths> && git commit -m "chore(local): preserve customization before update"` — then the update becomes a divergence handled by rebase: `git -C "$REPO" pull --rebase origin master` (never `--autostash` when untracked files such as `scripts/` must stay in place — autostash leaves untracked files alone, so this is safe, but confirm the stash contents with the user before relying on it).
-   - **Stash (for disposable or uncertain edits):** `git -C "$REPO" stash push -m "pre-update <YYYY-MM-DD>" -- <tracked paths only>`; NEVER stash `--include-untracked` blindly — that would sweep `plugins/c4f-model-policy/allowed_models.json` into a stash the user may never restore.
+   - **Stash (for disposable or uncertain edits):** `git -C "$REPO" stash push -m "pre-update <YYYY-MM-DD>" -- <tracked paths only>`; NEVER stash `--include-untracked` blindly — that would sweep untracked runtime files into a stash the user may never restore.
    Untracked files needed at runtime glued to absolute paths: leave them in place; only Step 4's untracked-clash case may move them.
 3. Re-run `pull --ff-only` or `pull --rebase` and report: commits applied, divergence strategy used, remaining dirty paths.
 

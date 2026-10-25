@@ -20,7 +20,7 @@ import { createStore } from './lib/store.js';
 // migrated: this release starts each project with an empty store. Point
 // `options.contextFile` at an old file to read it, or copy its lines across.
 const DEFAULT_CONTEXT_PATH = 'local/agents/retrieval_context.json';
-const NAMESPACE = 'retrieval';
+const NAMESPACE = 'c4f-retrieval';
 
 export default {
   id: 'c4f-retrieval',
@@ -52,8 +52,7 @@ export default {
         contextUpsertTool(ctx, getStore),
         contextInvalidateTool(getStore),
       ]) {
-        // Same namespace and Code Mode placement as the MCP server this replaces,
-        // so existing tool references keep resolving.
+        // Grouped under the c4f-retrieval namespace and exposed through Code Mode; keep the MCP-era grouping so one permission wildcard covers all four tools.
         editor.add({ ...tool, options: { namespace: NAMESPACE, codemode: true } });
       }
     });

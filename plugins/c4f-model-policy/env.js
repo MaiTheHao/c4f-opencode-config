@@ -16,8 +16,6 @@ export const env = Object.freeze({
   enabled: true,
 
   policy: Object.freeze({
-    /** Unlisted, non-banned models whose base id ends with this suffix are allowed. */
-    freeSuffix: '-free',
     /** `interrupt` denies disallowed model requests (L2); `off` disables that hook. */
     gate: 'interrupt',
     /** When the allowlist cannot be loaded: `fail-closed` denies all, `fail-open` allows all. */

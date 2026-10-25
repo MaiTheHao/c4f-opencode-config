@@ -17,8 +17,12 @@ export function registerRegistryFilter({ ctx, snapshot, policy }) {
       const models = typeof editor?.list === 'function' ? editor.list() : [];
 
       for (const model of models) {
-        const denied = current === null ? failClosed : !isAllowed(current, model);
-        if (denied) editor.remove(model.providerID, model.id);
+        if (current === null) {
+          if (failClosed) editor.remove(model.providerID, model.id);
+          continue;
+        }
+        const ref = modelRef(model);
+        if (!isAllowed(current, ref)) editor.remove(model.providerID, model.id);
       }
     } catch {
       // Never break model listing because of a policy error.
@@ -29,14 +33,19 @@ export function registerRegistryFilter({ ctx, snapshot, policy }) {
 /** L2 — backstop: interrupt a session whose request is pinned to a denied model. */
 export function registerRequestGate({ ctx, snapshot, policy }) {
   if (policy.gate !== 'interrupt') return undefined;
+  const failClosed = policy.onSnapshotFailure === 'fail-closed';
 
   return ctx.session.hook('model.request', async (event) => {
     try {
       const current = snapshot();
-      if (current === null) return;
+      if (current === null) {
+        if (!failClosed) return;
+        await ctx.session.interrupt({ sessionID: event?.sessionID, resume: false });
+        return;
+      }
 
       const ref = modelRef(event?.model);
-      if (ref.id === '' || isAllowed(current, ref)) return;
+      if (isAllowed(current, ref)) return;
 
       await ctx.session.interrupt({ sessionID: event?.sessionID, resume: false });
     } catch {

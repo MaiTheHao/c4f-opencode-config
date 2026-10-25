@@ -3,7 +3,6 @@ description: Deep-dive on one narrow sub-question via web research with source-t
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
-  - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
   - { action: skill, resource: 'oc-research-tiering', effect: allow }

@@ -7,7 +7,7 @@
 
 import { env, tokens } from './env.js';
 import { registerPromptScripts, registerRegistryFilter, registerRequestGate } from './lib/hooks.js';
-import { loadSnapshot } from './lib/policy.js';
+import { attachPricing, errorMessage, loadSnapshot } from './lib/policy.js';
 import { registerAllowedModelsTool } from './lib/tool.js';
 
 // Order matters: registry filtering first, the query tool last so it always
@@ -31,11 +31,33 @@ export default {
 
     // null means the last load failed; enforcement then follows policy.onSnapshotFailure.
     let snapshot = null;
+    let refreshing = false;
     const refresh = async () => {
+      if (refreshing) return;
+      refreshing = true;
       try {
-        snapshot = await loadSnapshot({ freeSuffix: policy.freeSuffix });
-      } catch {
-        snapshot = null;
+        let base;
+        try {
+          base = await loadSnapshot();
+        } catch {
+          snapshot = null;
+          return;
+        }
+        let models = null;
+        let error = null;
+        try {
+          // Registry snapshot: `ctx.model.list()` may be stale or not yet settled.
+          // It only feeds the policy heuristic (~60s refresh); never treat it as a
+          // billing source and never let its failure invalidate the policy config.
+          const listed = await ctx.model.list();
+          if (Array.isArray(listed?.data) && listed.data.length > 0) models = listed.data;
+          else error = 'registry returned no model data';
+        } catch (err) {
+          error = errorMessage(err);
+        }
+        snapshot = attachPricing(base, { models, error });
+      } finally {
+        refreshing = false;
       }
     };
 

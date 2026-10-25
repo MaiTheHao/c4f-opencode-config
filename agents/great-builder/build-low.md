@@ -1,19 +1,19 @@
 ---
 description: "LOW effort. Handles brainstorming's Trivial and Spike paths: self-analysis, direct edit, self-verify. Open permissions for chatting, answering, and coordinating; may delegate. Use for questions, small well-understood changes, and coordination."
 mode: primary
-color: '#4ade80'
+color: '#4a83de'
 permissions:
   # OpenCode's base policy, restated last so global rules cannot narrow this agent.
   - { action: '*', resource: '*', effect: ask }
+  - { action: question, resource: '*', effect: allow }
   - { action: read, resource: '*', effect: allow }
-  - { action: read, resource: '*.env', effect: deny }
-  - { action: read, resource: '*.env.*', effect: deny }
-  - { action: read, resource: '*.env.example', effect: allow }
-  - { action: edit, resource: '*.env', effect: deny }
-  - { action: edit, resource: '*.env.*', effect: deny }
-  - { action: edit, resource: '*.env.example', effect: allow }
-  - { action: external_directory, resource: '*', effect: ask }
+  - { action: edit, resource: '*', effect: allow }
+  - { action: patch, resource: '*', effect: allow }
   - { action: skill, resource: '*', effect: allow }
+  - { action: execute, resource: '*', effect: allow }
+  - { action: 'c4f-model-policy_*', resource: '*', effect: allow }
+  - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
+  - { action: browser, resource: '*', effect: deny }
 ---
 
 ## Context

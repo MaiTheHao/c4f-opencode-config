@@ -3,7 +3,6 @@ description: Cross-check claims from other research agents' reports and surface 
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
-  - { action: subagent, resource: '*', effect: deny }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
   - { action: skill, resource: 'oc-research-tiering', effect: allow }
