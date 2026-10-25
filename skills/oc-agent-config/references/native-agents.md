@@ -40,3 +40,17 @@ Preserve the original project prohibition on configuring `temperature` or `top_p
 `NATIVE` [D5]: use `provider/model#variant`, with an optional variant. Provider and model IDs are case-sensitive; a model ID can itself contain `/`. An expanded selector uses `providerID`, `model`, and optional `variant`. Availability depends on the active location's providers and credentials; use actual catalog IDs.
 
 `PROJECT`: prefer the string selector in handwritten agents. The project routing precondition (load skill `oc-routing` and apply the agent's embedded `### Routing` lanes before dispatch) lives in `references/project-authoring.md`.
+
+## Configuration boundary
+
+`UNVERIFIED` [S1]: global configuration is `~/.config/opencode/opencode.json` or `.jsonc`. Project configuration is `./opencode.json(c)` or `./.opencode/opencode.json(c)`, discovered by walking up from the working directory to the worktree root. Layers merge, and a discovered `.opencode` configuration overrides every direct configuration, even a closer one. Inspect the merged result.
+
+`UNVERIFIED` [S1]: `instructions: ["path", "glob/*.md"]` adds extra rule files to a configuration. JSONC root keys relevant to agents are `model`, `small_model`, `default_agent`, and `agent` (singular mapping keyed by agent ID). Do not author `agents` as a plural root key.
+
+`PROJECT`: pinning `model` under an agent entry is the only enforceable model-identity gate. A rule file such as `AGENTS.md` is advisory by construction: it describes policy but cannot force which model a session or subagent runs on. Do not present a rule-file check as enforcement.
+
+## MCP block shape
+
+`UNVERIFIED` [S1]: `mcp` is keyed by server name directly — `"mcp": { "<name>": { "type": "local", "command": [...], "environment": {} } }`. There is no `servers` wrapper. `mcp_timeout` sets a global timeout in milliseconds.
+
+`UNVERIFIED` [S1]: `cwd`, `codemode`, and `enabled` inside an MCP entry, and `{env:VAR}` substitution inside configuration values, are not confirmed on the installed build. `$HOME` inside a `command` array is not shell-expanded. Confirm before relying on any of them.

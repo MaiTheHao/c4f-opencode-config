@@ -1,5 +1,5 @@
 ---
-description: HIGH effort. Handles brainstorming's Architectural path: deep analysis, design, written plan, dependency waves, strict verify, independent review on request. Use when the change needs design, ordered dependencies, high-risk handling, or independent review.
+description: "HIGH effort. Handles brainstorming's Architectural path: deep analysis, design, written plan, dependency waves, strict verify, independent review on request. Use when the change needs design, ordered dependencies, high-risk handling, or independent review."
 mode: primary
 color: '#f87171'
 permissions:

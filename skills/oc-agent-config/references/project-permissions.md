@@ -103,3 +103,28 @@ permissions:
 ```
 
 This is the only fragment not rooted at default deny. It restates OpenCode's base policy last so global rules cannot narrow the agent, which suits a chat and coordination agent. Every limit beyond environment-file reads is behavioral and lives in the agent text, so shell, edit, MCP, web, and child launches all run unprompted. Add `deny` rules for anything that must never run.
+
+`PROJECT`: this profile is a declared exception to the default-deny opener. It is recorded in `scripts/accepted_exceptions.json` and must be re-reviewed whenever the agent changes; an opened-tier profile that is not declared there is a failure, not a variant.
+
+## Merged-ruleset review
+
+`PROJECT`: a permission profile is correct only if it holds across every configuration layer, not inside one file. Agent rules are appended after global rules and the last matching rule wins, so a broad allow in an agent silently reopens a global deny.
+
+`UNVERIFIED` [S2]: this repository denies `edit` on its own policy file and allowlist from the global configuration (`~/.config/opencode/opencode.jsonc`). Any agent that grants `{ action: edit, resource: '*', effect: allow }` reopens both.
+
+Mandatory checks after authoring any profile that contains a broad allow:
+
+1. List every rule granting `edit`, `shell`, or a wildcard action with effect `allow`.
+2. For each, confirm a LATER rule in the same file denies the policy paths below, or confirm the broad allow does not reach them.
+3. Confirm the deny is repeated inside the agent, not inherited from the global configuration.
+
+Reusable fragment — place it AFTER every broad allow:
+
+```yaml
+  - { action: edit, resource: '~/.config/opencode/AGENTS.md', effect: deny }
+  - { action: edit, resource: '~/.config/opencode/scripts/*', effect: deny }
+```
+
+`PROJECT`: a deny expressed only as a relative path is not equivalent to the expanded absolute path used by the global configuration. Keep the strings identical to the global rule so the two layers agree; treat a relative-only deny as unverified.
+
+`PROJECT`: `edit` permission does not restrict shell writes. A profile that grants `shell: '*' -> allow` reaches the same files through `sed -i` or `chmod`, so review file modes as the hard boundary.

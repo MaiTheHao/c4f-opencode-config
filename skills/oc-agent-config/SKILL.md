@@ -34,7 +34,7 @@ Every requirement belongs to one layer. Never present a project policy as native
 | `PROJECT` | Policy adopted by this agent family | Review this specification and its acceptance checks |
 | `UNVERIFIED` | Environment-dependent capability or missing dependency | Inspect the actual catalog/schema/configuration and run a focused smoke check |
 
-A project policy can narrow behavior; it cannot create a tool, grant authority, invent an input field, or make an unsupported setting effective. When evidence conflicts, record the conflict and leave the capability `UNVERIFIED`. NEVER silently migrate the configuration to another major version. Source register and the open schema conflict live in `references/sources.md`.
+A project policy can narrow behavior; it cannot create a tool, grant authority, invent an input field, or make an unsupported setting effective. When evidence conflicts, record the conflict and leave the capability `UNVERIFIED`. NEVER silently migrate the configuration to another major version. Source register and the open schema conflict live in `references/sources.md`. Supplementary sources are registered as `S1`–`S4` in that file; a claim resting only on an `S*` tag is `UNVERIFIED` and MUST NOT be labelled `NATIVE`.
 
 ## 3. The agent contract at a glance
 
@@ -50,7 +50,7 @@ Applies to every governed agent. Full rules: `references/project-authoring.md` a
 - MUST open an agent's own rules with `{ action: '*', resource: '*', effect: deny }`, then grant only what its workflow needs.
 - MUST give every custom leaf subagent `{ action: subagent, resource: '*', effect: deny }`, and grant only catalog-confirmed child IDs.
 - MUST keep `skill: '*' -> allow` on primaries as the family default.
-- MUST evaluate the complete merged ruleset: a later broad allow can reopen an earlier restriction.
+- MUST evaluate the complete merged ruleset across files: agent rules are appended after global rules, so a later broad allow reopens an earlier global restriction — including a deny on a policy file that constrains the agent itself.
 Invariants and fragments: `references/project-permissions.md`. Matching semantics: `references/native-permissions.md`.
 
 **Body** — three sections, in order:
@@ -76,7 +76,7 @@ Each requirement has exactly one owner; `## Workflow` references a rule instead 
 - Merged entry and live catalog inspected; every referenced child, skill, and model ID resolved.
 - Every workflow action maps to a callable tool with an effective permission decision.
 - Body matches layout, size budget, and single-owner rule discipline.
-- Permissions open with default deny; leaf children deny delegation; sensitive-file paths reviewed across all access channels.
+- Permissions open with default deny; leaf children deny delegation; sensitive-file paths reviewed across all access channels. A profile that cannot open with deny is declared in `scripts/accepted_exceptions.json`, never left undocumented.
 - Behavior exercised in the installed runtime, not merely YAML-parsed.
 - Change report distinguishes `NATIVE`, `PROJECT`, and `UNVERIFIED` results and records remaining blockers.
 Full procedure and behavioral cases: `references/acceptance.md`.

@@ -27,6 +27,19 @@ A project policy can narrow behavior; it cannot create a tool, grant authority, 
 | D7 | [Published config schema](https://opencode.ai/config.json) | Compatibility check; conflict recorded below |
 | D8 | [V2 Policies](https://opencode.ai/v2/docs/policies) | Hard restrictions outside ordinary agent permissions |
 
+## Supplementary source register
+
+`PROJECT`: these sources are recorded because they describe configuration surfaces the V2 pages omit (generation differences, MCP block shape, cross-OS behaviour). They are not part of the V2 contract.
+
+| ID | Source | Use | Retrieved |
+|---|---|---|---|
+| S1 | `https://opencode.ai/docs/config` | Config locations, precedence, `instructions`, root keys, MCP block | 2026-10-25 |
+| S2 | `https://opencode.ai/docs/permissions` | v1 `permission` generation, tool keys, defaults | 2026-10-25 |
+| S3 | `https://v2.opencode.ai/docs/permissions` | v2 `permissions` generation, `--auto`, saved approvals | 2026-10-25 |
+| S4 | `https://learnopencode.com` | Third-party config reference; navigation aid only | 2026-10-25 |
+
+`PROJECT`: a claim resting only on an `S*` tag carries authority `UNVERIFIED` and MUST NOT be labelled `NATIVE`. Promote it only after a `D1`–`D8` match or an installed-runtime check. An unversioned page may describe either generation; never infer which generation the installed build uses from an `S*` page alone.
+
 Use `/v2/docs/` sources for this specification. Unversioned `/docs/` pages and historical design proposals are not substitutes for the V2 contract.
 
 ## Observed schema conflict — OPEN
@@ -34,5 +47,11 @@ Use `/v2/docs/` sources for this specification. Unversioned `/docs/` pages and h
 On the review date, D6 linked to D7, but the fetched D7 exposed legacy `AgentConfig` fields including `permission`, `maxSteps`, and `tools`, and a root `agent` mapping. This does not match the native V2 authoring contract in D1/D2/D6. [D7]
 
 **Resolution policy:** use the V2 documentation baseline for authoring; require a schema or parser tied to the installed V2 release before claiming runtime validation. NEVER "fix" native `permissions` into `permission` merely to satisfy this fetched schema. NEVER invent a versioned schema URL. Record the exact URL, retrieval date, runtime version, and any source commit used during a future verification.
+
+## Observed generation conflict — OPEN
+
+`S1` `S2` `S3`: two permission syntax generations are documented. v1 uses a `permission` object with tool keys such as `edit` and `bash`; v2 uses a `permissions` array of `{ action, resource, effect }` with `shell` and `subagent`. Observed in this repository: the global config (`~/.config/opencode/opencode.jsonc`) uses the v1 `permission` object while every agent file uses the v2 `permissions` array.
+
+**Resolution policy:** author agents only in v2 syntax. Do not migrate the global config, and do not rewrite agent `permissions` into `permission`, until the installed build's accepted surface is confirmed. Record the runtime version with any decision.
 
 No OpenCode executable was available in the review environment. Custom subagents, installed skills, live tool schemas, provider credentials, and merged agent configurations were not supplied. Their existence and behavior remain `UNVERIFIED`.

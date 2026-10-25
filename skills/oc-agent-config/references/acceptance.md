@@ -4,7 +4,7 @@
 
 1. **Identify:** record runtime version/build, agent deployment IDs, input hashes, requested scope, and this spec revision.
 2. **Refresh evidence:** open only relevant current V2 sources; check schema identity and document differences before changing the baseline.
-3. **Parse:** run `python3 scripts/validate_agent.py <agent.md>` for the machine-checkable subset (duplicate keys, required/rejected fields, forbidden sampling keys, permission invariants, body layout, line budget), then review anything it cannot see (types, enums, semantics) by hand.
+3. **Parse:** run `python3 scripts/validate_agent.py <agent.md>` for the machine-checkable subset (duplicate keys, required/rejected fields, forbidden sampling keys, permission invariants, body layout, line budget), then review anything it cannot see (types, enums, semantics) by hand. Failures declared in `scripts/accepted_exceptions.json` are downgraded to warnings: a new `[accepted]` warning means the profile changed under a standing exception, and either the profile or the exception must move.
 4. **Resolve:** inspect the merged agent entry and live catalog, including global/project overrides, policies, saved approvals, skill winners, and child definitions.
 5. **Trace capabilities:** map each workflow operation to a callable tool, its permission action/resource, and dependencies. Resolve all required-but-denied operations without blanket grants.
 6. **Review behavior:** check layout, routing precondition, table/allowlist agreement, closed output contracts, failure transitions, gates, slot limits, operational budgets, and line budgets.
@@ -17,6 +17,7 @@
 | Case | Expected result under the selected project profile |
 |---|---|
 | Catch-all deny followed by exact allow | Allowed target succeeds; a neighboring target is denied |
+| Broad `edit: '*' -> allow` in an agent vs global deny on `AGENTS.md` / `scripts/*` | The deny wins in the merged ruleset; the agent cannot edit the policy file or the allowlist |
 | Leaf child attempts delegation | Denied by the child's effective rule |
 | Solo researcher attempts edit/shell/child call | Denied |
 | Planner writes `local/check.md` vs `src/check.ts` | Artifact allowed; source mutation denied |
@@ -33,7 +34,7 @@
 ## Acceptance record
 
 ```text
-SpecRevision: 2.0.0
+SpecRevision: 2.1.0
 RuntimeVersion: <actual version, or UNVERIFIED>
 AgentIDs: <resolved installed IDs>
 ChangedFiles: <paths and actions>

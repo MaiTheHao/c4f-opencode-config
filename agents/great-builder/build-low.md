@@ -1,5 +1,5 @@
 ---
-description: LOW effort. Handles brainstorming's Trivial and Spike paths: self-analysis, direct edit, self-verify. Open permissions for chatting, answering, and coordinating; may delegate. Use for questions, small well-understood changes, and coordination.
+description: "LOW effort. Handles brainstorming's Trivial and Spike paths: self-analysis, direct edit, self-verify. Open permissions for chatting, answering, and coordinating; may delegate. Use for questions, small well-understood changes, and coordination."
 mode: primary
 color: '#4ade80'
 permissions:

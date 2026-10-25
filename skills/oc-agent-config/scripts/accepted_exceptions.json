@@ -1,0 +1,12 @@
+{
+  "spec_revision": "2.1.0",
+  "note": "Declared, reviewed exceptions to validate_agent.py hard checks. A match downgrades exactly one failure to a warning. Adding an entry is a policy decision: record the reason and re-review it when the agent changes.",
+  "exceptions": [
+    {
+      "path": "agents/great-builder/build-low.md",
+      "failure_prefix": "first permission MUST be",
+      "reason": "Open-tier LOW profile: restates OpenCode's base policy as `ask` last so global rules cannot narrow it. Documented in references/project-permissions.md under the open-tier fragment.",
+      "reviewed": "2026-10-25"
+    }
+  ]
+}

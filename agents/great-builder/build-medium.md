@@ -1,5 +1,5 @@
 ---
-description: MEDIUM effort. Handles brainstorming's Bounded path: analyzer-scoped, one checkpoint, then direct edit or parallel workers, self-verified. Use when the change needs real analysis but no written plan, ordered units, or independent review.
+description: "MEDIUM effort. Handles brainstorming's Bounded path: analyzer-scoped, one checkpoint, then direct edit or parallel workers, self-verified. Use when the change needs real analysis but no written plan, ordered units, or independent review."
 mode: primary
 color: '#facc15'
 permissions:
@@ -15,6 +15,8 @@ permissions:
   - { action: edit, resource: '*.env', effect: deny }
   - { action: edit, resource: '*.env.*', effect: deny }
   - { action: edit, resource: '*.env.example', effect: allow }
+  - { action: edit, resource: '~/.config/opencode/AGENTS.md', effect: deny }
+  - { action: edit, resource: '~/.config/opencode/scripts/*', effect: deny }
   - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'ls *', effect: allow }
   - { action: shell, resource: 'wc *', effect: allow }

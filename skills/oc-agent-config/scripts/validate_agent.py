@@ -35,6 +35,8 @@ ALLOWED_MODES = {"primary", "subagent", "all"}
 REJECTED_KEYS = {"permission", "tools", "prompt", "disable", "maxSteps"}
 FORBIDDEN_RECURSIVE = {"temperature", "top_p"}
 REJECTED_ACTIONS = {"bash", "task"}
+POLICY_PATHS = ("AGENTS.md", "scripts/*")
+BASELINE_NAME = "accepted_exceptions.json"
 VALID_EFFECTS = {"allow", "ask", "deny"}
 BODY_SECTIONS = ["## Context", "## Workflow", "## Rules"]
 LINE_BUDGET = {  # mode -> (target, hard ceiling)
@@ -103,6 +105,99 @@ def _find_body_heading_order(body: str) -> list[str]:
         match = re.search(rf"^{re.escape(section)}\s*$", body, re.MULTILINE)
         positions.append((section, match.start() if match else -1))
     return positions
+
+
+def _policy_denies(permissions: list, start: int) -> set[str]:
+    """Policy paths denied by a rule at or after `start`."""
+    covered: set[str] = set()
+    for rule in permissions[start:]:
+        if not isinstance(rule, dict):
+            continue
+        if rule.get("effect") != "deny":
+            continue
+        if rule.get("action") not in ("edit", "*"):
+            continue
+        resource = rule.get("resource")
+        if not isinstance(resource, str):
+            continue
+        normalized = resource.replace("~/.config/opencode/", "")
+        if normalized in ("*", "**", "**/*"):
+            return set(POLICY_PATHS)
+        for path in POLICY_PATHS:
+            if normalized == path or normalized.endswith("/" + path):
+                covered.add(path)
+    return covered
+
+
+def _check_policy_reopen(result: Result, permissions: list) -> None:
+    """A broad edit allow must be followed by a deny of every policy path."""
+    for index, rule in enumerate(permissions):
+        if not isinstance(rule, dict):
+            continue
+        if rule.get("action") != "edit" or rule.get("effect") != "allow":
+            continue
+        if rule.get("resource") not in ("*", "**", "**/*"):
+            continue
+        missing = [p for p in POLICY_PATHS if p not in _policy_denies(permissions, index + 1)]
+        if missing:
+            result.fail(
+                f"permissions[{index}] grants a broad edit allow; a later rule must deny "
+                f"policy path(s): {', '.join(missing)}"
+            )
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+def _load_baseline(explicit: Path | None) -> list[dict]:
+    """Read declared exceptions. A missing or unreadable baseline declares none."""
+    path = explicit or (Path(__file__).resolve().parent / BASELINE_NAME)
+    if not path.is_file():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    entries = data.get("exceptions") if isinstance(data, dict) else None
+    return [e for e in entries if isinstance(e, dict)] if isinstance(entries, list) else []
+
+
+def _entry_matches(path: Path, entry_path: str) -> bool:
+    target = (_repo_root() / entry_path).resolve()
+    if path.resolve() == target:
+        return True
+    return str(path.resolve()).endswith("/" + entry_path)
+
+
+def _apply_baseline(results: list[Result], entries: list[dict]) -> tuple[int, list[str]]:
+    """Downgrade exactly the declared failures to warnings. Narrow by path and prefix."""
+    accepted = 0
+    used: set[int] = set()
+    for result in results:
+        for index, entry in enumerate(entries):
+            prefix = entry.get("failure_prefix")
+            entry_path = entry.get("path")
+            if not isinstance(prefix, str) or not prefix.strip() or not isinstance(entry_path, str):
+                continue
+            if not _entry_matches(result.path, entry_path):
+                continue
+            remaining = []
+            for failure in result.failures:
+                if failure.startswith(prefix):
+                    reason = entry.get("reason", "declared exception")
+                    result.warn(f"[accepted] {failure} — {reason}")
+                    used.add(index)
+                    accepted += 1
+                else:
+                    remaining.append(failure)
+            result.failures = remaining
+    unused = [
+        f"{entry.get('path')}: {entry.get('failure_prefix')}"
+        for index, entry in enumerate(entries)
+        if index not in used
+    ]
+    return accepted, unused
 
 
 def validate_file(path: Path) -> Result:
@@ -201,6 +296,8 @@ def validate_file(path: Path) -> Result:
                     "subagent MUST contain { action: subagent, resource: '*', effect: deny }"
                 )
 
+        _check_policy_reopen(result, permissions)
+
     # Body layout
     headings = _find_body_heading_order(body)
     missing_sections = [name for name, pos in headings if pos < 0]
@@ -236,7 +333,7 @@ def validate_file(path: Path) -> Result:
     return result
 
 
-def render(results: list[Result], as_json: bool) -> int:
+def render(results: list[Result], as_json: bool, accepted: int = 0, unused: list[str] | None = None) -> int:
     if as_json:
         payload = [
             {
@@ -258,6 +355,10 @@ def render(results: list[Result], as_json: bool) -> int:
                 print(f"  ! {warning}")
         failed = sum(1 for r in results if not r.ok)
         print(f"\n{len(results) - failed}/{len(results)} file(s) passed static checks.")
+        if accepted:
+            print(f"{accepted} declared exception(s) applied.")
+        for entry in unused or []:
+            print(f"! unused baseline exception: {entry}")
     return 1 if any(not r.ok for r in results) else 0
 
 
@@ -265,6 +366,12 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Static validator for OpenCode V2 agent files.")
     parser.add_argument("files", nargs="+", type=Path)
     parser.add_argument("--json", action="store_true", help="emit machine-readable output")
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        default=None,
+        help=f"declared exceptions file (default: {BASELINE_NAME} beside this script)",
+    )
     args = parser.parse_args(argv)
 
     missing = [p for p in args.files if not p.is_file()]
@@ -273,7 +380,9 @@ def main(argv: list[str]) -> int:
             sys.stderr.write(f"not a file: {p}\n")
         return 2
 
-    return render([validate_file(p) for p in args.files], args.json)
+    results = [validate_file(p) for p in args.files]
+    accepted, unused = _apply_baseline(results, _load_baseline(args.baseline))
+    return render(results, args.json, accepted, unused)
 
 
 if __name__ == "__main__":
