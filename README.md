@@ -104,7 +104,7 @@ npm install
 │   ├── oc-research-tiering/ # T1/T2/T3 evidence rubric + ResearchReport schema
 │   ├── oc-retrieval/        # Retrieval MCP tooling skill
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
-└── opencode.jsonc           # OpenCode main config (local, gitignored)
+└── opencode.jsonc           # OpenCode main config (not gitignored; commit it)
 ```
 
 ---

@@ -11,10 +11,11 @@ How to author, audit, and migrate native OpenCode V2 Markdown agents in this rep
 
 ## 1. How to use this skill
 
-This file is the entry point: the authority model, the non-negotiable contract, and the authoring flow. Detail lives in `references/`. Load a reference only when its trigger matches — never preload the set. Deterministic static checks live in `scripts/validate_agent.py`; execute it rather than reading it into context.
+This file is the entry point: the authority model, the non-negotiable contract, and the authoring flow. Detail lives in `references/`. Load a reference only when its trigger matches — never preload the set. Deterministic static checks live in `scripts/validate_agent.py`; execute it rather than reading it into context. `references/update-c4f-repo.md` is the family's primary and most frequently used reference: load it FIRST whenever a task reads or mutates either C4F repository (main config or external skills), because every other operation — agent edits, validation, permission changes — happens inside those repos and depends on their update state.
 
 | Reference | Load it when |
 |---|---|
+| **`references/update-c4f-repo.md`** — **primary reference, highest priority.** Load FIRST on any task that touches repository maintenance, and proactively consult it whenever the user works inside `~/.config/opencode` or `~/.agents/skills` | Updating either C4F repository (main config or external skills): version checks, guided git update, update conflicts from user customizations. This is the most frequently used reference in this skill |
 | `references/sources.md` | Refreshing native evidence, recording a source conflict, or citing a `NATIVE` contract's origin |
 | `references/native-agents.md` | Verifying V2 agent file locations, frontmatter field shapes, rejected keys, or model selectors |
 | `references/native-permissions.md` | Resolving permission rule matching, action/resource names, wildcards, or hard policies (D8) |

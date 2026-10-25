@@ -1,0 +1,48 @@
+{
+  "authorized": [
+    {
+      "id": "muse-spark-1.3-contributor",
+      "variants": ["low", "high"],
+      "cost": 1,
+      "role": "Implement multi-file changes, orchestrate agents, research architecture",
+      "strengths": "Long-horizon coding, complex requirements"
+    },
+    {
+      "id": "mimo-v2.6-flash",
+      "variants": ["low", "high"],
+      "cost": 2,
+      "role": "Implement features, run terminal workflows, debug iteratively, troubleshoot build/CI",
+      "strengths": "Tool-driven coding, iterative debugging"
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "variants": ["low", "high", "max"],
+      "cost": 2,
+      "role": "Root-cause analysis, complex debugging, refactoring, quantitative/technical research",
+      "strengths": "Algorithmic and quantitative reasoning"
+    },
+    {
+      "id": "glm-5.3-flash",
+      "variants": ["low", "high"],
+      "cost": 3,
+      "role": "Explore repos, generate tests, classify, summarize, routine maintenance, validate",
+      "strengths": "Repository exploration, validation, routine work"
+    },
+    {
+      "id": "hy3",
+      "variants": null,
+      "cost": 3,
+      "role": "Specialized tasks",
+      "strengths": "Use only when verified suitable"
+    }
+  ],
+  "free": {
+    "cost": 0,
+    "role": "Free-tier tasks (any *-free model)",
+    "strengths": "Zero cost; availability and quality unverified"
+  },
+  "banned": [
+    "qwen3.8-flash",
+    "mimo-v2.5"
+  ]
+}

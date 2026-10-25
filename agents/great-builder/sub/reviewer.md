@@ -2,21 +2,20 @@
 description: Read-only reviewer. Verifies the working-tree diff against an approved plan. Dispatched by great-builder/build-high's REVIEW flow or used standalone.
 mode: subagent
 permissions:
-  - { action: '*', resource: '*', effect: ask }
+  - { action: '*', resource: '*', effect: deny }
   - { action: subagent, resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
   - { action: read, resource: '*.env', effect: deny }
   - { action: read, resource: '*.env.*', effect: deny }
+  - { action: read, resource: '*.env.example', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
+  - { action: skill, resource: '*', effect: allow }
   - { action: shell, resource: 'ls *', effect: allow }
-  - { action: shell, resource: 'head *', effect: allow }
-  - { action: shell, resource: 'tail *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
   - { action: shell, resource: 'git log *', effect: allow }
-  - { action: shell, resource: 'git show *', effect: allow }
-  - { action: skill, resource: '*', effect: allow }
+  - { action: shell, resource: 'git show --stat *', effect: allow }
 ---
 
 ## Context
@@ -43,7 +42,7 @@ An approved plan and the units or scope to review. If the plan is missing, retur
 ## Rules
 
 - Required skills: `writing-plans`; load `git-commit` when judging a commit message.
-- Read-only. Never edit files or dispatch subagents.
+- Read-only by permission: edit is default-denied and never granted; subagents are denied. Never edit files or dispatch subagents.
 - Describe `RequiredChange` in words; never write the fix.
 - Cite `file:line` for every claim and finding.
 - Use `BLOCKER` only for defects that make the work unusable or unsafe. Do not pad findings.
