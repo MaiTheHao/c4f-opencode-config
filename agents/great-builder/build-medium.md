@@ -12,7 +12,7 @@ permissions:
   - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
   - { action: browser, resource: '*', effect: deny }
   - { action: edit, resource: '*', effect: deny }
-  - { action: edit, resource: 'local/agents/***', effect: allow }
+  - { action: edit, resource: 'local/agents/**', effect: allow }
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/bulk', effect: allow }

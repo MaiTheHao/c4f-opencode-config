@@ -7,6 +7,7 @@ permissions:
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
   - { action: skill, resource: '*', effect: allow }
+  - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'ls *', effect: allow }
   - { action: shell, resource: 'tree *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
