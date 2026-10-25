@@ -19,7 +19,7 @@ Never let an update pipeline touch these, and never proactively move them:
 |---|---|---|
 | `cli.json`, `service.json`, `local/`, `node_modules`, `bun.lock`, `__pycache__/` | Gitignored (main repo) | Runtime config and credentials; not pushed, not updated, not backed up |
 | `opencode.jsonc` | NOT gitignored; untracked until committed | Main OpenCode config. `.gitignore` no longer excludes it, so it shows in `git status` and `git clean -fd` erases it — that flag skips ignored paths but removes untracked ones. Ignoring it was the only protection it had. Commit it to protect it, and never rewrite it as part of an update |
-| `scripts/allowed_models.json` + `scripts/show_models.py` | Untracked in the main repo | The `AGENTS.md` C4F model-identity policy reads the allowlist from here; untracked files can be silently lost if anyone runs `git clean` |
+| `plugins/c4f-model-policy/allowed_models.json` + `plugins/c4f-model-policy/` | Untracked in the main repo | The runtime model filter reads this allowlist; untracked files can be silently lost if anyone runs `git clean` |
 | Any ` M` (modified tracked) path | Tracked | User customizations of repo content; expected source of update conflicts by design |
 
 Hard rule: NEVER run `git checkout -- .`, `git reset --hard`, or `git clean` on either repo without the user explicitly approving every erased path. Do not edit `allowed_models.json` as part of an update.
@@ -71,7 +71,7 @@ Typical cause: the user edited agent files, skills, or added untracked scripts. 
 1. Inventory: `git -C "$REPO" status --porcelain` — ` M`/`MM`/`?` paths are user deltas; gitignored paths are irrelevant to the update.
 2. Preserve user work, exactly one of:
    - **Commit (recommended for durable customizations):** `git add <paths> && git commit -m "chore(local): preserve customization before update"` — then the update becomes a divergence handled by rebase: `git -C "$REPO" pull --rebase origin master` (never `--autostash` when untracked files such as `scripts/` must stay in place — autostash leaves untracked files alone, so this is safe, but confirm the stash contents with the user before relying on it).
-   - **Stash (for disposable or uncertain edits):** `git -C "$REPO" stash push -m "pre-update <YYYY-MM-DD>" -- <tracked paths only>`; NEVER stash `--include-untracked` blindly — that would sweep `scripts/allowed_models.json` into a stash the user may never restore.
+   - **Stash (for disposable or uncertain edits):** `git -C "$REPO" stash push -m "pre-update <YYYY-MM-DD>" -- <tracked paths only>`; NEVER stash `--include-untracked` blindly — that would sweep `plugins/c4f-model-policy/allowed_models.json` into a stash the user may never restore.
    Untracked files needed at runtime glued to absolute paths: leave them in place; only Step 4's untracked-clash case may move them.
 3. Re-run `pull --ff-only` or `pull --rebase` and report: commits applied, divergence strategy used, remaining dirty paths.
 
@@ -100,8 +100,6 @@ python3 "$REPO/skills/oc-agent-config/scripts/validate_agent.py" \
 ```
 
 - Validator must exit `0`; warnings are review items, not blockers.
-- Re-check the model-identity policy after any `scripts/` or `AGENTS.md` change: `python3 ~/.config/opencode/scripts/show_models.py --check <model-id>` must return `AUTHORIZED` or `FREE` (exit 0).
-- **Known README drift:** `README.md` instructs `npm install`, but `package.json` was removed (commit `27cfa22`). Only run `npm install` when `package.json` exists at the repo root; otherwise note the drift to the user instead of reinstalling dependencies.
 - Final report to the user: commits pulled, conflicts (if any) and how each was resolved, remaining dirty/untracked paths, and validator result.
 
 ## Inline scripts (cross-platform wrappers)

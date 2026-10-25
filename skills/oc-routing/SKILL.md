@@ -9,17 +9,17 @@ description: Subagent routing and orchestration for OpenCode models. Use when di
 
 ## Models
 
-`python ~/.config/opencode/scripts/show_models.py --routing`
+`allowed_models` tool, action `allowed` (default) — routing table.
 
-Columns: Model, Variants, Cost (relative tier, lower = cheaper; `*-free` = 0), Role (what it can be assigned), Strengths.
+Columns: Model, Variants, Cost, Trigger, Strengths
 
-Match tasks to Role first, Strengths second, Cost last.
+Match tasks to Trigger first, Strengths second, Cost last.
 
 - Cost is a relative hint, not a price. Verify availability, variants, quota, and privacy against the provider.
 - Use the cheapest variant that reliably meets quality; escalate on hard reasoning, ambiguity, or repeated failure. Keep one default variant per model within a task sequence.
 - Routing is a starting hypothesis; validate against actual outcomes.
 - Muse Spark Contributor may use request data for training: never send sensitive/proprietary data unless the data-use policy is acceptable.
-- Free models are ordinary allowed models: route to them by fit and cost 0, no user request needed.
+- Free models are ordinary routing options: route to them by fit and cost 0.
 - **FULL FREE** (only when the user asks for it): use free models for every flow, no paid models.
 - On an `unpaid` error from an `opencode-go/` model: do not retry the paid route; switch to free models (`opencode/` prefix when supported).
 
@@ -36,7 +36,7 @@ Group small tasks sharing files, context, or dependencies into one dispatch with
 ### 3. Session selection (in order)
 1. **Affinity:** resume a session with relevant context and compatible history.
 2. **Reuse:** resume a compatible session on the same model+variant.
-3. **Tier up:** reuse a stronger permitted variant if appropriate.
+3. **Tier up:** reuse a stronger variant if appropriate.
 4. **Spawn:** create one if none fits.
 
 Use `laneKey = model#variant` as a hint only. Role compatibility and session state (idle, safe, appropriate) must still be checked.
@@ -48,13 +48,14 @@ Start fresh when: independent reasoning is needed (audit/second opinion), contex
 - Partition implementation by file ownership. If a file is being edited by another agent, wait.
 - After integration, inspect the combined diff for conflicts, duplicated logic, overwrites, and unrelated changes.
 - Locks/ownership are runtime responsibilities; do not assume this document enforces them.
+- Match the task to Trigger keywords first, then Cost.
 
 ### 5. Independent audits
 The auditor must not repeat the producer's reasoning. Prefer, in order: a different session → a different model → independent evidence (tests, specs, static analysis, repro, direct inspection). Reuse a compatible session that did not produce the finding; spawn a new one only if the review value justifies it. If model diversity is unavailable, keep session independence and disclose the limitation.
 
 ### 6. Failures and rate limits
 - HTTP 429: reduce concurrency, queue the rest, increase again only after a clean wave.
-- Model unavailable: pick the closest allowed model that meets requirements.
+- Model unavailable: pick the closest model that meets requirements.
 - Task failure: inspect evidence before retrying. Retry in the same session if context is still useful; change approach/session if the same failure repeats without progress.
 
 ### 7. Acceptance

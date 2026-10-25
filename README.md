@@ -39,7 +39,7 @@ This repository ships **two families of agents** plus the skills and tooling tha
 | | **Implementation** | Plan-driven and direct-edit build pipelines, split by effort. |
 | | **Research** | Web research pipelines with evidence tiering, adversarial checking, and structured reports. |
 | | **Routing** | One routing skill for both dev and research lanes; HIGH primaries pin roles and models. |
-| | **Tooling** | Model catalog queries, allowlist checks, static validation, audit and smoke tests. |
+| | **Tooling** | Model routing table, catalog queries, static validation, audit and smoke tests. |
 
 ---
 
@@ -205,9 +205,13 @@ npm install
 │   ├── oc-research-tiering/ # T1/T2/T3 evidence rubric + ResearchReport schema
 │   ├── oc-retrieval/        # Retrieval MCP tooling skill
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
-├── scripts/                 # Policy tooling (tracked)
-│   ├── show_models.py       # Model catalog query, allowlist check, routing table
-│   └── c4f.py               # protect (file modes) | audit | smoke | doctor
+├── plugins/                 # Native plugins (loaded by OpenCode)
+│   ├── c4f-model-policy/    # Runtime model filtering + `allowed_models` tool
+│   └── c4f-retrieval/       # Verified-context retrieval plugin
+├── mcps/                    # MCP servers
+│   └── retrieval/           # Repository context tools (`context_*`, `python_symbols`)
+├── AGENTS.md                # Model routing for this repo
+├── package.json             # Dependencies (@opencode/plugin, effect, typescript)
 └── opencode.jsonc           # OpenCode main config (not gitignored; commit it)
 ```
 
@@ -272,13 +276,14 @@ Add `--json` for machine-readable output.
 
 ## Tooling & Diagnostics
 
-| Command | Purpose |
+| Surface | Purpose |
 |---|---|
-| `python3 scripts/show_models.py` | Model catalog query, allowlist check, routing table |
-| `python3 scripts/c4f.py protect` | File modes |
-| `python3 scripts/c4f.py audit` | Audit |
-| `python3 scripts/c4f.py smoke` | Smoke test |
-| `python3 scripts/c4f.py doctor` | Environment health check |
+| `allowed_models` tool | Routing table: model, variants, cost tier, trigger |
+| retrieval MCP tools (`context_lookup`, `context_upsert`, `python_symbols`) | Verified repository context |
+| `python3 skills/oc-agent-config/scripts/validate_agent.py <files>` | Validate agent files |
+
+Enforcement lives in the `c4f-model-policy` plugin; routing data comes from the
+`allowed_models` tool, not a shell command.
 
 ---
 
