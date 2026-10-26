@@ -2,10 +2,9 @@
 // checks. Records keep the MCP layout (`_retrieval` metadata) so existing
 // context files stay readable.
 //
-// Concurrency: writes are serialized per file within one process (the host
-// loads one plugin instance, and a reload reuses the same queue registry).
-// Two OpenCode processes sharing one workspace are NOT serialized, and no
-// on-disk lock is provided — accepted limit: one process per workspace.
+// Concurrency: writes are serialized per file within one process. Two OpenCode
+// processes sharing one workspace are NOT serialized (accepted limit: one
+// process per workspace).
 
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
@@ -16,21 +15,20 @@ import { isInside, readCappedFile, resolveHead, relativeTo } from './repo.js';
 const METADATA_KEY = '_retrieval';
 const SAFE_KEY = /^[A-Za-z_][\w-]*$/;
 const RESERVED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const DEFAULT_RESULTS = 10;
+const MAX_RESULTS = 50;
+/** `path/file.py:10-40` or `:10-40,60-70` -> `path/file.py` */
+const LINE_SUFFIX = /:\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$/;
+/** Top-level fields that are bookkeeping, never searched and never stored back. */
+const DERIVED_KEYS = ['freshness', '_match', 'action'];
+const SEARCH_SKIP = new Set([METADATA_KEY, 'status', 'invalidation', ...DERIVED_KEYS]);
+const FRESHNESS_RANK = { fresh: 0, unknown: 1, stale: 2 };
 
-/**
- * Write serialization, keyed by the resolved store path.
- *
- * The registry lives on `globalThis` rather than in module scope: a plugin
- * reload re-executes this module, and a fresh module-scope Map would let the
- * old closures and the new ones write the same file unserialized.
- */
 const QUEUE_REGISTRY = Symbol.for('opencode.retrieval.storeQueues');
 const queues = (globalThis[QUEUE_REGISTRY] ??= new Map());
 
 function serialize(file, operation) {
-  // Normalize the key so two spellings of one path cannot bypass the queue.
   const key = resolve(file);
-
   const previous = queues.get(key) ?? Promise.resolve();
   const run = previous.then(operation, operation);
 
@@ -40,7 +38,6 @@ function serialize(file, operation) {
   );
   queues.set(key, settled);
   void settled.then(() => {
-    // Drop the entry once this store is idle so the registry cannot grow.
     if (queues.get(key) === settled) queues.delete(key);
   });
 
@@ -56,51 +53,50 @@ export function createStore({ file }) {
     readAll: () => readAll(file),
     lookup: (query, root, maxResults) => lookup(file, query, root, maxResults),
     upsert: (record, key, root) => serialize(file, () => upsert(file, record, key, root)),
-    invalidate: (ids, reason) => serialize(file, () => invalidate(file, ids, reason)),
+    invalidate: (ids, reason, key) => serialize(file, () => invalidate(file, ids, reason, key)),
   };
 }
 
-async function lookup(file, query, root, maxResults = 10) {
+/* ---------- lookup ---------- */
+
+async function lookup(file, query, root, maxResults = DEFAULT_RESULTS) {
   if (typeof query !== 'string') throw new Error('query must be a string');
 
-  const limit = Number.isInteger(maxResults) && maxResults > 0 ? maxResults : 10;
-  const records = await readAll(file);
+  const limit = Number.isInteger(maxResults) && maxResults > 0 ? Math.min(maxResults, MAX_RESULTS) : DEFAULT_RESULTS;
   const terms = tokenize(query);
+  const records = await readAll(file);
 
-  const evaluated = await Promise.all(
-    records.map(async (record) => {
-      const searchable = searchableText(record);
-      const matchingTerms = terms.filter((term) => searchable.includes(term));
-      return {
-        record,
-        freshness: await freshness(record, root),
-        score: terms.length === 0 ? 0 : matchingTerms.length / terms.length,
-        matchingTerms,
-      };
-    }),
-  );
+  // Match first, verify freshness only for hits: hashing sources of records
+  // that do not match the query is pure waste.
+  const matched = [];
+  for (const record of records) {
+    const text = searchableText(record);
+    const matchingTerms = terms.filter((term) => text.includes(term));
+    if (matchingTerms.length > 0) matched.push({ record, matchingTerms, score: matchingTerms.length / terms.length });
+  }
+
+  const cache = { hashes: new Map(), head: undefined, rootReal: undefined };
+  const evaluated = await Promise.all(matched.map(async (item) => ({ ...item, freshness: await freshness(item.record, root, cache) })));
 
   const results = evaluated
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score || FRESHNESS_RANK[a.freshness.status] - FRESHNESS_RANK[b.freshness.status])
     .slice(0, limit)
     .map(({ record, freshness: state, score, matchingTerms }) => ({
       ...record,
       freshness: state,
+      action: state.status === 'fresh' ? 'use' : 'review',
       _match: { score: Number(score.toFixed(3)), terms: matchingTerms },
     }));
 
   return { query, count: results.length, results, context_file: file };
 }
 
+/* ---------- upsert / invalidate ---------- */
+
 async function upsert(file, recordInput, key = 'id', root) {
   if (!isRecord(recordInput)) throw new Error('record must be an object');
-  if (typeof key !== 'string' || !SAFE_KEY.test(key) || RESERVED_KEYS.has(key)) {
-    throw new Error(`key must be a plain identifier field name, got ${JSON.stringify(key)}`);
-  }
-  if (!Object.hasOwn(recordInput, key)) {
-    throw new Error(`record.${key} is required to upsert context`);
-  }
+  assertKey(key);
+  if (!Object.hasOwn(recordInput, key)) throw new Error(`record.${key} is required to upsert context`);
 
   const record = structuredClone(recordInput);
   const identity = record[key];
@@ -109,7 +105,13 @@ async function upsert(file, recordInput, key = 'id', root) {
   }
   const identityValue = String(identity);
 
-  const { stamped, unstamped, malformed } = await stamp(record, root);
+  // A looked-up record may be passed straight back: drop derived fields, and
+  // treat the upsert as re-verification (clears a previous invalidation).
+  for (const derived of DERIVED_KEYS) delete record[derived];
+  delete record.invalidation;
+  if (record.status === 'stale') delete record.status;
+
+  const { stamped, unstamped, malformed, declaredCount } = await stamp(record, root);
   const records = await readAll(file);
   const existing = records.findIndex((item) => item[key] !== undefined && String(item[key]) === identityValue);
 
@@ -118,29 +120,34 @@ async function upsert(file, recordInput, key = 'id', root) {
 
   await writeAll(file, records);
 
+  const warnings = [];
+  if (declaredCount === 0) warnings.push('no sources declared: freshness will rely on repository HEAD only');
+
   return {
     stored: true,
     key,
     identity: identityValue,
     replaced: existing >= 0,
     record: stamped,
-    // Only present when a declared source could not be hashed; the model should
-    // fix the path, and freshness will report the record as unknown until it does.
     ...(unstamped.length > 0 ? { unstamped } : {}),
     ...(malformed ? { sources_malformed: true } : {}),
+    ...(warnings.length > 0 ? { warnings } : {}),
     context_file: file,
   };
 }
 
-async function invalidate(file, ids, reason = '') {
+async function invalidate(file, ids, reason = '', key = 'id') {
+  assertKey(key);
   const records = await readAll(file);
   const selected = new Set(ids.map(String));
+  const found = new Set();
   const at = new Date().toISOString();
   let invalidated = 0;
 
   const updated = records.map((record) => {
-    const id = record.id === undefined ? '' : String(record.id);
+    const id = record[key] === undefined ? '' : String(record[key]);
     if (!selected.has(id)) return record;
+    found.add(id);
     invalidated += 1;
     return {
       ...record,
@@ -152,8 +159,17 @@ async function invalidate(file, ids, reason = '') {
   // A no-op must not rewrite the file or create it.
   if (invalidated > 0) await writeAll(file, updated);
 
-  return { invalidated, requested: ids, reason, context_file: file };
+  const missing = [...selected].filter((id) => !found.has(id));
+  return { invalidated, requested: ids, ...(missing.length > 0 ? { missing } : {}), reason, context_file: file };
 }
+
+function assertKey(key) {
+  if (typeof key !== 'string' || !SAFE_KEY.test(key) || RESERVED_KEYS.has(key)) {
+    throw new Error(`key must be a plain identifier field name, got ${JSON.stringify(key)}`);
+  }
+}
+
+/* ---------- file IO ---------- */
 
 async function readAll(file) {
   let raw;
@@ -175,7 +191,6 @@ async function readAll(file) {
       throw new Error(`invalid JSON in ${file} at line ${index + 1}`);
     }
     if (!isRecord(value)) {
-      // Silently dropping it would delete the line on the next write.
       throw new Error(`invalid context record in ${file} at line ${index + 1}: expected a JSON object`);
     }
     records.push(value);
@@ -197,6 +212,8 @@ async function writeAll(file, records) {
   }
 }
 
+/* ---------- provenance ---------- */
+
 async function stamp(record, root) {
   const head = await resolveHead(root);
   const rootReal = await realpath(root).catch(() => resolve(root));
@@ -215,7 +232,7 @@ async function stamp(record, root) {
           stamped = { path: relativeTo(rootReal, sourceReal), sha256: sha256(await readCappedFile(sourceReal)) };
         }
       } catch {
-        // Reported below; never silently treated as covered.
+        // Reported via `unstamped`; never silently treated as covered.
       }
     }
 
@@ -226,6 +243,7 @@ async function stamp(record, root) {
   return {
     unstamped,
     malformed: declared.malformed,
+    declaredCount: declared.paths.length,
     stamped: {
       ...record,
       [METADATA_KEY]: {
@@ -240,18 +258,16 @@ async function stamp(record, root) {
 
 /**
  * Freshness is a conjunction of the evidence a record actually carries.
- *
- * `fresh` is only ever returned when something was verified and still matches:
- * every stamped source hash, or the recorded HEAD when no hashes exist. Anything
- * unverifiable is `unknown` — never `fresh`.
+ * `fresh` only when something was verified and still matches; anything
+ * unverifiable is `unknown`, never `fresh`.
  */
-async function freshness(record, root) {
+async function freshness(record, root, cache) {
   const reasons = [];
   if (record.status === 'stale') reasons.push('record explicitly invalidated');
 
   const metadata = record[METADATA_KEY];
   if (!isRecord(metadata)) {
-    return { status: 'unknown', reasons: [...reasons, 'record has no retrieval provenance metadata'] };
+    return { status: reasons.length > 0 ? 'stale' : 'unknown', reasons: [...reasons, 'record has no retrieval provenance metadata'] };
   }
 
   if (typeof metadata.repoRoot !== 'string') {
@@ -260,7 +276,6 @@ async function freshness(record, root) {
     reasons.push('repository root differs from stored provenance');
   }
 
-  // A declared source in a shape we cannot parse is still a declared source.
   const declared = declaredSources(record.sources);
   if (declared.malformed) reasons.push('record declares sources in an unrecognized shape');
 
@@ -282,7 +297,8 @@ async function freshness(record, root) {
   }
 
   if (verifiable) {
-    const rootReal = await realpath(root).catch(() => resolve(root));
+    cache.rootReal ??= realpath(root).catch(() => resolve(root));
+    const rootReal = await cache.rootReal;
 
     for (const source of hashes) {
       if (!isRecord(source) || typeof source.path !== 'string' || typeof source.sha256 !== 'string') {
@@ -299,18 +315,14 @@ async function freshness(record, root) {
         continue;
       }
 
-      // Resolve symlinks before reading: a link inside the root must not become
-      // a read outside it.
       if (!isInside(rootReal, sourceReal)) {
         reasons.push(`source path is outside repository: ${source.path}`);
         continue;
       }
 
       try {
-        const current = sha256(await readCappedFile(sourceReal));
-        if (current !== source.sha256) reasons.push(`source changed: ${source.path}`);
+        if ((await currentHash(cache, sourceReal)) !== source.sha256) reasons.push(`source changed: ${source.path}`);
       } catch (err) {
-        // A file too large to hash is unverifiable, not missing.
         const tooLarge = /exceeds \d+ bytes/.test(errorMessage(err));
         reasons.push(`${tooLarge ? 'source too large to verify' : 'source missing'}: ${source.path}`);
       }
@@ -319,7 +331,8 @@ async function freshness(record, root) {
 
   if (verifiable && hashes.length === 0) {
     if (typeof metadata.gitHead === 'string') {
-      const liveHead = await resolveHead(root);
+      cache.head ??= resolveHead(root);
+      const liveHead = await cache.head;
       if (liveHead === null) {
         reasons.push('repository HEAD is unreadable and no source hashes are available');
       } else if (metadata.gitHead !== liveHead) {
@@ -338,34 +351,72 @@ async function freshness(record, root) {
   return { status: 'fresh', reasons: [] };
 }
 
-function tokenize(query) {
-  return [...new Set(query.toLocaleLowerCase().split(/[^\p{L}\p{N}_-]+/u).filter((term) => term.length > 1))];
+/** One hash per file per lookup, however many records cite it. */
+function currentHash(cache, sourceReal) {
+  let pending = cache.hashes.get(sourceReal);
+  if (pending === undefined) {
+    pending = readCappedFile(sourceReal).then(sha256);
+    cache.hashes.set(sourceReal, pending);
+  }
+  return pending;
 }
 
-function searchableText(record) {
-  // Provenance bookkeeping must not make a record match its own query.
-  const { [METADATA_KEY]: _ignored, ...rest } = record;
-  return JSON.stringify(rest).toLocaleLowerCase();
+/* ---------- search ---------- */
+
+function tokenize(query) {
+  return [
+    ...new Set(
+      query
+        .toLocaleLowerCase()
+        .split(/[^\p{L}\p{N}_-]+/u)
+        .filter((term) => term.length > 1),
+    ),
+  ];
 }
 
 /**
- * Read the declared sources without losing information: anything unparseable
- * sets `malformed` so a record can never look source-free and be called fresh.
+ * Searchable text is the record's *values* only. Field names ("id", "path",
+ * "summary") and provenance never match, so a query like "id" cannot hit every
+ * record.
+ */
+function searchableText(record) {
+  const parts = [];
+  collect(record, parts, 0);
+  return parts.join('\n').toLocaleLowerCase();
+}
+
+function collect(value, parts, depth) {
+  if (depth > 6) return;
+  if (typeof value === 'string') parts.push(value);
+  else if (typeof value === 'number' || typeof value === 'boolean') parts.push(String(value));
+  else if (Array.isArray(value)) for (const item of value) collect(item, parts, depth + 1);
+  else if (isRecord(value)) {
+    for (const [key, item] of Object.entries(value)) {
+      if (depth === 0 && SEARCH_SKIP.has(key)) continue;
+      collect(item, parts, depth + 1);
+    }
+  }
+}
+
+/**
+ * Declared source paths, deduplicated, with a trailing `:START-END` line range
+ * removed (the SKILL cites ranges). Anything unparseable sets `malformed` so a
+ * record can never look source-free and be called fresh.
  */
 function declaredSources(sources) {
   if (sources === undefined || sources === null) return { paths: [], malformed: false };
   if (!Array.isArray(sources)) return { paths: [], malformed: true };
 
-  const paths = [];
+  const paths = new Set();
   let malformed = false;
 
   for (const source of sources) {
-    if (typeof source === 'string' && source.trim() !== '') paths.push(source);
-    else if (isRecord(source) && typeof source.path === 'string' && source.path.trim() !== '') paths.push(source.path);
+    const raw = typeof source === 'string' ? source : isRecord(source) ? source.path : undefined;
+    if (typeof raw === 'string' && raw.trim() !== '') paths.add(raw.trim().replace(LINE_SUFFIX, ''));
     else malformed = true;
   }
 
-  return { paths, malformed };
+  return { paths: [...paths], malformed };
 }
 
 function errorMessage(err) {
