@@ -1,6 +1,6 @@
 {
   "name": "c4f-opencode-config",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Custom OpenCode configuration with TypeScript tools and plugins",
   "private": true,
   "type": "module",
