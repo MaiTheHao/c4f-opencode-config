@@ -6,38 +6,61 @@ compatibility: opencode
 
 # Repository Context Retrieval
 
-Authoritative procedure for the `oc-retrieval` agent: answer repository questions with source-cited evidence and maintain the verified persistent context store. Uses the Code Mode-only tools in the `c4f-retrieval` namespace (`tools['c4f-retrieval'].context_lookup`, `.python_symbols`, `.context_upsert`, `.context_invalidate`). Read-only: never modifies repository source.
+Answer repository questions with source-cited evidence and maintain the verified context store. Read-only on repository source.
+
+Code Mode tools, namespace `c4f-retrieval`: `tools['c4f-retrieval'].context_lookup`, `.code_outline`, `.context_upsert`, `.context_invalidate`. Batch independent calls in one script (`Promise.all`). Everything else uses native `grep` / `read` / `glob` / `shell` (git).
 
 ## 1. Lookup first
 
-1. Call `tools['c4f-retrieval'].context_lookup` with the question's concepts before touching source.
-2. If a relevant record returns `action: "use"`, answer from it.
-3. If no useful record exists, or any relevant record returns `action: "review"`, investigate source — a `review` record is only a hint and MUST be re-checked against repository source before use.
+Call `context_lookup` once per distinct concept (symbol, flow, component) before reading source. Each hit has `action`:
+
+| `action` | Meaning                                              | Do                                            |
+| -------- | ---------------------------------------------------- | --------------------------------------------- |
+| `use`    | All stamped sources unchanged                        | Answer from it; still cite its sources        |
+| `review` | Stale or unverifiable (`freshness.reasons` says why) | Hint only: re-check against source before use |
+
+No hit, or only `review` hits → go to step 2.
 
 ## 2. Investigate narrowly
 
-Read only the minimum source needed to establish each claim.
+Read the minimum source that proves each claim.
 
-| Need | Tool |
-|---|---|
-| Python symbol ranges | `tools['c4f-retrieval'].python_symbols` |
-| Text search, exact line ranges, textual references, file discovery, HEAD / branch / dirty state | native `grep` / `read` / `glob` / `shell` git commands |
+| Need                                                                 | Tool                                                                        |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Declaration outline: classes, methods, line ranges (py, java, ts/js) | `code_outline` (use `name_contains` on large files; ranges are approximate) |
+| Text search, references, file discovery                              | `grep` / `glob`                                                             |
+| Exact lines                                                          | `read` with a line range                                                    |
+| HEAD, branch, dirty state                                            | `shell` git                                                                 |
 
-## 3. Persist verified facts
+Prefer `code_outline` then a ranged `read` over reading a whole module. Stop as soon as every part of the question is backed by a citation.
 
-1. Persist each verified fact cluster with `tools['c4f-retrieval'].context_upsert`, using a stable dotted id and the source line ranges.
-2. Replace or invalidate records contradicted by source with `tools['c4f-retrieval'].context_invalidate`.
-3. One fact cluster per record; NEVER store guesses, and NEVER overwrite a useful record with a vague summary.
+## 3. Persist
+
+For each verified fact cluster, `context_upsert` one record:
+
+```json
+{
+  "id": "area.component.topic",
+  "summary": "One verified, self-contained statement.",
+  "sources": [{ "path": "src/a/b.py", "lines": "40-88" }],
+  "relations": ["other.record.id"]
+}
+```
+
+- `id`: stable dotted name; reuse the same id to update, never create near-duplicates.
+- `sources`: every file the claim depends on (freshness is checked by file hash). A record without sources can only be checked against HEAD.
+- If the result has `unstamped` or `warnings`, fix the paths and upsert again.
+- Fact no longer true → `context_invalidate` with a `reason`. Check `missing` in the result.
+- One cluster per record. NEVER store guesses; NEVER replace a precise record with a vaguer one.
 
 ## 4. Answer
 
-1. Re-check the answer against collected evidence.
-2. On tool failure or insufficient evidence, return `BLOCKED`; never guess.
+1. Re-check each claim against the evidence you collected.
+2. Cite `path/to/file.py:LINE-LINE` for every non-trivial claim.
+3. State uncertainty explicitly; NEVER infer undocumented runtime behavior.
+4. On tool failure or insufficient evidence, reply `BLOCKED: <what is missing>`; never guess.
 
 ## Constraints
 
-- Repository source is authoritative; persistent context is only a cache and navigation layer.
-- MUST cite `path/to/file.py:LINE-LINE` for every non-trivial claim.
-- MUST treat `action: "use"` as usable evidence and `action: "review"` as requiring a source re-check.
-- NEVER infer undocumented runtime behavior; state uncertainty explicitly.
-- NEVER modify repository files; the only allowed mutation is persistent context via `tools['c4f-retrieval'].context_upsert` and `tools['c4f-retrieval'].context_invalidate`.
+- Repository source is authoritative; the store is only a cache and navigation layer.
+- NEVER modify repository files. The only allowed mutations are `context_upsert` and `context_invalidate`.

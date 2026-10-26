@@ -278,7 +278,7 @@ Add `--json` for machine-readable output.
 | Surface | Purpose |
 |---|---|
 | `tools['c4f-model-policy'].allowed_models` (`c4f-model-policy` namespace) | Routing table: model, provider, variants, routing tier, trigger |
-| `c4f-retrieval` tools (`context_lookup`, `context_upsert`, `context_invalidate`, `python_symbols`) | Verified repository context |
+| `c4f-retrieval` tools (`context_lookup`, `context_upsert`, `context_invalidate`, `code_outline`) | Verified repository context |
 | `python3 skills/oc-agent-config/scripts/validate_agent.py <files>` | Validate agent files |
 
 Enforcement lives in the `c4f-model-policy` plugin; routing data comes from the
