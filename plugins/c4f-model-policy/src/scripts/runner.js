@@ -11,16 +11,13 @@ function basename(arg) {
 /** Return a reason when a command could recursively start OpenCode, else null. */
 export function guardRecursion(command) {
   for (const arg of command) {
-    const base = basename(arg)
-      .toLowerCase()
-      .replace(/\.exe$/, '');
+    const base = basename(arg).toLowerCase().replace(/\.exe$/, '');
     if (base === 'opencode') return 'spawns opencode';
   }
-
   return null;
 }
 
-/** Replace every `{NAME}` token that has a value in `vars`. */
+/** Replace every `{HOME}` / `{ROOT}` token that has a value in `vars`. */
 export function expandTokens(arg, vars) {
   return arg.replaceAll('{HOME}', vars.HOME).replaceAll('{ROOT}', vars.ROOT);
 }
