@@ -6,7 +6,7 @@ permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
   - { action: read, resource: 'local/agents/research-artifacts/*', effect: allow }
-  - { action: edit, resource: 'local/agents/research-artifacts/*', effect: ask }
+  - { action: edit, resource: 'local/agents/research-artifacts/*', effect: allow }
   - { action: websearch, resource: '*', effect: allow }
   - { action: webfetch, resource: '*', effect: allow }
   - { action: skill, resource: '*', effect: allow }

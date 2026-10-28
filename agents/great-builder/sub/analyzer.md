@@ -10,6 +10,7 @@ permissions:
   - { action: shell, resource: 'tree *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: shell, resource: 'git diff *', effect: allow }
+  - { action: shell, resource: 'git log *', effect: allow }
   - { action: execute, resource: '*', effect: allow }
   - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
   - { action: browser, resource: '*', effect: deny }
