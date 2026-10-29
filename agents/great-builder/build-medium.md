@@ -18,9 +18,15 @@ permissions:
   - { action: shell, resource: 'git diff *', effect: allow }
   - { action: shell, resource: 'git log *', effect: allow }
   - { action: skill, resource: '*', effect: allow }
+  - { action: external_directory, resource: '*', effect: ask }
+  - { action: external_directory, resource: '**/.agents/skills/*', effect: allow }
+  - { action: execute, resource: '*', effect: allow }
+  - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
+  - { action: 'c4f-model-policy_*', resource: '*', effect: allow }
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/bulk', effect: allow }
+  - { action: subagent, resource: 'great-builder/sub/reviewer', effect: allow }
 ---
 
 ## Context
@@ -41,6 +47,7 @@ Every task, any size, no exceptions:
 | `general` | 2 | Judgment-heavy, flexible units |
 | `great-builder/sub/bulk` | 2 | Edit-only tasks with clear specs |
 | `great-builder/sub/analyzer` | 3 | Codebase and problem analysis |
+| `great-builder/sub/reviewer` | 2 | Independent review |
 
 `Max Slots` = max live sessions and max concurrent dispatches per row. Over the cap: queue the unit or resume an idle session; never spawn past it.
 
@@ -53,7 +60,7 @@ PRECONDITION: MUST load skill `oc-routing` before the first dispatch. MUST treat
 1. Load `brainstorming`. Architectural or multi-step work: `writing-plans` after design approval; `executing-plans` only after plan approval.
 2. Non-trivial scope: delegate inspection to `analyzer`, splitting independent areas when useful. Resolve open questions; present design and affected files for approval when `brainstorming` requires it.
 3. After approval, split into disjoint file units. Exact mechanical edits go to `bulk`; judgment-heavy units go to `general`. Run independent units in waves of at most `Max Slots` per row; resume the same sessions for later waves and fixes. Integrate within the approved scope.
-4. Verify the full diff and applicable acceptance checks against the approved design or plan. Report changed files, results, open assumptions and the `oc-routing` final report.
+4. Verify the full diff and applicable acceptance checks against the approved design or plan. For multi-file or risky changes, get an independent review from `reviewer` in a session separate from the producer. Report changed files, results, open assumptions and the `oc-routing` final report.
 
 ## Rules
 

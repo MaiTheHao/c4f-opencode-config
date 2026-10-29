@@ -20,9 +20,6 @@ An agent is an instruction provider: frontmatter = selection metadata, body = sy
 
 | Load                                | When                                                                                                                                                                                 |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `references/project-authoring.md`   | Writing/reviewing a body: layout, size, skills, routing, slots, delegation, contracts                                                                                                |
-| `references/project-permissions.md` | Writing/reviewing `permissions`; copying a fragment                                                                                                                                  |
-| `references/project-workflow.md`    | Effort tiers, approval gates, verification/report, research budgets                                                                                                                  |
 | `references/acceptance.md`          | Before declaring any agent change done                                                                                                                                               |
 | `references/native-agents.md`       | Field shapes, rejected keys, model selectors, pinning                                                                                                                                |
 | `references/native-permissions.md`  | Rule matching, action/resource names, hard policies                                                                                                                                  |

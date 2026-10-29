@@ -18,6 +18,11 @@ permissions:
   - { action: shell, resource: 'git diff *', effect: allow }
   - { action: shell, resource: 'git log *', effect: allow }
   - { action: skill, resource: '*', effect: allow }
+  - { action: external_directory, resource: '*', effect: ask }
+  - { action: external_directory, resource: '**/.agents/skills/*', effect: allow }
+  - { action: execute, resource: '*', effect: allow }
+  - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
+  - { action: 'c4f-model-policy_*', resource: '*', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/bulk', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/reviewer', effect: allow }

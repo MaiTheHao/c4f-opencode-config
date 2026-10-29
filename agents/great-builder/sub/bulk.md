@@ -10,7 +10,6 @@ permissions:
   - { action: browser, resource: '*', effect: deny }
   - { action: subagent, resource: '*', effect: deny }
   - { action: edit, resource: '*', effect: allow }
-  - { action: patch, resource: '*', effect: allow }
   - { action: shell, resource: '*', effect: ask }
 ---
 
