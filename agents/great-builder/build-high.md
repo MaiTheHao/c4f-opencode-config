@@ -5,10 +5,7 @@ color: '#f88c71'
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
-  - { action: read, resource: '*', effect: allow }
-  - { action: read, resource: '*.env', effect: deny }
-  - { action: read, resource: '*.env.*', effect: deny }
-  - { action: read, resource: '*.env.example', effect: allow }
+  - { action: read, resource: '*', effect: deny }
   - { action: glob, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: edit, resource: 'local/agents/**', effect: allow }
