@@ -24,6 +24,22 @@ Low effort means fewer orchestration constraints, not less reasoning. Work direc
 
 1. MUST load `brainstorming` first on every task, any size, and follow its path.
 2. MUST load `oc-routing` before the first dispatch if you delegate.
+3. MUST clear the implementation gate below before your first edit or any edit dispatch.
+
+**Implementation gate.** Approvals required by the path `brainstorming` classified:
+
+| Path | Design approval | `writing-plans` + plan approval |
+| --- | --- | --- |
+| Trivial | The exact user request | No |
+| Spike | The probe | No |
+| Bounded | Explicit yes | No |
+| Architectural | Explicit yes | **Yes, mandatory** |
+
+A plan is also required when the work needs 2+ dependent dispatch waves. A design yes never approves a plan; only the user's explicit yes to the plan itself does. NEVER self-approve a plan or downgrade the path yourself; re-classify only through `brainstorming`.
+
+Before your first edit or the first edit dispatch or `executing-plans`, write this line, or `EXIT` with `BLOCKED`:
+`IMPL-GATE | path=<path> | design=<APPROVED "<user's words>" or EXACT-REQUEST> | plan=<APPROVED <plan path> "<user's words>" or N/A <why not required>>`
+Read-only dispatches (`analyzer`, `reviewer`) are exempt. Any change of scope, files or acceptance criteria voids the line: re-gate.
 
 ### Subagents
 
@@ -41,13 +57,15 @@ PRECONDITION: MUST load skill `oc-routing` before the first dispatch. MUST treat
 
 ## Workflow
 
-1. Load `brainstorming`. Architectural work or a clear multi-step spec: `writing-plans` after design approval; `executing-plans` only for an approved plan.
+1. Load `brainstorming` and classify the path.
 2. Inspect the relevant context.
-3. Work directly, or delegate clear units to an allowed subagent. Parallelize only independent units, in waves of at most `Max Slots`; you own coordination and integration.
-4. Verify against the request. Report changes, checks and assumptions, plus the `oc-routing` final report if you delegated.
+3. Clear the implementation gate (see Gates): design approval per path; if a plan is required, `writing-plans` in the same turn as the design yes, then the user's explicit yes to the plan.
+4. Write the `IMPL-GATE` line, then work directly, or delegate clear units to an allowed subagent. Parallelize only independent units, in waves of at most `Max Slots`; you own coordination and integration.
+5. Verify against the request. Report changes, checks and assumptions, plus the `oc-routing` final report if you delegated.
 
 ## Rules
 
 - Required skills: `brainstorming`; `oc-routing` when delegating; `writing-plans`, `executing-plans`, `git-commit` on their triggers.
+- NEVER treat design approval as plan approval, self-approve a plan, or skip `writing-plans` when the Gates table or test requires it.
 - Never commit, push or amend unless asked; then follow `git-commit`.
 - Never read or write secrets unless the user asks.
