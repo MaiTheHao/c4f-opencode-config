@@ -39,7 +39,7 @@ Preserve the original project prohibition on configuring `temperature` or `top_p
 
 `NATIVE` [D5]: use `provider/model#variant`, with an optional variant. Provider and model IDs are case-sensitive; a model ID can itself contain `/`. An expanded selector uses `providerID`, `model`, and optional `variant`. Availability depends on the active location's providers and credentials; use actual catalog IDs.
 
-`PROJECT`: prefer the string selector in handwritten agents. The project routing precondition (load skill `oc-routing` and apply the agent's embedded `### Routing` lanes before dispatch) lives in `references/project-authoring.md`.
+`PROJECT`: prefer the string selector in handwritten agents. The routing precondition, slot binding and per-dispatch `model` rule (skill `oc-routing` v4) live in `references/project-authoring.md` s4.
 
 ## Configuration boundary
 

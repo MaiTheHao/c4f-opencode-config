@@ -92,6 +92,31 @@ permissions:
 
 `<skill-id>` and the `team/*` IDs are placeholders to replace with catalog-confirmed IDs. Add `git add *` only for an agent that owns commits; commits and pushes fall to `ask` through the shell fallback. `git diff` and `git log` can still print tracked secrets, so this is not secret isolation.
 
+### Effort-tier orchestrator (medium / high)
+
+```yaml
+permissions:
+- { action: '*', resource: '*', effect: deny }
+- { action: question, resource: '*', effect: allow }
+- { action: read, resource: '*', effect: allow }
+- { action: read, resource: '*.env', effect: deny }
+- { action: read, resource: '*.env.*', effect: deny }
+- { action: read, resource: '*.env.example', effect: allow }
+- { action: glob, resource: '*', effect: allow }
+- { action: grep, resource: '*', effect: allow }
+- { action: edit, resource: 'local/agents/**', effect: allow }
+- { action: shell, resource: '*', effect: ask }
+- { action: shell, resource: 'ls *', effect: allow }
+- { action: shell, resource: 'git status *', effect: allow }
+- { action: shell, resource: 'git diff *', effect: allow }
+- { action: shell, resource: 'git log *', effect: allow }
+- { action: skill, resource: '*', effect: allow }
+- { action: subagent, resource: 'team/analyzer', effect: allow }
+- { action: subagent, resource: 'team/bulk', effect: allow }
+```
+
+The orchestrator never edits source: its only writable root is `local/agents/**`. `shell * ask` stays so acceptance checks can run on approval; the allowlist covers diff inspection only. Replace `team/*` with catalog-confirmed IDs; each granted child needs a row in `### Subagents`.
+
 ### Designated open agent
 
 ```yaml

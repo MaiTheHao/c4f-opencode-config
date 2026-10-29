@@ -1,93 +1,62 @@
 ---
 name: oc-agent-config
-description: "Authoritative engineering specification, validation rules, and authoring guidelines for configuring, auditing, or migrating native OpenCode V2 Markdown agents in this repository. Triggers whenever authoring or modifying agent files (.opencode/agents/*.md), reviewing agent permissions/frontmatter, auditing delegation lifecycles, or resolving schema/tool contracts."
+description: "Authoritative spec, validator and authoring rules for native OpenCode V2 Markdown agents in this repo. MUST be used whenever the user creates, edits, reviews, audits or migrates an agent file (.opencode/agents/*.md, agents/**/build-*.md), its frontmatter, permissions, subagent table, slot limits, routing precondition or required skills, or asks to validate/accept an agent. Also use for 'agent config', 'primary/subagent', 'effort tier', 'Max Slots', 'oc-routing precondition', 'validate_agent'."
 ---
 
 # OpenCode Agent Configuration
 
-How to author, audit, and migrate native OpenCode V2 Markdown agents in this repository.
+An agent is an instruction provider: frontmatter = selection metadata, body = system prompt. Detail lives in `references/`; the validator is `scripts/validate_agent.py` (execute it, never read it into context).
 
-**Framing:** an agent is an instruction provider. Its frontmatter is selection metadata; its body is the system prompt. Author it with the same discipline as a skill — the description is the trigger, the body stays lean, and detail lives behind explicit pointers instead of being dumped inline. See the inheritance rules in `references/project-authoring.md`.
+## Non-negotiable (read before touching any agent file)
 
-## 1. How to use this skill
+1. **Plan line first.** Before writing, output one line:
+   `AGENT-PLAN: kind=<delegating|solo|specialist> | path=<resolved> | children=<id:slots,...> | skills=<ids> | validate=<command>`
+2. **Never finish without the validator.** Run `python3 scripts/validate_agent.py <files>`; paste its result. Fix the agent, never weaken a rule or add a blanket allow to pass.
+3. **Slots bind session count.** For every child row, `Max Slots` = max live sessions = max concurrent dispatches. Delegating primaries MUST carry the `### Subagents` table and `### Routing` precondition (`references/project-authoring.md` s4-s5).
+4. **Classify claims**: `NATIVE` (official V2 docs), `PROJECT` (this family's policy), `UNVERIFIED` (needs live check). Never label a project rule or an `S*`-only claim `NATIVE`. Evidence conflict: record it, leave `UNVERIFIED`, never migrate major versions silently.
+5. **Mutate agent files only when asked.** Editing this spec is not a request to rewrite every profile.
 
-This file is the entry point: the authority model, the non-negotiable contract, and the authoring flow. Detail lives in `references/`. Load a reference only when its trigger matches — never preload the set. Deterministic static checks live in `scripts/validate_agent.py`; execute it rather than reading it into context. `references/update-c4f-repo.md` is the family's primary and most frequently used reference: load it FIRST whenever a task reads or mutates either C4F repository (main config or external skills), because every other operation — agent edits, validation, permission changes — happens inside those repos and depends on their update state.
+## Load references by trigger (never preload the set)
 
-| Reference | Load it when |
-|---|---|
-| **`references/update-c4f-repo.md`** — **primary reference, highest priority.** Load FIRST on any task that touches repository maintenance, and proactively consult it whenever the user works inside `~/.config/opencode` or `~/.agents/skills` | Updating either C4F repository (main config or external skills): version checks, guided git update, update conflicts from user customizations. This is the most frequently used reference in this skill |
-| `references/sources.md` | Refreshing native evidence, recording a source conflict, or citing a `NATIVE` contract's origin |
-| `references/native-agents.md` | Verifying V2 agent file locations, frontmatter field shapes, rejected keys, or model selectors |
-| `references/native-permissions.md` | Resolving permission rule matching, action/resource names, wildcards, or hard policies (D8) |
-| `references/native-tools-skills.md` | Checking tool availability/invocation or native skill discovery and frontmatter |
-| `references/project-authoring.md` | Writing/reviewing an agent body: instruction design, capability checks, required skills, routing, layout, size, contracts, delegation |
-| `references/project-permissions.md` | Authoring/reviewing a permission profile, or copying a reusable fragment |
-| `references/project-workflow.md` | Authoring workflow/approval gates, verification/reporting, or research budgets |
-| `references/acceptance.md` | Before declaring any agent change complete; running the acceptance procedure |
+| Load                                | When                                                                                                                                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `references/project-authoring.md`   | Writing/reviewing a body: layout, size, skills, routing, slots, delegation, contracts                                                                                                |
+| `references/project-permissions.md` | Writing/reviewing `permissions`; copying a fragment                                                                                                                                  |
+| `references/project-workflow.md`    | Effort tiers, approval gates, verification/report, research budgets                                                                                                                  |
+| `references/acceptance.md`          | Before declaring any agent change done                                                                                                                                               |
+| `references/native-agents.md`       | Field shapes, rejected keys, model selectors, pinning                                                                                                                                |
+| `references/native-permissions.md`  | Rule matching, action/resource names, hard policies                                                                                                                                  |
+| `references/native-tools-skills.md` | Tool availability/invocation, skill discovery                                                                                                                                        |
+| `references/sources.md`             | Source register, open schema/generation conflicts                                                                                                                                    |
+| `references/update-c4f-repo.md`     | The task is to version-check, update or resolve update conflicts in `~/.config/opencode` or `~/.agents/skills`. Load it FIRST for that task; do not load it for ordinary agent edits |
 
-## 2. Authority model
+## Contract at a glance
 
-Every requirement belongs to one layer. Never present a project policy as native behavior, and never present an unverified capability as available.
+**Frontmatter**: UTF-8, one `---` pair, YAML mapping, unique keys, non-empty body.
 
-| Label | Meaning | How to verify |
-|---|---|---|
-| `NATIVE` | Behavior described by current official V2 documentation | Check the corresponding source and the installed V2 build |
-| `PROJECT` | Policy adopted by this agent family | Review this specification and its acceptance checks |
-| `UNVERIFIED` | Environment-dependent capability or missing dependency | Inspect the actual catalog/schema/configuration and run a focused smoke check |
+- Required: `description`, `mode`, `permissions`. Optional: `model` (string), `color` (hex), `steps`, `hidden`, `disabled`, `request`.
+- NEVER add `$schema`, provider blocks, `skills`, concurrency keys. Reject `permission`, `tools`, `prompt`, `disable`, `maxSteps`, `temperature`, `top_p`; author `shell`/`subagent`, not `bash`/`task`.
 
-A project policy can narrow behavior; it cannot create a tool, grant authority, invent an input field, or make an unsupported setting effective. When evidence conflicts, record the conflict and leave the capability `UNVERIFIED`. NEVER silently migrate the configuration to another major version. Source register and the open schema conflict live in `references/sources.md`. Supplementary sources are registered as `S1`–`S4` in that file; a claim resting only on an `S*` tag is `UNVERIFIED` and MUST NOT be labelled `NATIVE`.
+**Permissions**: ordered `{ action, resource, effect }`, last match wins.
 
-## 3. The agent contract at a glance
+- Open with `{ action: '*', resource: '*', effect: deny }`, then grant the minimum. Only a designated open agent (named in its own `description`, declared in `scripts/accepted_exceptions.json`) may open otherwise.
+- Leaf subagents: `{ action: subagent, resource: '*', effect: deny }`. Grant only catalog-confirmed child and skill IDs.
+- Review the merged ruleset: a later broad allow reopens an earlier global deny.
 
-Applies to every governed agent. Full rules: `references/project-authoring.md` and `references/project-permissions.md`.
+**Body** (exact order): `## Context` (role; delegating primaries add `### Gates` optional, `### Subagents`, `### Routing`) -> `## Workflow` -> `## Rules` (flat bullets, last; declares required skills). One owner per rule; Workflow references, never restates. Budgets: primary 150/160 lines, specialist 90/120.
 
-**Frontmatter** — UTF-8, one `---` … `---` pair, YAML mapping, unique keys, non-empty body.
-- Required family fields: `description`, `mode`, `permissions`.
-- Optional: `model` (string selector), `color` (six-digit hex), `steps`, `hidden`, `disabled`, `request`.
-- NEVER add `$schema`, provider definitions, global `skills`, or concurrency settings to agent frontmatter.
-- Reject legacy keys `permission`, `tools`, `prompt`, `disable`, `maxSteps`, `temperature`, `top_p`. Author `shell` and `subagent`, never `bash`/`task`. Details: `references/native-agents.md`.
+## Authoring flow
 
-**Permissions** — ordered rules `{ action, resource, effect: allow|ask|deny }`; last match wins.
-- MUST open an agent's own rules with `{ action: '*', resource: '*', effect: deny }`, then grant only what its workflow needs.
-- MUST give every custom leaf subagent `{ action: subagent, resource: '*', effect: deny }`, and grant only catalog-confirmed child IDs.
-- MUST keep `skill: '*' -> allow` on primaries as the family default.
-- MUST evaluate the complete merged ruleset across files: agent rules are appended after global rules, so a later broad allow reopens an earlier global restriction — including a deny on a policy file that constrains the agent itself.
-Invariants and fragments: `references/project-permissions.md`. Matching semantics: `references/native-permissions.md`.
+1. **Identify** kind and deployment path; resolve the installed ID.
+2. **Classify** claims; refresh `references/sources.md` evidence only if native behavior is load-bearing.
+3. **Check capabilities**: every action maps to a callable, permitted tool (`project-authoring.md` s2).
+4. **Write** to layout and budget; table + precondition for delegating primaries; required skills in `## Rules`.
+5. **Permissions** from a fragment in `project-permissions.md`, then merged-ruleset review.
+6. **Validate** with `references/acceptance.md`; report `NATIVE`, `PROJECT`, `UNVERIFIED` results separately.
 
-**Body** — three sections, in order:
-1. `## Context` — role, scope, and the kind's contract.
-2. `## Workflow` — ordered actions and explicit transitions.
-3. `## Rules` — flat bullets; final section; required skills declared here.
+## Maintenance
 
-Each requirement has exactly one owner; `## Workflow` references a rule instead of restating it. Layout, kinds, and size budgets: `references/project-authoring.md`.
-
-## 4. Authoring flow
-
-1. **Identify** the agent kind (delegating primary, solo primary, specialist subagent) and its deployment path; resolve the installed ID before naming the agent.
-2. **Classify** every claim as `NATIVE`, `PROJECT`, or `UNVERIFIED`; refresh the relevant source via `references/sources.md` when native behavior is load-bearing.
-3. **Check capabilities** before writing the workflow: every action needs an existing, reachable, permitted tool with working dependencies and a consumable result (`references/project-authoring.md`).
-4. **Design the instructions** with the instruction-provider principles — lean body, one owner per rule, imperative bindings plus rationale, and pointers instead of inlined detail (`references/project-authoring.md`).
-5. **Write the body** to the project layout and size budget; declare required skills as a `## Rules` bullet; add the routing precondition after `### Subagents` for delegating primaries.
-6. **Author permissions** from a project profile: start at default deny, grant the minimum the workflow needs.
-7. **Validate** with `references/acceptance.md` (`scripts/validate_agent.py` covers the static checks); report native, project-policy, and dependency checks separately. Never mark a check complete by weakening a rule or adding a blanket allow.
-
-## 5. Acceptance checklist (summary)
-
-- Frontmatter parses with no duplicate keys, no rejected keys, and no forbidden sampling keys.
-- Merged entry and live catalog inspected; every referenced child, skill, and model ID resolved.
-- Every workflow action maps to a callable tool with an effective permission decision.
-- Body matches layout, size budget, and single-owner rule discipline.
-- Permissions open with default deny; leaf children deny delegation; sensitive-file paths reviewed across all access channels. A profile that cannot open with deny is declared in `scripts/accepted_exceptions.json`, never left undocumented.
-- Behavior exercised in the installed runtime, not merely YAML-parsed.
-- Change report distinguishes `NATIVE`, `PROJECT`, and `UNVERIFIED` results and records remaining blockers.
-Full procedure and behavioral cases: `references/acceptance.md`.
-
-## 6. Maintenance
-
-- Use this specification as the family policy baseline; treat release-specific runtime evidence as the authority on what OpenCode actually supports.
-- Increment the spec revision for changes to fields, permissions, routing, required skills, contracts, or gates; record the changed rule and affected profiles.
-- Recheck relevant sources on an OpenCode upgrade; never claim this dated snapshot covers every future V2 release.
-- Distinguish a native incompatibility, a project-policy failure, and an unavailable dependency in review results.
-- Keep amendments and migration decisions in this specification when the user requests source-of-truth-only work.
-- NEVER edit agents, skills, provider settings, or runtime policies merely to make a verification status look complete.
-- Mutate agent files only when explicitly requested; revising this specification alone is not a request to change every profile.
+- Bump the spec revision when fields, permissions, routing, skills, contracts or gates change; record the rule and affected profiles. Current: **2.3.0**.
+- Recheck sources on an OpenCode upgrade; this snapshot does not cover future V2 releases.
+- Keep native incompatibility, project-policy failure and missing dependency distinct in reviews.
+- NEVER edit agents, skills, provider settings or policies just to make a status look complete.

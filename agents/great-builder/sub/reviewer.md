@@ -1,5 +1,5 @@
 ---
-description: Read-only reviewer. Verifies the working-tree diff against an approved plan. Dispatched by great-builder/build-high's REVIEW flow or used standalone.
+description: Review the working-tree diff against the approved plan; report findings and acceptance status. Use in build-high REVIEW or standalone.
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }

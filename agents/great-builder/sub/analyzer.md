@@ -1,5 +1,5 @@
 ---
-description: Read-only codebase analyzer. depth fast for narrow scope, deep for cross-file reasoning. Returns an execution contract with exact file:line evidence.
+description: Trace assigned code scope; return file:line evidence and an execution contract. Use `deep` for cross-file flow.
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }

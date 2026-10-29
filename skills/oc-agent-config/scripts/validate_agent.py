@@ -3,7 +3,8 @@
 
 Implements the machine-checkable subset of the acceptance procedure in
 `references/acceptance.md` (parse, frontmatter contract, line budget, body
-layout, permission invariants). It does NOT replace runtime validation:
+layout, permission invariants, and for delegating primaries the `### Subagents`
+slot table plus the `### Routing` precondition). It does NOT replace runtime validation:
 Catch-all defaults, merged configuration, catalog reachability, and behavior
 still require the installed OpenCode build.
 
@@ -200,6 +201,85 @@ def _apply_baseline(results: list[Result], entries: list[dict]) -> tuple[int, li
     return accepted, unused
 
 
+
+ROUTING_TOKENS = ("PRECONDITION", "oc-routing")
+
+
+def _section(body: str, heading: str) -> str | None:
+    """Text of a `###`/`##` section (heading text only) up to the next heading, else None."""
+    match = re.search(rf"^#{{2,3}}\s+{re.escape(heading)}\s*$", body, re.MULTILINE)
+    if not match:
+        return None
+    rest = body[match.end():]
+    nxt = re.search(r"^#{2,3}\s", rest, re.MULTILINE)
+    return rest[: nxt.start()] if nxt else rest
+
+
+def _table_rows(text: str) -> list[list[str]]:
+    rows = []
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("|") and not re.fullmatch(r"\|[\s:|-]+\|?", line):
+            rows.append([c.strip() for c in line.strip("|").split("|")])
+    return rows
+
+
+def _delegated_children(permissions: list) -> list[str]:
+    ids: list[str] = []
+    for rule in permissions:
+        if (
+            isinstance(rule, dict)
+            and rule.get("action") == "subagent"
+            and rule.get("effect") == "allow"
+            and isinstance(rule.get("resource"), str)
+            and rule["resource"] != "*"
+            and rule["resource"] not in ids
+        ):
+            ids.append(rule["resource"])
+    return ids
+
+
+def _check_delegation(result: Result, body: str, children: list[str]) -> None:
+    """Delegating primary: slot table covers every granted child; routing precondition present."""
+    context_pos = body.find("## Context")
+    workflow_pos = body.find("## Workflow")
+    sub_pos = body.find("### Subagents")
+    if sub_pos < 0:
+        result.fail("delegating primary is missing a '### Subagents' section (Name / Max Slots / Purpose table)")
+    else:
+        if context_pos >= 0 and workflow_pos >= 0 and not (context_pos < sub_pos < workflow_pos):
+            result.fail("'### Subagents' must sit inside '## Context' (before '## Workflow')")
+        rows = _table_rows(_section(body, "Subagents") or "")
+        header = next((r for r in rows if any(c.lower() == "max slots" for c in r)), None)
+        if header is None:
+            result.fail("'### Subagents' table needs a 'Max Slots' column")
+        else:
+            col = [c.lower() for c in header].index("max slots")
+            data = [r for r in rows if r is not header]
+            for child in children:
+                row = next((r for r in data if any(child in c for c in r)), None)
+                if row is None:
+                    result.fail(f"granted child {child!r} has no row in the Subagents table")
+                    continue
+                cell = row[col] if col < len(row) else ""
+                if not (cell.isdigit() and int(cell) >= 1):
+                    result.fail(f"Max Slots for {child!r} must be an integer >= 1, found {cell!r}")
+            for row in data:
+                if not any(child in c for child in children for c in row):
+                    result.warn(f"Subagents row {row[0]!r} matches no granted subagent permission")
+
+    routing = _section(body, "Routing")
+    if routing is None:
+        result.fail("delegating primary is missing a '### Routing' section with the oc-routing precondition")
+    else:
+        for token in ROUTING_TOKENS:
+            if token not in routing:
+                result.fail(f"'### Routing' must contain {token!r}")
+    rules = body.split("## Rules", 1)[1] if "## Rules" in body else ""
+    if "oc-routing" not in rules:
+        result.fail("'## Rules' must declare 'oc-routing' among the required skills")
+
+
 def validate_file(path: Path) -> Result:
     result = Result(path=path)
     text = path.read_text(encoding="utf-8")
@@ -297,6 +377,10 @@ def validate_file(path: Path) -> Result:
                 )
 
         _check_policy_reopen(result, permissions)
+
+        children = _delegated_children(permissions)
+        if children and mode in ("primary", "all"):
+            _check_delegation(result, body, children)
 
     # Body layout
     headings = _find_body_heading_order(body)

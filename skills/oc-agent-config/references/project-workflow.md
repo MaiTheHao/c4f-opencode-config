@@ -6,13 +6,27 @@
 
 | Profile | Direct work | Delegated work | Mutation policy |
 |---|---|---|---|
-| Builder normal | Questions, permitted skills, synthesis | Analysis, implementation, verification | Primary performs no direct edits |
+| Builder low | Anything it can do inside its permissions, incl. direct edits | Optional, within Max Slots | Open agent; edits directly or via workers |
+| Builder medium | Questions, skills, synthesis, design alignment | Inspection, source edits | Orchestrator edits only `local/agents/**`; source edits go to workers |
+| Builder high | Scope, design, plan, integration, verification | Inspection, edits, independent review | As medium, plus review by a session separate from the producer |
 | Planner | Read/search and approved plan-artifact writes | Analysis and review | Source/config/tests remain read-only |
 | Research fast | Web research and synthesis | None | No writes |
 | Research normal | Orchestration and synthesis | Scout/deep/specialists/audit | No writes across the research team |
 | Research extra | Orchestration, evidence-gap tracking | Bounded concurrent research waves | No writes across the research team |
 
 "Read-only planner" means read-only project implementation with a declared plan-artifact exception. Validate that `writing-plans` selects a path inside the allowed artifact root; if it does not, report the conflict before writing. Do not alter the skill, widen permissions, or move the plan silently.
+
+## Effort tiers
+
+All three builder tiers share the same gates: `brainstorming` first (any task size), `oc-routing` before any dispatch (low: only if it delegates), approvals required by the skills before implementation. Tiers differ only in the numbers and duties below.
+
+| Tier | Max Slots (analyzer / bulk / reviewer / general) | Review | Parallel waves |
+|---|---|---|---|
+| low | 2 / 2 / - / 2 | Self-verify | Only when units are independent |
+| medium | 3 / 2 / - / 2 | Orchestrator verifies full diff | Waves <= Max Slots per row |
+| high | 5 / 5 / 3 / - | Separate-session `reviewer` before reporting | Waves <= Max Slots per row |
+
+Resume before spawn at every tier; the final report shows dispatches vs sessions (`oc-routing` s8).
 
 ## Human checkpoint
 

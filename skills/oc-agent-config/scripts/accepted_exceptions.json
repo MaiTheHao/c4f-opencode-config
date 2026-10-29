@@ -1,5 +1,5 @@
 {
-  "spec_revision": "2.2.0",
+  "spec_revision": "2.3.0",
   "note": "Declared, reviewed exceptions to validate_agent.py hard checks. A match downgrades exactly one failure to a warning. Adding an entry is a policy decision: record the reason and re-review it when the agent changes.",
   "exceptions": [
     {

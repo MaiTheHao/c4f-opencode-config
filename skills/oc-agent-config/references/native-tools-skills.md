@@ -10,7 +10,7 @@
 
 `PROJECT`: no blanket `execute` grant. Add it only when the installed tool exposure requires Code Mode or the workflow deliberately uses it. Reassess browser and session utilities when enabling that catalog. A default-deny rule is not a guarantee that every catalog utility issues a permission check.
 
-`PROJECT`: preserve permission action `edit` for the three mutation tools, but invoke the actual available tool by its own schema. Never fabricate `spawn`, `resume`, `wait`, `list`, or `model` arguments from another agent framework.
+`PROJECT`: preserve permission action `edit` for the three mutation tools, but invoke the actual available tool by its own schema. Never fabricate `spawn`, `resume`, `wait` or `list` arguments from another agent framework. Send `model` only when the live `subagent` schema lists it (`references/project-authoring.md` s4); never invent it.
 
 ## Skills: native behavior
 

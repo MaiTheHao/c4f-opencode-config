@@ -1,87 +1,104 @@
 # Project Authoring Standard
 
-**Load this when** writing or reviewing an agent body: instruction design, capability checks, required skills, routing, layout, size, output contracts, or delegation. All rules here are `PROJECT` unless marked `NATIVE`.
+**Load this when** writing or reviewing an agent body: instruction design, capability checks, required skills, routing, slots, layout, size, contracts, or delegation. All rules are `PROJECT` unless marked `NATIVE`.
 
-## 1. Agent as instruction provider (inherited conventions)
+## 1. Agent as instruction provider
 
-An agent is a system prompt with selection metadata, so the instruction-design habits from `skill-creator` apply directly:
-
-- **Metadata triggers, body executes.** The `description` is what makes the runtime select the agent. Write it as scope plus "use when" triggers, in the same pushy style as a skill description; never bury selection logic in the body.
-- **Progressive disclosure.** Keep the body lean and push detail behind explicit pointers. An agent's three levels are: frontmatter metadata (always visible), body/system prompt (loaded on selection), and referenced skills/files (loaded on demand). Do not inline what a referenced skill already owns.
-- **Single owner per requirement.** State each rule once; other sections reference it. Duplicated rules drift apart.
-- **Imperative bindings, explained.** Use `MUST`, `NEVER`, `ONLY`, `PRECONDITION`, `EXIT` for binding rules, and say *why* so the model can generalize. Convert vague `should`, `prefer`, `try to`, `carefully`, and `as needed` directives into a condition, action, and outcome. Explanatory prose and source descriptions need not use normative keywords.
-- **Avoid overfit rigidity.** Prefer a clear principle plus its reason over a long list of special cases; a rule that only fits one example will not generalize.
+- **Metadata triggers, body executes.** `description` is scope plus "use when" triggers, written pushy like a skill description. Never bury selection logic in the body.
+- **Progressive disclosure.** Frontmatter always visible; body loaded on selection; skills/files loaded on demand. Do not inline what a skill already owns.
+- **One owner per requirement.** State a rule once; other sections reference it.
+- **Imperative bindings, with the reason.** Use `MUST`, `NEVER`, `ONLY`, `PRECONDITION`, `EXIT`. Turn `should`, `prefer`, `try to`, `as needed` into condition, action, outcome.
+- **Weak-model hardening.** For models that drift from policy, a binding rule needs (a) a numeric or yes/no test, (b) a written artifact the model must produce (a ledger line, a table), and (c) an explicit statement that it overrides conflicting tool-description hints. A rule that is only "remembered" will be dropped under long context.
 
 ## 2. Capability checks before workflow authoring
 
-For each action in the workflow, record:
-
-| Check | Required evidence |
-|---|---|
-| Tool exists | Exact live catalog name and input schema |
-| Tool is reachable | Direct exposure or confirmed Code Mode route |
-| Agent may use it | Effective action/resource decision |
-| Dependencies work | Directory, provider, network, skill, or child availability |
-| Result is consumable | Expected return shape and continuation mechanism |
+| Check                | Required evidence                                          |
+| -------------------- | ---------------------------------------------------------- |
+| Tool exists          | Exact live catalog name and input schema                   |
+| Tool is reachable    | Direct exposure or confirmed Code Mode route               |
+| Agent may use it     | Effective action/resource decision                         |
+| Dependencies work    | Directory, provider, network, skill, or child availability |
+| Result is consumable | Return shape and continuation mechanism (`sessionID`)      |
 
 ## 3. Required-skill contract
 
-- MUST declare required skills once, as a bullet in the agent's final `## Rules` section.
+- MUST declare required skills once, as a bullet in the final `## Rules` (`Required skills: ...`).
 - MUST load each dependency before its first dependent operation, in the relevant session.
-- MUST verify exact IDs and winning definitions; do not confuse a permitted skill with an installed or loaded skill.
-- MUST check supporting-file and execution permissions. A primary with only `skill` permission may load a body but remain unable to follow references or execute scripts.
-- MUST return `BLOCKED` with the missing ID, denied capability, or incompatible requirement when a mandatory dependency cannot be used. Never claim it was loaded.
-- MUST record dependencies required by children in the child's contract; a parent's skill load is not proof of child-session readiness.
-- Reusable rubric or spec text belongs in a skill, not a bare reference file. A required non-skill reference (an agent-owned doc outside `skills/`) is declared the same way, read from the agent's own reference root before first use, and covered by a `read` rule — plus `external_directory` when that root sits outside the active location.
+- MUST verify exact IDs; a permitted skill is not an installed or loaded skill.
+- MUST check supporting-file and execution permissions: `skill` permission alone cannot follow references or run scripts.
+- MUST return `BLOCKED` with the missing ID or denied capability when a mandatory dependency is unusable. Never claim it was loaded.
+- MUST record child-required skills in the child's contract; a parent's load is not child readiness.
+- Reusable rubric text belongs in a skill, not a bare reference file.
 
-| Profile | Required skills / references retained from samples |
-|---|---|
-| Builder normal | `brainstorming`, `oc-routing` |
-| Planner | `brainstorming`, `writing-plans`, `oc-routing` |
-| Research normal / high | `oc-routing` plus the agent's embedded `### Routing` lanes, and `oc-research-tiering` for tiers and the `ResearchReport` schema |
-| Research fast | `oc-research-tiering` |
+| Profile                | Required skills                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------- |
+| Builder low            | `brainstorming`; `oc-routing` when it delegates                                                   |
+| Builder medium / high  | `brainstorming`, `oc-routing`; `writing-plans`, `executing-plans`, `git-commit` on their triggers |
+| Planner                | `brainstorming`, `writing-plans`, `oc-routing`                                                    |
+| Research normal / high | `oc-routing` plus embedded `### Routing`, `oc-research-tiering`                                   |
+| Research fast          | `oc-research-tiering`                                                                             |
 
-These skills were not supplied with the sample set, so their internals, path requirements, and any custom routing API remain `UNVERIFIED`. Do not manufacture their contents or turn their names into native OpenCode features.
+Skill internals are `UNVERIFIED` unless the skill file was supplied. Do not turn skill names into native features.
 
-## 4. Model routing precondition
+## 4. Routing precondition and slot binding
 
-`PROJECT`: prefer the string selector in handwritten agents. Preserve this precondition as the first line of the agent's `### Routing` section, which follows the `### Subagents` table on delegating primaries:
+`PROJECT`: `Max Slots` in the `### Subagents` table is the single source of the session cap. It means BOTH max simultaneously active dispatches AND max live (created, not retired) sessions for that row. The skill `oc-routing` (v4) enforces it through H1/H2 and a per-dispatch ledger; the agent only has to declare the numbers and the precondition.
 
-> PRECONDITION: MUST load skill `oc-routing` and apply the agent's embedded `### Routing` lanes in this session before the first child dispatch; MUST resolve and verify the applicable route before each dispatch or continuation. EXIT with `BLOCKED` when the required route cannot be applied through a supported mechanism.
+The engine does not enforce slots. NEVER describe a slot cap as engine-enforced. The cap holds only because the agent writes the ledger line before each dispatch.
 
-The supplied "every dispatch/resume MUST pass a `model`" instruction is **not established by the documented tool contract**. Do not require that argument until the installed tool schema or a documented extension proves support. A resolved route must be applied through a supported configuration/session/tool mechanism and checked against the actual child model. If none is available, block the affected dispatch rather than pretending prompt text changes the model.
+Canonical `### Routing` body, first line verbatim:
 
-For resumed children, verify whether the route is still valid; do not assume continuation changes models. For skeptic/validation diversity, choose a different supported model when available; otherwise record the shared-model limitation. Do not assert independent verification merely from different model names.
+> PRECONDITION: MUST load skill `oc-routing` before the first dispatch. MUST treat the `Max Slots` column as the live-session cap per row, resume an existing session before spawning, and set `model` on every dispatch from the routeTable. EXIT with `BLOCKED` when the route cannot be applied.
+
+Rules for the `model` argument:
+
+- `UNVERIFIED` (observed in session transcripts, not in D1-D8): the `subagent` tool exposes an optional `model` argument whose description says to omit it unless asked. `oc-routing` overrides that hint: loading the skill is the explicit instruction to set it.
+- Confirm the argument in the live tool schema before claiming it works. If the schema lacks it, route through a supported configuration mechanism or `EXIT BLOCKED` for the affected dispatch. Never pretend prompt text changes the model.
+- Verify a resumed session's model still matches its route; resuming does not change models.
+- For skeptic/validation diversity, pick a different supported model when available; otherwise record the shared-model limit. Different names alone do not prove independence.
 
 ## 5. Mandatory layout
 
 1. YAML frontmatter.
-2. `## Context`: role, scope, and the relevant contract below.
-3. `## Workflow`: ordered actions and explicit transitions.
+2. `## Context`: role and scope; kind-specific subsections below.
+3. `## Workflow`: ordered actions and explicit transitions (named sub-flows such as BUILD / REVIEW are `###`).
 4. `## Rules`: flat bullets; final section; required skills declared here.
 
-| Kind | Required Context content | Exemptions |
-|---|---|---|
-| Delegating primary | `### Subagents` with its `Name / Max Slots / Purpose` table, then `### Routing` with its precondition | No redundant input DTO |
-| Solo primary | Explicit single-agent scope | No Subagents table or routing prerequisite |
-| Specialist subagent | `### Output Schema` with types, closed status enums, conditional fields | No redundant input DTO |
+| Kind                | Required in Context                                                                                                                                                                   | Exemptions           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| Delegating primary  | `### Subagents` (table `Name / Max Slots / Purpose`, every allowed child listed, integer slots >= 1), then `### Routing` (precondition above). `### Gates` optional, before Subagents | No input DTO         |
+| Solo primary        | Explicit single-agent scope                                                                                                                                                           | No table, no routing |
+| Specialist subagent | `### Output Schema`: types, closed status enums, conditional fields                                                                                                                   | No input DTO         |
 
-`Max Slots` means simultaneously active child sessions for that row. It is not a native configuration field. A run-wide `MaxConcurrentSubagents` caps the sum of active children across roles and waves. Awaiting a child result is not proof the slot is free until completion is established.
+`validate_agent.py` fails a primary with any named `subagent allow` rule if the table, a child's row, or the precondition is missing.
+
+A run-wide `MaxConcurrentSubagents` (never frontmatter) caps the sum of active children across rows. Awaiting a result does not prove a slot is free until completion is established.
+
+**Effort-tier primaries** (low / medium / high) share one skeleton so tiers differ only in numbers and gates:
+
+```text
+## Context
+<one-paragraph role: what the agent owns, what subagents own>
+### Gates            # mandatory skills, approvals; identical wording across tiers
+### Subagents        # Name | Max Slots | Purpose
+### Routing          # canonical PRECONDITION
+## Workflow
+### BUILD / ### REVIEW   # numbered steps with explicit transitions
+## Rules             # Required skills bullet + flat constraints
+```
 
 ## 6. Size and wording
 
-| File type | Target | Hard ceiling |
-|---|---:|---:|
-| Primary | 150 lines | 160 lines |
-| Specialist | 90 lines | 120 lines |
+| File type  |    Target | Hard ceiling |
+| ---------- | --------: | -----------: |
+| Primary    | 150 lines |    160 lines |
+| Specialist |        90 |          120 |
 
-Count physical lines, including YAML and blanks. A target overrun needs an explicit reason in the change report; exceeding the ceiling fails acceptance. This source-of-truth specification is exempt.
+Count physical lines. A target overrun needs a reason in the change report; exceeding the ceiling fails acceptance.
 
 ## 7. Contracts and failure handling
 
-Use one transport per child report: JSON or structured Markdown with fixed fields. Do not demand both "JSON only" and the samples' "structured markdown" suffix. Enumerate domain-specific report statuses rather than inventing one universal status set.
-
-A minimal specialist envelope can be specified as:
+One transport per child report (JSON or fixed-field Markdown). Closed, domain-specific status enums, each with a producer schema and a consumer transition. Minimal envelope:
 
 ```text
 Status: READY | BLOCKED
@@ -90,16 +107,15 @@ Evidence: array of { Reference: string, Finding: string }
 BlockingQuestions: string[]  # non-empty exactly when Status = BLOCKED
 ```
 
-The original `READY`, `REQUEST_ANALYZER`, `SUCCESS`, `PASS`, `CHANGES_REQUIRED`, `WEAKENED`, and `BROKEN` statuses belong to different contracts. Before use, require a matching producer schema and a consumer transition for every value. Define malformed output, tool failure, cancellation, and exhausted budget handling explicitly; never interpret missing status as success.
-
-Default retry policy: initial attempt plus at most two retries per logical task unit. Resuming or creating a new session does not reset this budget. Retry only with a concrete correction or a transient-failure reason; then return `BLOCKED` with completed work and the remaining issue.
+Define malformed output, tool failure, cancellation and exhausted budget; never read a missing status as success. Retry: initial attempt plus at most two retries per logical unit; a new or resumed session does not reset the budget. Retry only with a concrete correction or transient-failure reason, then `BLOCKED` with completed work and the remaining issue.
 
 ## 8. Delegation and session lifecycle
 
-- MUST keep orchestration internal: slot IDs, synthetic context IDs, and scheduling notes stay out of child prompts.
-- MUST pass task scope, exact affected paths, acceptance conditions, relevant findings, and required report format.
-- MUST retain the real returned session handle and pass it through supported tool arguments for continuation.
-- MUST reuse a compatible active/resumable child for follow-up work when available; never invent a resume capability.
-- MUST partition parallel mutations into non-overlapping file sets; serialize or merge overlapping work.
-- MUST inspect custom leaf-agent permissions before relying on no-delegation or read-only guarantees. A sentence in the parent's Rules does not enforce the child's permissions.
-- NEVER treat a prompt-level slot cap, stop rule, or approval gate as an engine-enforced limit.
+- MUST keep orchestration internal: slot IDs, ledger lines and scheduling notes stay out of child prompts.
+- MUST pass scope, exact paths, acceptance conditions, relevant findings and the report format. Send the full preamble once per session; later dispatches carry only the delta.
+- MUST retain the real returned `sessionID` and pass it through the supported continuation argument.
+- MUST resume a compatible idle session before spawning. "New unit", "new file", "another round" and "fix" are never spawn reasons. Spawn only for a different role, a different model/variant, contaminated context, a worthwhile independent audit, a retired lane (6 dispatches, scope change, contamination), or parallel width below the cap.
+- MUST run parallel work in waves no larger than `Max Slots`, on disjoint file sets, and resume the same sessions in the next wave. Serialize overlapping files.
+- MUST inspect each custom leaf's permissions before relying on no-delegation or read-only claims; a sentence in the parent's Rules does not enforce them.
+- MUST end a delegating task with the `oc-routing` final report (dispatches vs sessions, per-role usage vs cap, reason for every spawn).
+- NEVER treat a prompt-level slot cap, stop rule or approval gate as engine-enforced.

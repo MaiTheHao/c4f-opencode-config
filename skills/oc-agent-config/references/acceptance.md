@@ -4,10 +4,10 @@
 
 1. **Identify:** record runtime version/build, agent deployment IDs, input hashes, requested scope, and this spec revision.
 2. **Refresh evidence:** open only relevant current V2 sources; check schema identity and document differences before changing the baseline.
-3. **Parse:** run `python3 scripts/validate_agent.py <agent.md>` for the machine-checkable subset (duplicate keys, required/rejected fields, forbidden sampling keys, permission invariants, body layout, line budget), then review anything it cannot see (types, enums, semantics) by hand. Failures declared in `scripts/accepted_exceptions.json` are downgraded to warnings: a new `[accepted]` warning means the profile changed under a standing exception, and either the profile or the exception must move.
+3. **Parse:** run `python3 scripts/validate_agent.py <agent.md>` for the machine-checkable subset (duplicate keys, required/rejected fields, forbidden sampling keys, permission invariants, body layout, `### Subagents` slot table and `### Routing` precondition for delegating primaries, line budget), then review anything it cannot see (types, enums, semantics) by hand. Failures declared in `scripts/accepted_exceptions.json` are downgraded to warnings: a new `[accepted]` warning means the profile changed under a standing exception, and either the profile or the exception must move.
 4. **Resolve:** inspect the merged agent entry and live catalog, including global/project overrides, policies, saved approvals, skill winners, and child definitions.
 5. **Trace capabilities:** map each workflow operation to a callable tool, its permission action/resource, and dependencies. Resolve all required-but-denied operations without blanket grants.
-6. **Review behavior:** check layout, routing precondition, routing-table agreement with its routing source, closed output contracts, failure transitions, gates, slot limits, operational budgets, and line budgets.
+6. **Review behavior:** check layout, routing precondition, slot table vs granted `subagent` rules, routing-table agreement with its routing source, closed output contracts, failure transitions, gates, operational budgets, and line budgets.
 7. **Validate in runtime:** load the actual Markdown with the installed parser, confirm discovery by exact ID, then exercise the relevant cases below. YAML parsing alone is not runtime validation.
 8. **Review changes:** compare against the initial state and approved scope; preserve unrelated work. Report successful checks separately from skipped or blocked checks.
 9. **Record:** update this specification when a rule changes; apply agent changes only when requested. Never mutate all profiles merely because the source-of-truth file was revised.
@@ -25,7 +25,12 @@
 | Read authorized external fixture | Directory and read rules both satisfied |
 | Load missing / denied required skill | Report exact dependency failure, never claim readiness |
 | Continue a child session | Correct returned handle and preserved task contract |
-| Unsupported `model` argument | Not sent; use verified route or report blocker |
+| `subagent` schema lists `model` | Every dispatch sets `model` from the routeTable; none left empty |
+| `subagent` schema lacks `model` | Argument not sent; use a supported mechanism or `BLOCKED` for that dispatch |
+| Follow-up unit for an existing lane (same role, model, variant) | Idle session resumed with the recorded `sessionID`; no spawn; delta-only prompt |
+| Dispatch wave larger than `Max Slots` | Excess units queue; live sessions per row never exceed the cap |
+| Second wave after a parallel wave | Same sessions resumed, none spawned |
+| Final report of a delegating task | Shows dispatches vs sessions, per-row usage vs cap, a reason for every spawn |
 | Enable Code Mode with nested edit denied | Nested edit remains denied; review exposed utility exceptions |
 | Implementation scope expands | Update affected-file plan and obtain required scope authorization |
 | Child result malformed / retry limit reached | Correct bounded failure transition |
@@ -34,7 +39,7 @@
 ## Acceptance record
 
 ```text
-SpecRevision: 2.2.0
+SpecRevision: 2.3.0
 RuntimeVersion: <actual version, or UNVERIFIED>
 AgentIDs: <resolved installed IDs>
 ChangedFiles: <paths and actions>

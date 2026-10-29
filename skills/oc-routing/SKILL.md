@@ -1,140 +1,99 @@
 ---
 name: oc-routing
-description: Subagent routing and session orchestration for OpenCode. Use when dispatching, resuming, parallelizing, or auditing subagents.
-version: 2
+description: Mandatory before ANY subagent dispatch or resume in OpenCode (analyze, edit, review, test). Routes each task to a model from allowed_models, reuses lanes (resume before spawn), caps live sessions at the agent's Max Slots, runs parallel work in waves. Use whenever dispatching, resuming, parallelizing or auditing subagents.
+version: 4
 ---
 
 # oc-routing
 
-**ROUTE BY FIT. RESUME WHEN USEFUL. SPAWN LAST. COUNT EVERY DISPATCH.**
+**RESUME BY DEFAULT. SET `model` EVERY DISPATCH. NEVER EXCEED MAX SLOTS. WRITE THE LEDGER.**
 
-## Models
+This skill overrides tool-description hints ("omit model unless asked", "one session per task"). Loading it IS the explicit instruction to set `model` and to resume. Never justify resume or spawn by cache, cost or token estimates (unobservable).
 
-Call `allowed_models` once per task. Its table is the only source of truth for
-available models, provider, class, price, tier, variants and triggers. Never
-route to a model it does not list.
+## 1. Hard limits (any violation = task failure)
 
-- Pick by the task's primary objective: match the most specific Trigger first;
-  use Tier only to break ties.
-- Use the lowest Variant that reliably meets the reasoning need. Keep one
-  variant per model within a task sequence. Escalating the variant ends the
-  sequence and opens a new one — record why.
-- Treat a route as a hypothesis and adjust on observed outcomes.
-- **FULL FREE** (only when explicitly requested): query once with
-  `model_paid_type=FREE` and use only those rows for the whole workflow,
-  including retries, audits and follow-ups. Never fall back to a PAID row.
-- On an `unpaid` error, drop that route for the rest of the task and re-query
-  with `model_paid_type=FREE`.
+- **H1** Live sessions per agent row <= `Max Slots` in the primary's `### Subagents` table (no table: 2). Retiring a session frees its seat.
+- **H2** In-flight dispatches per row <= `Max Slots`. One session runs one dispatch at a time.
+- **H3** Every dispatch sets `model` as `providerID/modelID` or `providerID/modelID#variant`. Empty or unprefixed = violation (unprefixed gives `Invalid model`).
+- **H4** Ledger line BEFORE sending; sessionID recorded AFTER. Unrecorded = unjustified spawn.
+- **H5** "New unit", "new file", "another round", "fix", "different role, same row" never justify a spawn.
 
-## State to maintain
+## 2. Rows and roles
 
-Two things live for the whole task, written down — not remembered:
+A session belongs to one subagent row; a `bulk` session cannot serve `analyzer`. Map each row to a role:
 
-1. **`laneMap`**: `laneKey -> sessionID`, plus one line per session recording
-   what it already holds (files touched, decisions made, conventions established).
-2. **`dispatchCount`**: dispatches per lane.
+| Row                   | Role (tier, cheap / quality)                                                                         |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `bulk`                | `code-bulk-edit` (T-fast low / T-fast high); one already-decided step: `code-apply-step`             |
+| `analyzer`            | `analysis-root-cause` (T-core high / T-core max)                                                     |
+| `general`             | `code-implement` (T-fast low / T-core high), `code-refactor`, `code-test` (T-core low / T-core high) |
+| `reviewer`            | `review-quality` (T-core high / T-cross)                                                             |
+| low-effort quick task | `general-quick` (T-fast low / T-fast high)                                                           |
 
-`laneKey = model#variant` is a hint for grouping, not proof of identity or
-compatibility. The sessionID is the identity.
+Default `cheap`. Escalate to `quality` only on an explicit trigger: "high accuracy", "critical", "production", "security-grade".
 
-After every dispatch, record the returned sessionID before doing anything else.
-A dispatch whose sessionID is not recorded counts as a spawn you must justify.
+## 3. Model resolution (once per task)
 
-## Pre-spawn gate
+1. Call `allowed_models` once. Its rows are the only truth; never route to an unlisted model.
+2. Resolve tier to a row by Trigger (most specific first; Tier breaks ties):
+   - **T-fast**: cheapest row whose triggers cover mechanical work (bulk-edit, analysis, exploration).
+   - **T-core**: row whose triggers cover judgment work (complex-bug-fix, architecture-design, complex-feature-implementation).
+   - **T-cross**: a different model family from the one that produced the code; factual reliability weighs most.
+3. Write `routeTable: row/role -> providerID/modelID#variant` and keep it for the task.
+4. Lowest variant that reliably works; a model lacking the variant takes the nearest lower one. Escalating a variant or changing model ends the lane (section 6).
+5. Substitute an unavailable model by tier characteristics, not by cheapest. T-cross stays a different family from T-core.
+6. A route is a hypothesis: change it on observed failure and record why.
+7. **Free-only** (running on a FREE model, or the user asks FULL FREE): query once with `model_paid_type=FREE`, use only those rows for the whole task including retries and audits, never fall back to PAID. Map free models to tiers by observed capability. No free model for an essential tier: `BLOCKED`, naming the tier. On an `unpaid` error: drop that route and re-query FREE.
 
-Before any spawn, answer these in one line. Any hit on 1–2, or a miss on 3,
-blocks the spawn:
+## 4. Dispatch protocol
 
-1. Does a live session already cover this scope, role and model? → continuation.
-2. Is the only reason to spawn "new unit" or "another round of edits"? →
-   continuation.
-3. Is the spawn justified by exactly one of: a different role, a different
-   model, isolation from contaminated context, or independent audit? → spawn,
-   naming the reason.
+**Inline-first** (only if you hold edit tools): do not delegate an edit of <= 3 lines in one file already in your context. If you cannot edit, delegate; never simulate an edit.
 
-Default is continuation. Spawn is the exception and must name its reason.
+**Batch first.** Group by objective, not by file. Dependent, sequential or file-sharing tasks = ONE dispatch with a numbered checklist (about 7 items or fewer). Worker returns per-item evidence (command + output).
 
-## Rules
+**Lane registry** (write it in your reply, update on every change):
+`laneKey = row|providerID/modelID#variant` -> `sessionID | dispatches n/6 | fails | files | holds: decisions, conventions`
 
-### 1. Batching
+**Before every dispatch write one line:**
+`DISPATCH #n | row | model#variant | RESUME <sessionID> or NEW:<reason a-e> | wave k | live r/cap`
 
-Group by objective, not by file. Different files serving one objective are one
-dispatch with a numbered checklist. Split when objectives need independent
-judgment, when dependencies differ, or when shared mutable state makes
-concurrency unsafe.
+Pick the session, first match:
 
-"Small" = one checklist of roughly seven items or fewer that a single reviewer
-would accept as one deliverable. Beyond that, split.
+1. Idle lane, same laneKey, task continues, fixes or extends its work: RESUME.
+2. Idle lane, same laneKey, unrelated task, files disjoint from every busy lane: RESUME.
+3. Idle lane of the same row on a stronger variant, if justified: RESUME and note it.
+4. Spawn, only for one reason: **a** different row; **b** different model or variant; **c** contaminated context; **d** independent audit worth its cost (section 7); **e** lane retired (section 6), or parallel width needed with live < cap.
 
-### 2. Session selection
+No reason a-e = no spawn. Resume.
 
-Confirm eligibility first: context relevance, role and scope fit, session state,
-no contamination. Then take the first match:
+## 5. Parallel work = waves
 
-1. **Affinity:** a session with relevant context and compatible history.
-2. **Reuse:** a compatible session with the same model and variant.
-3. **Tier up:** a suitable session on a stronger variant, when justified.
-4. **Spawn:** a new session when none fits, and the gate above permits it.
+- Parallel only for disjoint files, no dependency, no shared mutable state; one writer per file. Same-file work is sequential inside one session.
+- A wave = at most `Max Slots` dispatches, one per distinct session. Extra units queue for the next wave.
+- Later waves and fixes RESUME the same sessions. Never spawn for a new wave.
+- Never split a unit just to create parallelism. Integrate each wave before a dependent one.
 
-Affinity and reuse overlap; when they disagree, prefer the session whose
-existing context saves more work, and note the trade-off.
+## 6. Lane lifecycle and messages
 
-Start fresh when independent reasoning is required, prior assumptions are
-disproven, context is contaminated, role or scope differs materially, or reuse
-would compromise the task.
+**Forced respawn (only these):** model or variant changes; `review-quality` at `quality` tier (fresh session per audit, so earlier fixes do not bias it); lane dispatches >= 6; lane fails >= 2 on the same task (retire; brief the new lane with the failure evidence); scope changes materially; context contaminated. A replacement does not raise the live count.
 
-### 3. Independent audits
+**Message shape.** First message to a lane: short stable preamble (rules, output format). Follow-ups: delta only (task, paths, constraints, acceptance command). Never resend the preamble.
 
-The auditor must not repeat the producer's reasoning. Prefer, in order: a
-different session, a different model, independent evidence. Reuse a compatible
-session that did not produce the changes; spawn only when independent review is
-worth the overhead.
+## 7. Audit and verify
 
-"Worth the overhead" means the change is irreversible, touches shared or
-critical paths, or the producer's own reasoning was uncertain (an escalation
-happened, ambiguity was flagged). Otherwise a non-producing existing session is
-enough.
+- Auditor must not repeat the producer's reasoning. Prefer: another session of the audit row, then a different model, then independent evidence. Spawn an auditor only if the change is irreversible, touches shared or critical paths, or the producer was uncertain. Say so when model diversity is unavailable.
+- **Verify-before-trust.** Every task carries an acceptance command (grep, build, test, run the script). SUCCESS without command output = FAIL. Fix a failure in the SAME lane first. For `T-fast low` output touching escaping, regex or generated code, run the real script, not just grep.
+- Verifying your own orchestration work needs no new session.
 
-Verification of the orchestrator's own work runs in the orchestrator's lane. It
-does not require a new session.
+## 8. Final report (mandatory, show the arithmetic)
 
-If model diversity is unavailable, keep session independence and say so.
+```
+Dispatches D=__ | Sessions S=__
+Per row: row: sessions __/Max Slots __, dispatches __
+Spawns: #id -> reason a-e (list EVERY spawn)
+Red flag: D>=6 and S>D/3 -> justify each spawn or admit the violation
+Orphan sessions in registry: none | <list>
+Rules bent: none | <rule, why>
+```
 
-### 4. Concurrency and file safety
-
-Shared mutable state means no two dispatches run concurrently over it. It does
-not require separate sessions: sequential work on the same files inside one
-session is valid and preferred. One writer at a time per file. Sequence within a
-lane; split across lanes only when parallel work is genuinely safe.
-
-## Dispatch habits
-
-- Send the full task preamble once per session. Later dispatches carry only the
-  new task, scope, constraints and deliverables.
-- Give each batch a clear scope and explicit deliverables.
-- Reuse to preserve context; spawn for isolation, a different role, or
-  independent reasoning.
-- Avoid redundant sessions, extra dispatches and excess concurrency.
-
-## Retirement
-
-A lane retires — its next dispatch becomes a spawn — when any of: six dispatches
-reached, scope changes materially, context is contaminated, or its model no
-longer fits. Retirement is the only routine path from continuation to spawn
-besides the pre-spawn gate.
-
-## Post-task audit
-
-Before declaring the task done, state:
-
-- dispatches vs sessions, and which sessions were redundant;
-- the gate reason for every spawn;
-- that `laneMap` has no orphaned session;
-- any rule bent during the task, and why.
-
-## Objective
-
-Optimize for correctness, context continuity, latency, integration cost and
-total resource use. Choose the simplest viable strategy. When two rules
-conflict, prefer the one that preserves context continuity and the fewest
-sessions.
+Never write "spawns were justified" without the list above.

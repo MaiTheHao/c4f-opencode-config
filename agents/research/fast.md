@@ -15,8 +15,8 @@ permissions:
 ## Context
 
 ### Model
-- Primary: 1 agent, no subagents (solo reconnaissance, targeted research, self-check, synthesis).
-- Tiers, the citation-chain rule, and the `ResearchReport` schema come from skill `oc-research-tiering`; load it before the first classification; never invent a local rubric.
+- Work solo: reconnaissance, targeted research, self-check, and synthesis; never dispatch children.
+- Tiers, citation-chain rules, and the `ResearchReport` schema come from `oc-research-tiering`; load it before classifying sources. Do not invent a local rubric.
 
 ## Workflow
 

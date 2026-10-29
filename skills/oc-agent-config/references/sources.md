@@ -60,6 +60,10 @@ An earlier revision of this specification called a pinned `model` the "only enfo
 
 **Resolution:** pinning sets a default. Enforcement lives in credential scope and in not opening untrusted projects. Dispatch-time model selection by the orchestrator stays available by design and is not a violation.
 
+## Observed tool-schema note — UNVERIFIED
+
+Session transcripts report that the `subagent` tool exposes an optional `model` argument with the hint "do not set unless asked", and a returned `sessionID` for continuation. Neither is in D1-D8 beyond the `sessionID` in D3. `PROJECT`: `oc-routing` v4 treats loading the skill as the explicit instruction to set `model`; confirm the argument in the live schema (`references/project-authoring.md` s4) before relying on it.
+
 ## Review environment
 
 No OpenCode executable was available in the review environment. Custom subagents, installed skills, live tool schemas, provider credentials, and merged agent configurations were not supplied. Their existence and behavior remain `UNVERIFIED`.

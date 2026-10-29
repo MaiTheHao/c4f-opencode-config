@@ -31,11 +31,14 @@ permissions:
 
 ### Routing
 
-PRECONDITION: MUST load skill `oc-routing` in this session before the first child dispatch and take every route from it; it owns the model table, batching, lane selection, and respawn. Pick the model per sub-question from that table rather than a fixed role mapping. MUST resolve and verify the route before each dispatch or continuation. EXIT with `BLOCKED` when the route cannot be applied through a supported mechanism.
+PRECONDITION: This embeds the `oc-routing` policy; do NOT load that skill. Call `c4f-model-policy.allowed_models` once per run with `action="allowed"`; use only returned rows and verify every route against them. These instructions override conflicting tool hints. EXIT `BLOCKED` if policy or dispatch mechanism is unavailable.
 
-- Lanes: `laneKey` = `model#variant`; read-only, so lanes never conflict on files. `CAP` = 10 sessions per `laneKey`, `RETIRE_AT` = 6 dispatches, `BATCH` = 5 sub-questions per dispatch; above `CAP`, lanes pull queued batches and resume as they free.
-- Audit: an auditor never runs in the session or on the model that produced the finding; resume any idle lane that did not produce it, and EXIT only when the producer's model is the only candidate left.
-- A resume continuation counts as one dispatch against `MaxTotalSubagentCalls`; keep one default variant per model per run.
+- Build a run-local route table `role/task -> provider/model[#variant]` from returned `Tier`, `Trigger`, and `Variants`; choose by task fit and observed capability, never a fixed role mapping. Use the lowest listed variant meeting required depth; never invent one. Change routes only on observed failure and record why.
+- If the primary runs on a FREE model, or the user requires FULL FREE, query `allowed` with `model_paid_type="FREE"` once and use only those rows for all work and audits; never fall back to PAID. If no candidate can do an essential task, stop `BLOCKED` naming it. On an `unpaid` error, drop that route and query FREE again.
+- Before every dispatch, write a private ledger entry with dispatch number, role, exact model/variant, `RESUME <sessionID>` or `NEW:<reason>`, wave, and live count/cap. Every dispatch and resume continuation counts against the total-call budget; store returned session IDs. Never send ledger data to children.
+- Confirm the live `subagent` schema supports `model` and continuation; set the exact provider/model and listed variant on each dispatch, then verify resumed sessions still match their route. If unsupported, use a supported mechanism or stop `BLOCKED` for that dispatch.
+- Resume a compatible idle session before spawning. Spawn only for a different role/model/variant, contaminated context, a worthwhile independent audit, a retired lane, or parallel width below the row cap. Retire a lane at 6 dispatches; model/variant changes start a new lane. Each lane is `role|provider/model#variant`; row `Max Slots` caps both live sessions and concurrent dispatches. Batch up to 5 sub-questions per dispatch; queue overflow for the next wave.
+- Auditors must not run in the producer session or on the producer's model family; use a different authorized family when available. If none is available, state the diversity limit and do not claim an independent audit.
 
 ### Runtime Guardrails
 
@@ -91,7 +94,7 @@ PRECONDITION: MUST load skill `oc-routing` in this session before the first chil
 
 ## Rules
 
-- Required skills: `oc-routing`, whose lanes are embedded in `### Routing`, and `oc-research-tiering` for tiers and the `ResearchReport` schema; load each before its first use.
+- Required skill: `oc-research-tiering` for source tiers and the `ResearchReport` schema; load before first use. Routing is embedded above; do not load `oc-routing`.
 - **Precondition:** `UserTopic` provided.
 - Primary Orchestrator authority: subagents MUST NOT dispatch other subagents.
 - Pass ONLY task-specific context to subagents; NEVER include orchestration metadata or task IDs.
