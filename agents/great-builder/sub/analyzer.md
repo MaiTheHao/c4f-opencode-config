@@ -13,8 +13,6 @@ permissions:
   - { action: shell, resource: 'git log *', effect: allow }
   - { action: execute, resource: '*', effect: allow }
   - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
-  - { action: browser, resource: '*', effect: deny }
-  - { action: subagent, resource: '*', effect: deny }
   - { action: skill, resource: '*', effect: allow }
 ---
 

@@ -44,7 +44,6 @@ permissions:
   - { action: execute, resource: '*', effect: allow }
   - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
   - { action: browser, resource: '*', effect: allow }
-  - { action: subagent, resource: '*', effect: deny }
 ---
 
 ## Context

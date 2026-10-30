@@ -4,13 +4,7 @@ mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
-  - { action: skill, resource: '*', effect: allow }
-  - { action: execute, resource: '*', effect: allow }
-  - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
-  - { action: browser, resource: '*', effect: deny }
-  - { action: subagent, resource: '*', effect: deny }
   - { action: edit, resource: '*', effect: allow }
-  - { action: shell, resource: '*', effect: ask }
 ---
 
 ## Context
