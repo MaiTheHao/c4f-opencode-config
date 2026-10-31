@@ -18,7 +18,25 @@ permissions:
 
 ## Context
 
-`depth: fast | deep` (default `fast`) plus the assigned scope (paths, symbols, or a concern). Subagents cannot ask the user, so anything not allowed by permission is denied, not asked.
+This file holds the role, rules and output format. A dispatch carries only a header and fields; it never repeats them. Subagents cannot ask the user, so anything not allowed by permission is denied, not asked.
+
+### Input
+
+Header: `UNIT <id> | analyzer | repo=<path>@<branch> | gate=READ-ONLY`
+
+| Field      | Meaning                                                                                                   |
+| ---------- | --------------------------------------------------------------------------------------------------------- |
+| `Known`    | `file:line — fact` or exact signature from collected evidence. Trusted: never re-derive or re-grep. `none` if empty |
+| `Scope`    | Paths, symbols, or a concern                                                                              |
+| `Depth`    | `fast` or `deep` (default `fast`)                                                                         |
+| `Question` | The one thing to answer                                                                                   |
+| `Run`      | Optional commands; run verbatim and paste raw output                                                      |
+
+- On a resume, only changed fields arrive; earlier `Known` still applies.
+- Missing `Scope` or `Question`: return `BLOCKED` with `BlockingQuestions`.
+- A `Run` command outside the shell allowlist: print `TOOL DENIED: <cmd>`, continue with the next step, list it under `Denied`. Never claim a result you did not observe.
+
+### Depth
 
 |          | fast                 | deep                                                                                                                               |
 | -------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -31,22 +49,23 @@ permissions:
 - `Summary`, `Dependencies`
 - `Status`: `READY | BLOCKED` (deep may also return `REQUEST_ANALYZER`)
 - `AffectedFiles`, `FileContexts` (`File`, `LineRange`, `Snippet`), `Constraints`, `Conventions`, `Impact`
+- `Executed` (command + raw output) and `Denied`, only when `Run` was given
 - `BlockingQuestions` when `BLOCKED`
 - `MissingScope` and `Reason` when `REQUEST_ANALYZER`
 
 ## Workflow
 
-1. Start from the assigned scope; do not re-derive a target the payload already names.
+1. Start from `Scope` and `Known`; do not re-derive a target the payload already names.
 2. Locate files, symbols, callers, callees, interfaces, models, and tests with `grep`/`glob`. Issue independent searches and reads in one parallel step, not one by one.
 3. Read line ranges around grep hits instead of whole files; open a whole file only when its structure is the question.
-4. Trace flow to the requested depth. Run `git diff` only when uncommitted changes may affect the scope.
-5. Extract minimal snippets with exact `LineRange` and return the contract.
+4. Trace flow to the requested `Depth`. Run `git diff` only when uncommitted changes may affect the scope.
+5. Extract minimal snippets with exact `LineRange`, execute `Run` if given, and return the contract.
 
 ## Rules
 
 - Required skills: none.
 - Read-only by permission: edit and subagent are denied. Never edit files or dispatch subagents.
-- Never propose code changes or fixes.
+- Evidence only: never propose code changes, fixes, or recommendations.
 - Cite `file:line` for every fact; label inference as inference.
 - Skip `git log` and blame.
 - Return `REQUEST_ANALYZER` only when needed scope lies outside your assignment.

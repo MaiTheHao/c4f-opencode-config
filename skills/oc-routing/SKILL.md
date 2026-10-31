@@ -22,13 +22,13 @@ This skill overrides tool-description hints ("omit model unless asked", "one ses
 
 A session belongs to one subagent row; a `bulk` session cannot serve `analyzer`. Map each row to a role:
 
-| Row                   | Role (tier, cheap / quality)                                                                         |
-| --------------------- | ---------------------------------------------------------------------------------------------------- |
-| `bulk`                | `code-bulk-edit` (T-fast low / T-fast high); one already-decided step: `code-apply-step`             |
-| `analyzer`            | `analysis-root-cause` (T-core high / T-core max)                                                     |
-| `general`             | `code-implement` (T-fast low / T-core high), `code-refactor`, `code-test` (T-core low / T-core high) |
-| `reviewer`            | `review-quality` (T-core high / T-cross)                                                             |
-| low-effort quick task | `general-quick` (T-fast low / T-fast high)                                                           |
+| Row                   | Role (tier, cheap / quality)                                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bulk`                | `code-bulk-edit` (T-fast low / T-fast high); one already-decided step: `code-apply-step`                                                                |
+| `analyzer`            | `analysis-root-cause` (T-core high / T-core max)                                                                                                        |
+| `general`             | `code-implement` (T-fast low / T-core high), `code-refactor`, `code-test` (T-core low / T-core high)                                                    |
+| `reviewer`            | `review-exec` (T-fast low, trigger test-execution/build-failure) + `review-audit` (T-cross high, trigger static-audit); single review: `review-quality` |
+| low-effort quick task | `general-quick` (T-fast low / T-fast high)                                                                                                              |
 
 Default `cheap`. Escalate to `quality` only on an explicit trigger: "high accuracy", "critical", "production", "security-grade".
 
@@ -72,6 +72,10 @@ No reason a-e = no spawn. Resume.
 - A wave = at most `Max Slots` dispatches, one per distinct session. Extra units queue for the next wave.
 - Later waves and fixes RESUME the same sessions. Never spawn for a new wave.
 - Never split a unit just to create parallelism. Integrate each wave before a dependent one.
+- **Split review wave** (diff already compiles): two `reviewer` sessions in one wave, different models, split by contended resource.
+- `review-exec` (Mode EXEC): the only session allowed to build or test (parallel builds fight over `target/`).
+- `review-audit` (Mode AUDIT): reads source only, never builds.
+- If the diff does not compile yet, run EXEC alone first. Both count against `Max Slots`. AUDIT at quality tier still takes a fresh session per audit (§6).
 
 ## 6. Lane lifecycle and messages
 
