@@ -6,6 +6,8 @@ permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
   - { action: edit, resource: 'local/agents/**', effect: allow }
+  - { action: write, resource: 'local/agents/**', effect: allow }
+  - { action: patch, resource: 'local/agents/**', effect: allow }
   - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'git commit *', effect: allow }
   - { action: shell, resource: 'git status *', effect: allow }

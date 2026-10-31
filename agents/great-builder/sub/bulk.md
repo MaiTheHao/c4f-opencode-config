@@ -5,6 +5,8 @@ permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
   - { action: edit, resource: '*', effect: allow }
+  - { action: write, resource: '*', effect: allow }
+  - { action: patch, resource: '*', effect: allow }
 ---
 
 ## Context
@@ -37,7 +39,8 @@ There is no `Verify`, `Self-check` or `Known` field: you have no shell, and the 
 
 - **Multi-file / multi-section / structural / bulk units** (add, delete, move, rename across files, or a repeated pattern across many files, including `COPY`): apply via **one `patch` call** with a single `patchText` containing all relevant sections.
 - **Single-file targeted replacements** (exact `oldString` → `newString`, small localized change): apply via **`edit`**.
-- No fallback tools. `write` is not permitted. If a unit implies a change that neither `patch` nor `edit` can express from the `Spec`, return `NEEDS_CLARIFICATION`.
+- **Full-file creation or complete rewrite**: apply via **`write`**.
+- If a unit implies a change that none of `patch` / `edit` / `write` can express from the `Spec`, return `NEEDS_CLARIFICATION`.
 
 ## Workflow
 

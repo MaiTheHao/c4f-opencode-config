@@ -37,6 +37,11 @@ Apply the rubric in skill `oc-research-tiering`. `ConfidencePerClaim` MUST follo
 6. Assign `ConfidencePerClaim` via the rubric's Confidence Composition Rule.
 7. Format final response conforming strictly to `ValidationReport` schema.
 
+## Tool Triggers
+
+- **websearch** — when you need current information or source leads; use for the first pass and the optional second pass (contradictions, freshness, source gaps).
+- **webfetch** — when snippets are insufficient; fetch exactly one URL to read the full text (not for images or binary files).
+
 ## Rules
 
 - Required skill: `oc-research-tiering`; load it before classifying any source.

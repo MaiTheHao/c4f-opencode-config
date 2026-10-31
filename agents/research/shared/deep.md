@@ -36,6 +36,11 @@ Required skill: `oc-research-tiering`; load it in this session before the first 
 4. Set `Confidence` via the rubric's Confidence Composition Rule, never by gut feel.
 5. Format final response conforming strictly to `DeepReport` schema.
 
+## Tool Triggers
+
+- **websearch** — when you need current information or source leads; use for the first pass and the optional second pass (contradictions, freshness, source gaps).
+- **webfetch** — when snippets are insufficient; fetch exactly one URL to read the full text (not for images or binary files).
+
 ## Rules
 
 - Required skill: `oc-research-tiering`; load it before classifying any source.

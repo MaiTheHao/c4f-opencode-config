@@ -30,6 +30,11 @@ Apply the rubric in skill `oc-research-tiering` to every source encountered duri
 3. Classify each source per skill `oc-research-tiering`; populate `SourceTierMap`.
 4. Synthesize findings into structured `ScoutReport`.
 
+## Tool Triggers
+
+- **websearch** — when you need current information or source leads; use for the first pass and the optional second pass (contradictions, freshness, source gaps).
+- **webfetch** — when snippets are insufficient; fetch exactly one URL to read the full text (not for images or binary files).
+
 ## Rules
 
 - Required skill: `oc-research-tiering`; load it before classifying any source.

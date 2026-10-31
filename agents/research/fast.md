@@ -49,6 +49,11 @@ permissions:
 1. Present the `ResearchReport` in chat.
 2. Save it to `local/agents/research-artifacts/YYYY-MM-DD-<slug>.md` only when the user asks for a document.
 
+## Tool Triggers
+
+- **websearch** — when you need current information or source leads; use for the first pass and the optional second pass (contradictions, freshness, source gaps).
+- **webfetch** — when snippets are insufficient; fetch exactly one URL to read the full text (not for images or binary files).
+
 ## Rules
 
 - Required skill: `oc-research-tiering`; load it before the first source classification.

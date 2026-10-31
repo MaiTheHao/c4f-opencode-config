@@ -3,13 +3,6 @@ description: 'LOW effort build agent, designated open agent. Full reasoning, wor
 mode: primary
 color: '#4a83de'
 permissions:
-  - { action: '*', resource: '*', effect: allow }
-  - { action: read, resource: '*.env', effect: ask }
-  - { action: read, resource: '*.env.*', effect: ask }
-  - { action: read, resource: '*.env.example', effect: allow }
-  - { action: execute, resource: '*', effect: allow }
-  - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
-  - { action: 'c4f-model-policy_*', resource: '*', effect: allow }
   - { action: subagent, resource: '*', effect: deny }
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }
