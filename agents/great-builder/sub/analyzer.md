@@ -54,6 +54,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 - Read-only: never edit files or dispatch subagents.
 - Evidence only: no code changes, fixes or recommendations.
 - Cite `file:line` for every fact; label inference as inference.
+- Existence claims (file, symbol, version, drift) need a cited `glob`/`grep`/`ls` hit; no hit means `not found`, never `exists` by inference.
 - Skip `git log` and blame.
 - Return `REQUEST_ANALYZER` only when needed scope lies outside your assignment.
 - Stop once scope, constraints and impact are clear for the requested depth.

@@ -70,4 +70,4 @@ Input fields are defined in the description. On resume, only changed fields arri
 - `BLOCKER` only for defects that make the work unusable or unsafe. Do not pad findings.
 - Review only the assigned scope. Skip blame.
 - Stop once the verdict is established.
-- Reply with the `ReviewResult` only: no preamble, no recap.
+- Reply with the `ReviewResult` only: no preamble, no recap. Never end on tool calls or an empty message; the final message is always the `ReviewResult`.

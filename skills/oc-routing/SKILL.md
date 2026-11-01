@@ -24,7 +24,7 @@ This skill overrides tool-description hints ("omit model unless asked", "one ses
 2. Each subagent's description names the trigger it needs (`Route:`). Send the dispatch to the cheapest row that lists that trigger. Escalate only on an explicit word ("high accuracy", "critical", "production", "security-grade"), a failed lane, or a condition the description names: first a higher variant of the same model, then the next row listing the trigger.
 3. Producer/reviewer split (`static-audit`, `security-review`): the row must be a different model family from every model that produced the code under review; take the cheapest row that differs. None differs: say so in the final report (`Rules bent`).
 4. A trigger no row lists is a policy gap: `BLOCKED`, naming the trigger. Never substitute by guess.
-5. Write `routeTable: row -> providerID/modelID#variant` and keep it for the task. Lowest variant that reliably works; a model lacking the variant takes the nearest lower one. Escalating a variant or changing model ends the lane (section 6). A route is a hypothesis: change it on observed failure and record why.
+5. Write `routeTable: row -> providerID/modelID#variant` and keep it for the task. Take the variant only from those `allowed_models` lists for that model (lowest that reliably works; none listed: no `#variant`); never assume one. On `Model unavailable`, retry the same model with the next listed variant before changing model. Escalating a variant or changing model ends the lane (section 6). A route is a hypothesis: change it on observed failure and record why.
 6. **Free-only** (running on a FREE model, or the user asks FULL FREE): call the tool with `model_paid_type: FREE`, use only those rows for the whole task including retries and audits, never fall back to PAID. No free row for a needed trigger: `BLOCKED`, naming it. On an `unpaid` error: drop that route and re-query FREE.
 
 ## 4. Dispatch protocol
@@ -48,7 +48,7 @@ Pick the session, first match:
 3. Idle lane of the same row on a stronger variant, if justified: RESUME and note it.
 4. Spawn, only for one reason: **a** different row; **b** different model or variant; **c** contaminated context; **d** independent audit worth its cost (section 7); **e** lane retired (section 6), or parallel width needed with live < cap.
 
-No reason a-e = no spawn. Resume.
+No reason a-e = no spawn. Resume. If the runtime returns a new sessionID on resume, it is still the same logical lane: record the latest ID and count the lane once toward `Max Slots`.
 
 ## 5. Parallel work = waves
 
@@ -84,7 +84,7 @@ No reason a-e = no spawn. Resume.
 Dispatches D=__ | Sessions S=__
 Per row: row: sessions __/Max Slots __, dispatches __
 Spawns: #id -> reason a-e (list EVERY spawn)
-Red flag: D>=6 and S>D/3 -> justify each spawn or admit the violation (skipped when Max Slots is inf)
+Red flag: D>=6 and S>D/3 -> justify each spawn or admit the violation (skipped when Max Slots is inf or resume yields new sessionIDs)
 Orphan sessions in registry: none | <list>
 Rules bent: none | <rule, why>
 ```
