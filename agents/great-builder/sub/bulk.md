@@ -3,6 +3,7 @@ description: 'Applies fully specified mechanical edits; makes no decisions, has 
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
+  - { action: shell, resource: '*', effect: ask }
   - { action: read, resource: '*', effect: allow }
   - { action: edit, resource: '*', effect: allow }
   - { action: write, resource: '*', effect: allow }
@@ -30,6 +31,7 @@ Input fields are defined in the description. Treat `Spec` as complete and correc
 - Single-file targeted replacement (exact `oldString` -> `newString`): `edit`.
 - Full-file creation or complete rewrite: `write`.
 - A change none of these can express from the `Spec`: `NEEDS_CLARIFICATION`.
+- File deletion: use shell with `rm -- <path>` only when explicitly specified in the Spec.
 
 ## Workflow
 
@@ -47,3 +49,8 @@ Input fields are defined in the description. Treat `Spec` as complete and correc
 - Never search or trace source; never run git, shell, tests or builds.
 - Never read or write secrets (`.env` and similar).
 - Reply tersely: no explanations or summaries beyond the per-file line.
+- Shell is permitted only for file deletion explicitly specified in the Spec.
+- Use `rm -- <path>` only; never use `rm -rf`, wildcards, command substitution or chained commands.
+- Delete only files explicitly listed in `Files` and named for deletion in the `Spec`.
+- Never delete directories, recursively or otherwise.
+- Never use shell for inspection, searching, git, tests, builds or other operations.
