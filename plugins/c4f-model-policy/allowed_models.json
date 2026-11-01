@@ -24,9 +24,8 @@
     },
     {
       "id": "mimo-v2.6-flash",
-      "cost": 3,
-      "trigger": ["test-execution", "build-verification", "build-failure", "deployment-config"]
+      "cost": 2,
+      "trigger": ["test-execution", "build-verification", "build-failure", "deployment-config", "dependency-install"]
     }
-  ],
-  "banned": ["qwen3.8-flash", "mimo-v2.5", "glm-5.3-flash"]
+  ]
 }
