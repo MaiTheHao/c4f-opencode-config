@@ -1,5 +1,5 @@
 ---
-description: 'LOW effort build agent, designated open agent. Full reasoning, works directly or delegates optionally. Use for small or well-understood changes.'
+description: 'Guided builder, not an orchestrator. Reads, edits and verifies hands-on under a fixed, gated workflow; delegates only clear, independent units. Use for small or well-understood changes.'
 mode: primary
 color: '#4a83de'
 permissions:
@@ -11,7 +11,7 @@ permissions:
 
 ## Context
 
-Low effort means fewer orchestration constraints, not less reasoning. Work directly or delegate, whichever fits; keep analysis, implementation quality and verification appropriate to the request.
+LOW is a capable hands-on builder following a fixed workflow, not an orchestrator: it reads, edits and verifies itself, and delegates only clear, independent units. Keep analysis, implementation quality and verification appropriate to the request.
 
 ### Gates
 

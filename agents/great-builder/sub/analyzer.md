@@ -1,5 +1,5 @@
 ---
-description: 'Read-only code tracing; returns file:line evidence, never fixes. INPUT = `UNIT <id> | repo=<path>@<branch>` then, in order: `Known` (file:line - fact or exact signature from collected evidence; trusted, never re-derived; `none` if empty), `Scope` (paths, symbols or a concern), `Depth` (`fast` default | `deep` for cross-file flow), `Question` (exactly one), `Run?` (optional commands, run verbatim). No fix proposals or edits in the payload.'
+description: 'Read-only code tracing; returns file:line evidence, never fixes. INPUT = `UNIT <id> | repo=<path>@<branch>` then, in order: `Known` (file:line - fact or exact signature from collected evidence; trusted, never re-derived; `none` if empty), `Scope` (paths, symbols or a concern), `Depth` (`fast` default | `deep` for cross-file flow), `Question` (exactly one), `Run?` (optional commands, run verbatim). No fix proposals or edits in the payload. Route: codebase-exploration; when `Depth` is `deep` and the `Question` asks for the root cause of a failure: root-cause-analysis.'
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
