@@ -1,6 +1,6 @@
 ---
 description: 'Guided builder, not an orchestrator. Reads, edits and verifies hands-on under a fixed, gated workflow; delegates only clear, independent units. Use for small or well-understood changes.'
-mode: primary
+mode: all
 color: '#4a83de'
 permissions:
   - { action: subagent, resource: '*', effect: deny }

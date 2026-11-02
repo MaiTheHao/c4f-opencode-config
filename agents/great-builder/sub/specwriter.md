@@ -3,6 +3,7 @@ description: 'Compiles an approved design into exact, bulk-ready spec files; dec
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
+  - { action: subagent, resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }

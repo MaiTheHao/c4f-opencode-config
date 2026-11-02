@@ -3,6 +3,7 @@ description: 'Independent review of the working-tree diff against the plan; neve
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
+  - { action: subagent, resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }

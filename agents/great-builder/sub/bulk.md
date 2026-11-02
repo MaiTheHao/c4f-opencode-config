@@ -3,11 +3,18 @@ description: 'Applies fully specified mechanical edits; makes no decisions, has 
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
+  - { action: subagent, resource: '*', effect: deny }
   - { action: shell, resource: '*', effect: ask }
   - { action: read, resource: '*', effect: allow }
   - { action: edit, resource: '*', effect: allow }
   - { action: write, resource: '*', effect: allow }
   - { action: patch, resource: '*', effect: allow }
+  - { action: edit, resource: 'AGENTS.md', effect: deny }
+  - { action: edit, resource: 'scripts/*', effect: deny }
+  - { action: write, resource: 'AGENTS.md', effect: deny }
+  - { action: write, resource: 'scripts/*', effect: deny }
+  - { action: patch, resource: 'AGENTS.md', effect: deny }
+  - { action: patch, resource: 'scripts/*', effect: deny }
 ---
 
 ## Context

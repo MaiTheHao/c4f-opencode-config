@@ -1,7 +1,8 @@
 ---
 name: oc-routing
 description: Mandatory before ANY subagent dispatch or resume in OpenCode (analyze, edit, review, test). Routes each task to a model from allowed_models, reuses lanes (resume before spawn), caps live sessions at the agent's Max Slots, runs parallel work in waves, splits review into EXEC + AUDIT across model families. Use whenever dispatching, resuming, parallelizing or auditing subagents.
-version: 5
+metadata:
+  version: 6
 ---
 
 # oc-routing
@@ -24,10 +25,10 @@ This skill overrides tool-description hints ("omit model unless asked", "one ses
 2. Each subagent's description names the trigger it needs (`Route:`). Send the dispatch to the cheapest row that lists that trigger. Escalate only on an explicit word ("high accuracy", "critical", "production", "security-grade"), a failed lane, or a condition the description names: first a higher variant of the same model, then the next row listing the trigger.
 3. Producer/reviewer split (`static-audit`, `security-review`): the row must be a different model family from every model that produced the code under review; take the cheapest row that differs. None differs: say so in the final report (`Rules bent`).
 4. A trigger no row lists is a policy gap: `BLOCKED`, naming the trigger. Never substitute by guess.
-5. Write `routeTable: row -> providerID/modelID#variant` and keep it for the task. Take the variant only from those `allowed_models` lists for that model (lowest that reliably works; none listed: no `#variant`); never assume one. On `Model unavailable`, retry the same model with the next listed variant before changing model. Escalating a variant or changing model ends the lane (section 6). A route is a hypothesis: change it on observed failure and record why.
+5. Write `routeTable: row -> providerID/modelID#variant` and keep it for the task; list every row the task dispatches or blocks, and omit unused rows. Take the variant only from those `allowed_models` lists for that model: a new lane takes the lowest listed variant, a resume keeps the lane's variant, and an escalation moves to the next listed variant only on an explicit accuracy, criticality or security-grade word. None listed: no `#variant`. Never assume one. On `Model unavailable`, retry the same model with the next listed variant before changing model. Escalating a variant or changing model ends the lane (section 5). A route is a hypothesis: change it on observed failure and record why.
 6. **Free-only** (running on a FREE model, or the user asks FULL FREE): call the tool with `model_paid_type: FREE`, use only those rows for the whole task including retries and audits, never fall back to PAID. No free row for a needed trigger: `BLOCKED`, naming it. On an `unpaid` error: drop that route and re-query FREE.
 
-## 4. Dispatch protocol
+## 3. Dispatch protocol
 
 **Inline-first** (only if you hold edit tools): do not delegate an edit of <= 3 lines in one file already in your context. If you cannot edit, delegate; never simulate an edit.
 
@@ -46,11 +47,11 @@ Pick the session, first match:
 1. Idle lane, same laneKey, task continues, fixes or extends its work: RESUME.
 2. Idle lane, same laneKey, unrelated task, files disjoint from every busy lane: RESUME.
 3. Idle lane of the same row on a stronger variant, if justified: RESUME and note it.
-4. Spawn, only for one reason: **a** different row; **b** different model or variant; **c** contaminated context; **d** independent audit worth its cost (section 7); **e** lane retired (section 6), or parallel width needed with live < cap.
+4. Spawn, only for one reason: **a** different row; **b** different model or variant; **c** contaminated context; **d** independent audit worth its cost (section 6); **e** lane retired (section 5), or parallel width needed with live < cap.
 
 No reason a-e = no spawn. Resume. If the runtime returns a new sessionID on resume, it is still the same logical lane: record the latest ID and count the lane once toward `Max Slots`.
 
-## 5. Parallel work = waves
+## 4. Parallel work = waves
 
 - Parallel only for disjoint files, no dependency, no shared mutable state; one writer per file. Same-file work is sequential inside one session.
 - A wave = at most `Max Slots` dispatches, one per distinct session (`inf`: every independent unit in one wave). Extra units queue for the next wave.
@@ -61,29 +62,31 @@ No reason a-e = no spawn. Resume. If the runtime returns a new sessionID on resu
 
 - Mode EXEC: the only session allowed to build or test; parallel builds fight over `target/`. Trigger `test-execution` only as the final pass; blocking compile/test loops use `terminal-workflow`.
 - Mode AUDIT: reads source only, never builds.
-- Reason a for the first spawn of each (different role and model). Both count against `Max Slots` and each fills its own lane; later rounds RESUME them, except an escalated AUDIT (section 6).
+- Reason a for the first spawn of each (different role and model). Both count against `Max Slots` and each fills its own lane; later rounds RESUME them, except an escalated AUDIT (section 5).
 - If the diff does not compile yet, run EXEC alone first, fix in the producer lane, then run the pair.
 - Why two families: EXEC catches classpath, framework-runtime and numeric failures that reading cannot see; AUDIT catches security and logic defects that a green build cannot see. Evidence for this split is a single session so far; record in `Rules bent` when it could not be used.
 
-## 6. Lane lifecycle and messages
+## 5. Lane lifecycle and messages
 
 **Forced respawn (only these):** model or variant changes; an AUDIT reviewer on an escalated route (fresh session per audit, so earlier fixes do not bias it); lane dispatches >= 6; lane fails >= 2 on the same task (retire; brief the new lane with the failure evidence); scope changes materially; context contaminated. A replacement does not raise the live count.
 
 **Message shape.** Role, rules and output format live in the subagent file, so there is no preamble. First message to a lane = header + fields. Follow-ups = changed fields only (task, paths, constraints, acceptance command); never resend `Known` already sent to that lane.
 
-## 7. Audit and verify
+## 6. Audit and verify
 
 - Auditor must not repeat the producer's reasoning. Prefer: the AUDIT row on a different model family, then another session of the audit row, then independent evidence. Spawn an auditor only if the change is irreversible, touches shared or critical paths, or the producer was uncertain. Say so when model diversity is unavailable.
 - **Verify-before-trust.** Every task carries an acceptance command (grep, build, test, run the script). SUCCESS without command output = FAIL. Fix a failure in the SAME lane first. For cheap-mode `bulk` output touching escaping, regex or generated code, run the real script, not just grep.
 - A failing EXEC result is classified TEST bug or PRODUCTION bug by the reviewer; the fix wave's payload states which one before any edit is dispatched. Never fix production code to make a test pass without that classification.
 - Verifying your own orchestration work needs no new session.
 
-## 8. Final report (mandatory, show the arithmetic)
+## 7. Final report (mandatory, show the arithmetic)
+
+Definitions: `D` = number of DISPATCH lines sent in this task. `S` = live sessions in the lane registry, including idle lanes carried over from earlier tasks; retired sessions are excluded. In `Spawns`, `#n` is the number of the DISPATCH that created the session, not the position in the spawn list.
 
 ```
 Dispatches D=__ | Sessions S=__
 Per row: row: sessions __/Max Slots __, dispatches __
-Spawns: #id -> reason a-e (list EVERY spawn)
+Spawns: #<dispatch number> -> reason a-e (list EVERY spawn)
 Red flag: D>=6 and S>D/3 -> justify each spawn or admit the violation (skipped when Max Slots is inf or resume yields new sessionIDs)
 Orphan sessions in registry: none | <list>
 Rules bent: none | <rule, why>

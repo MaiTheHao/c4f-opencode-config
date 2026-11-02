@@ -3,6 +3,7 @@ description: 'Read-only code tracing; returns file:line evidence, never fixes. I
 mode: subagent
 permissions:
   - { action: '*', resource: '*', effect: deny }
+  - { action: subagent, resource: '*', effect: deny }
   - { action: read, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
