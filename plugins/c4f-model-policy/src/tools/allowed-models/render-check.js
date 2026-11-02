@@ -11,6 +11,26 @@ function renderRow(row) {
   return renderTable(CHECK_COLUMNS, [row]);
 }
 
+function freeReason(snapshot) {
+  return snapshot?.classification?.free === 'any-zero'
+    ? 'registry pricing confirms at least one price axis is 0'
+    : 'registry pricing confirms every price axis is 0';
+}
+
+export function variantsForProvider(snapshot, providerID, baseID) {
+  if (!(snapshot?.pricing instanceof Map)) return null;
+  if (providerID !== '') {
+    const variants = snapshot.pricing.get(pricingKey(providerID, baseID))?.variants;
+    return Array.isArray(variants) ? variants : null;
+  }
+  const matches = [];
+  for (const entry of snapshot.pricing.values()) {
+    if (entry?.id === baseID) matches.push(entry);
+  }
+  if (matches.length !== 1) return null;
+  return Array.isArray(matches[0]?.variants) ? matches[0].variants : null;
+}
+
 export function renderCheck(snapshot, modelID, failClosed) {
   const input = modelID.trim();
   if (input === '') {
@@ -25,12 +45,13 @@ export function renderCheck(snapshot, modelID, failClosed) {
 
   const authorized = snapshot.authorized instanceof Map ? snapshot.authorized.get(model) : undefined;
   const registry = isPricingLoaded(snapshot) ? snapshot.pricing.get(pricingKey(providerID, idPart)) : undefined;
+  const resolvedVariants = isPricingLoaded(snapshot) ? variantsForProvider(snapshot, providerID, model) : null;
   const row = {
     model,
     provider: providerID === '' ? '-' : providerID,
     class: registry?.classification ?? 'UNPRICED',
     tier: Number.isFinite(authorized?.cost) ? authorized.cost : null,
-    variants: Array.isArray(registry?.variants) ? registry.variants : null,
+    variants: resolvedVariants,
     status: 'DENIED',
     reason: '',
   };
@@ -73,7 +94,7 @@ export function renderCheck(snapshot, modelID, failClosed) {
       return renderRow({
         ...row,
         status: 'FREE',
-        reason: 'registry pricing confirms every price axis is 0',
+        reason: freeReason(snapshot),
       });
 
     default:

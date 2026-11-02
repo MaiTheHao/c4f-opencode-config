@@ -1,6 +1,7 @@
 // Plugin lifecycle: build the snapshot store, register hooks, return a disposer.
 
 import { REGISTRARS } from './hooks/index.js';
+import { loadRuntime } from './policy/allowlist.js';
 import { createSnapshotStore } from './policy/snapshot-store.js';
 import { registerAllowedModelsTool } from './tools/allowed-models/index.js';
 
@@ -8,11 +9,12 @@ import { registerAllowedModelsTool } from './tools/allowed-models/index.js';
 // reads the live snapshot.
 const ALL_REGISTRARS = [...REGISTRARS, registerAllowedModelsTool];
 
-export async function setup(ctx, { env }) {
-  if (!env.enabled) return;
+export async function setup(ctx, options = {}) {
+  const runtime = await loadRuntime({ file: options.configFile });
+  if (!runtime.enabled) return;
 
-  const { policy } = env;
-  const store = createSnapshotStore(ctx);
+  const policy = runtime;
+  const store = createSnapshotStore(ctx, { configFile: options.configFile });
   const registrations = [];
 
   try {

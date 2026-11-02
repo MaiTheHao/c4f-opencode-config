@@ -15,6 +15,7 @@ export function renderAllowed(snapshot, failClosed, paidType) {
     return renderStatusTable('PRICING_UNAVAILABLE', pricingUnavailableMessage(snapshot));
   }
 
-  const rows = buildCatalog(snapshot).filter((row) => PERMITTED.has(row.decision));
+  const permitted = new Set(snapshot?.decision?.allowed ?? [...PERMITTED]);
+  const rows = buildCatalog(snapshot).filter((row) => permitted.has(row.decision));
   return renderTable(ALLOWED_COLUMNS, filterByClass(rows, paidType));
 }

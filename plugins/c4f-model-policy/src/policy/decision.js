@@ -1,5 +1,6 @@
-// Policy verdicts. Order: scope → banned → authorized → priced FREE → deny.
+// Policy verdicts. Order is config-driven: first matching predicate wins.
 
+import { DEFAULT_DECISION } from './bootstrap.js';
 import { baseId, normalizeProviderID, pricingKey } from './ids.js';
 
 export const DECISION = Object.freeze({
@@ -12,6 +13,18 @@ export const DECISION = Object.freeze({
 
 const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
+const PREDICATES = Object.freeze({
+  OUT_OF_SCOPE: (snapshot, providerID) => !snapshot.filteredProviders.has(providerID),
+  BANNED: (snapshot, providerID, id) => snapshot.banned.has(id),
+  AUTHORIZED: (snapshot, providerID, id) => snapshot.authorized.has(id),
+  FREE: (snapshot, providerID, id) => {
+    if (!(snapshot.pricing instanceof Map)) return false;
+    const entry = snapshot.pricing.get(pricingKey(providerID, id));
+    return isPlainObject(entry) && entry.classification === 'FREE';
+  },
+  DENIED: () => true,
+});
+
 /** Never throws: any malformed input yields DENIED. */
 export function policyDecision(snapshot, ref) {
   try {
@@ -23,13 +36,11 @@ export function policyDecision(snapshot, ref) {
     const id = baseId(ref.id);
     if (providerID === '' || id === '') return DECISION.DENIED;
 
-    if (!snapshot.filteredProviders.has(providerID)) return DECISION.OUT_OF_SCOPE;
-    if (snapshot.banned.has(id)) return DECISION.BANNED;
-    if (snapshot.authorized.has(id)) return DECISION.AUTHORIZED;
-
-    if (snapshot.pricing instanceof Map) {
-      const entry = snapshot.pricing.get(pricingKey(providerID, id));
-      if (isPlainObject(entry) && entry.classification === 'FREE') return DECISION.FREE;
+    const order = snapshot?.decision?.order ?? DEFAULT_DECISION.order;
+    for (const token of order) {
+      const predicate = PREDICATES[token];
+      if (typeof predicate !== 'function') continue;
+      if (predicate(snapshot, providerID, id)) return token;
     }
     return DECISION.DENIED;
   } catch {
@@ -37,12 +48,11 @@ export function policyDecision(snapshot, ref) {
   }
 }
 
-const ALLOWED_DECISIONS = new Set([DECISION.OUT_OF_SCOPE, DECISION.AUTHORIZED, DECISION.FREE]);
-
 /** Enforcement predicate. Never throws. */
 export function isAllowed(snapshot, ref) {
   try {
-    return ALLOWED_DECISIONS.has(policyDecision(snapshot, ref));
+    const allowed = new Set(snapshot?.decision?.allowed ?? DEFAULT_DECISION.allowed);
+    return allowed.has(policyDecision(snapshot, ref));
   } catch {
     return false;
   }

@@ -1,0 +1,10 @@
+node_modules
+bun.lock
+service.json
+cli.json
+opencode.jsonc
+local/
+__pycache__/
+
+# User-local C4F policy override (see plugins/c4f-model-policy/README.md)
+plugins/c4f-model-policy/allowed_models.override.json

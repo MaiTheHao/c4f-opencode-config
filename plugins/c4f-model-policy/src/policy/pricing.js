@@ -1,5 +1,6 @@
 // Registry pricing: classification (FREE / PAID / UNPRICED) and snapshot enrichment.
 
+import { DEFAULT_CLASSIFICATION } from './bootstrap.js';
 import { baseId, normalizeProviderID, pricingKey } from './ids.js';
 
 /** A price is real only when it is a finite number — never a coerced string. */
@@ -17,21 +18,29 @@ function isValidTier(tier) {
 /**
  * Classify a registry `cost` array as FREE, PAID, or UNPRICED.
  * Prices are USD per million tokens; only real numeric zeros count as FREE.
+ * `rules.free`: 'all-zero' (every axis numeric 0 -> FREE) or 'any-zero'
+ * (at least one axis numeric 0 -> FREE). `rules.invalidTier`: 'unpriced'
+ * (tier-shape rejection) or 'ignore' (skip the tier-shape check).
  */
-export function classifyCost(cost) {
+export function classifyCost(cost, rules = DEFAULT_CLASSIFICATION) {
   if (!Array.isArray(cost) || cost.length === 0) return 'UNPRICED';
+  const free = rules?.free ?? DEFAULT_CLASSIFICATION.free;
+  const invalidTier = rules?.invalidTier ?? DEFAULT_CLASSIFICATION.invalidTier;
 
   let hasPositive = false;
+  let hasZero = false;
   for (const entry of cost) {
     if (!isPlainObject(entry)) return 'UNPRICED';
-    if (entry.tier !== undefined && !isValidTier(entry.tier)) return 'UNPRICED';
+    if (invalidTier !== 'ignore' && entry.tier !== undefined && !isValidTier(entry.tier)) return 'UNPRICED';
     if (!isPlainObject(entry.cache)) return 'UNPRICED';
 
     for (const value of [entry.input, entry.output, entry.cache.read, entry.cache.write]) {
       if (!isMoney(value) || value < 0) return 'UNPRICED';
       if (value > 0) hasPositive = true;
+      if (value === 0) hasZero = true;
     }
   }
+  if (free === 'any-zero') return hasZero ? 'FREE' : hasPositive ? 'PAID' : 'FREE';
   return hasPositive ? 'PAID' : 'FREE';
 }
 
@@ -87,7 +96,7 @@ export function attachPricing(snapshot, { models, error = null } = {}) {
       input: firstObj !== null && isMoney(firstObj.input) ? firstObj.input : null,
       output: firstObj !== null && isMoney(firstObj.output) ? firstObj.output : null,
       variants: variantIDs(model.variants),
-      classification: classifyCost(model.cost),
+      classification: classifyCost(model.cost, snapshot.classification ?? DEFAULT_CLASSIFICATION),
     });
   }
 

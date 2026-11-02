@@ -29,10 +29,22 @@ export function mergeRegistry(previous, models) {
     const key = registryKey(model);
     if (key !== '') merged.set(key, model);
   }
+  if (Array.isArray(models)) {
+    const listedKeys = new Set();
+    for (const model of models) {
+      const key = registryKey(model);
+      if (key !== '') listedKeys.add(key);
+    }
+    for (const [key, record] of merged) {
+      if (!listedKeys.has(key)) {
+        merged.set(key, { ...record, variants: [] });
+      }
+    }
+  }
   return [...merged.values()];
 }
 
-export function createSnapshotStore(ctx) {
+export function createSnapshotStore(ctx, { configFile = undefined } = {}) {
   let snapshot = null;
   let registry = null;
   let refreshing = false;
@@ -57,14 +69,27 @@ export function createSnapshotStore(ctx) {
     try {
       let base;
       try {
-        base = await loadSnapshot();
+        base = await loadSnapshot({ file: configFile });
       } catch {
         snapshot = null;
         return;
       }
 
       const listed = await listRegistry();
-      if (listed.models === null) {
+      if (listed.error || !Array.isArray(listed.models)) {
+        if (snapshot) {
+          const configFields = {
+            filteredProviders: base.filteredProviders,
+            authorized: base.authorized,
+            banned: base.banned,
+            decision: base.decision,
+            classification: base.classification,
+            configSource: base.configSource,
+            overrideError: base.overrideError,
+          };
+          snapshot = { ...snapshot, ...configFields, pricing: snapshot.pricing, pricingStatus: snapshot.pricingStatus, pricingLoadedAt: snapshot.pricingLoadedAt, pricingError: snapshot.pricingError };
+          return;
+        }
         // A failed read must stay a failure: never serve cached prices as fresh.
         snapshot = attachPricing(base, listed);
         return;

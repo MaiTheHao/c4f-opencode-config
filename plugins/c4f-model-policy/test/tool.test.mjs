@@ -321,3 +321,18 @@ test('class partition: FREE and PAID are disjoint and cover NONE exactly', async
   const overlap = free.filter((row) => paid.some((other) => other.Model === row.Model));
   assert.deepEqual(overlap, []);
 });
+
+test('check: FREE reason follows the classification rule', async () => {
+  const allZero = parseTable(await harness(await snapshotWith())({ action: 'check', model: 'opencode/mimo-v2.6-flash-free' }));
+  assert.equal(allZero.rows[0].Status, 'FREE');
+  assert.match(allZero.rows[0].Reason, /every price axis is 0/);
+
+  const base = await snapshotWith();
+  const anyZero = attachPricing(
+    { ...base, classification: { free: 'any-zero', invalidTier: 'unpriced' } },
+    { models: MODELS },
+  );
+  const row = parseTable(await harness(anyZero)({ action: 'check', model: 'opencode-go/paid-outsider' }));
+  assert.equal(row.rows[0].Status, 'FREE');
+  assert.match(row.rows[0].Reason, /at least one price axis is 0/);
+});

@@ -1,4 +1,19 @@
 {
+  "schemaVersion": 1,
+  "runtime": {
+    "enabled": true,
+    "gate": "interrupt",
+    "onSnapshotFailure": "fail-closed",
+    "refreshMs": 60000
+  },
+  "decision": {
+    "order": ["OUT_OF_SCOPE", "BANNED", "AUTHORIZED", "FREE", "DENIED"],
+    "allowed": ["OUT_OF_SCOPE", "AUTHORIZED", "FREE"]
+  },
+  "classification": {
+    "free": "all-zero",
+    "invalidTier": "unpriced"
+  },
   "filteredProviders": ["opencode-go", "opencode"],
   "authorized": [
     {
