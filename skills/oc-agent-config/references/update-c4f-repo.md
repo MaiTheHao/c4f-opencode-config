@@ -19,10 +19,10 @@ Never let an update pipeline touch these, and never proactively move them:
 |---|---|---|
 | `cli.json`, `service.json`, `local/`, `node_modules`, `bun.lock`, `__pycache__/` | Gitignored (main repo) | Runtime config and credentials; not pushed, not updated, not backed up |
 | `opencode.jsonc` | Gitignored (main repo) | Local OpenCode configuration; never pushed and never rewritten as part of an update. Keep a local backup |
-| `plugins/c4f-model-policy/allowed_models.json` + `plugins/c4f-model-policy/` | Tracked | Committed runtime allowlist and plugin. Edits are user customizations: never reset or replace them as part of an update |
+| `plugins/model-insights/model_insights.json` + `model_insights.override.json` + `plugins/model-insights/` | Tracked | Committed model metadata and plugin. Edits are user customizations: never reset or replace them as part of an update |
 | Any ` M` (modified tracked) path | Tracked | User customizations of repo content; expected source of update conflicts by design |
 
-Hard rule: NEVER run `git checkout -- .`, `git reset --hard`, or `git clean` on either repo without the user explicitly approving every erased path. Do not edit `allowed_models.json` as part of an update.
+Hard rule: NEVER run `git checkout -- .`, `git reset --hard`, or `git clean` on either repo without the user explicitly approving every erased path. Do not edit `model_insights.json` or `model_insights.override.json` as part of an update.
 
 ## Step 0 — Preconditions
 

@@ -207,7 +207,7 @@ npm install
 │   ├── oc-retrieval/        # Retrieval skill (`c4f-retrieval` namespace tools)
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
 ├── plugins/                 # Native plugins (loaded by OpenCode)
-│   ├── c4f-model-policy/    # Runtime filtering + `allowed_models` (namespace `c4f-model-policy`)
+│   ├── model-insights/      # Live availability, pricing, variants, task triggers (read-only)
 │   └── c4f-retrieval/       # Verified-context retrieval plugin
 ├── AGENTS.md                # Repo-level agent instructions (currently empty)
 ├── package.json             # Dependencies (@opencode/plugin, effect, typescript)
@@ -277,12 +277,13 @@ Add `--json` for machine-readable output.
 
 | Surface | Purpose |
 |---|---|
-| `tools['c4f-model-policy'].allowed_models` (`c4f-model-policy` namespace) | Routing table: model, provider, variants, routing tier, trigger |
+| `model_insights` tool (`list`, `inspect`, `pricing`, `variants`) | Live models: provider, cost class, cost tier, triggers, variants |
 | `c4f-retrieval` tools (`context_lookup`, `context_upsert`, `context_invalidate`, `code_outline`) | Verified repository context |
 | `python3 skills/oc-agent-config/scripts/validate_agent.py <files>` | Validate agent files |
 
-Enforcement lives in the `c4f-model-policy` plugin; routing data comes from the
-`tools['c4f-model-policy'].allowed_models` call in the `c4f-model-policy` namespace, not a shell command.
+`model-insights` is read-only: it never filters, blocks, enables, or disables models.
+Routing policy lives in the agent instructions and `oc-routing`; availability, pricing,
+and variants come from the live OpenCode registry through `model_insights`, not a shell command.
 
 ---
 

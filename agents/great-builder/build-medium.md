@@ -14,7 +14,7 @@ permissions:
   - { action: skill, resource: '*', effect: allow }
   - { action: external_directory, resource: '*', effect: ask }
   - { action: external_directory, resource: '**/.agents/skills/*', effect: allow }
-  - { action: 'c4f-model-policy_*', resource: '*', effect: allow }
+  - { action: model_insights, resource: '*', effect: allow }
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/bulk', effect: allow }

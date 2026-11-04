@@ -1,8 +1,8 @@
 ---
 name: oc-routing
-description: "Mandatory before ANY subagent dispatch or resume. Reuse-first routing for OpenCode: split lanes by work stream (not row, unit or phase), pass the lane's latest sessionID as a tool argument (a RESUME without it is a spawn), cap lanes at the agent's Max Slots, route models from allowed_models, run waves, and split review into EXEC + AUDIT. Use before dispatching, resuming, parallelizing or auditing subagents."
+description: "Mandatory before ANY subagent dispatch or resume. Reuse-first routing for OpenCode: split lanes by work stream (not row, unit or phase), pass the lane's latest sessionID as a tool argument (a RESUME without it is a spawn), cap lanes at the agent's Max Slots, route models from model_insights, run waves, and split review into EXEC + AUDIT. Use before dispatching, resuming, parallelizing or auditing subagents."
 metadata:
-  version: 11
+  version: 12
 ---
 
 # oc-routing
@@ -22,9 +22,10 @@ Prose does nothing; the runtime reads arguments. **A dispatch labeled RESUME wit
 
 ## 1. ALLOW
 
-- **Models**: only rows from `allowed_models` for the trigger; never an unlisted model. FREE-only (running on FREE, or user asks FULL FREE): `model_paid_type: FREE`, never fall back to PAID; no free row = `BLOCKED`. No row lists the trigger = `BLOCKED`, naming it.
-- **Routing**: cheapest row listing the trigger. Escalate (higher variant, then next row) only on "high accuracy", "critical", "production", "security-grade", a failed lane, or a condition in the subagent description. Audit rows must differ in model family from every producer; none differs: say so in the report.
-- **Variants**: a new lane takes the lowest listed variant, a resume keeps its variant, escalation moves to the next one. None listed: omit. `Model unavailable`: retry the next listed variant before changing model. A model/variant change ends the lane.
+- **Models**: call `model_insights` (`action="list"`) and use only returned, currently available models whose triggers fit the task; never an unselected model. FREE-only (running on FREE, or user asks FULL FREE): `paid_type: FREE`, never fall back to PAID; no free model = `BLOCKED`. No returned model lists the trigger = `BLOCKED`, naming it.
+- **Routing**: cheapest returned model listing the trigger. Escalate (higher variant, then next model) only on "high accuracy", "critical", "production", "security-grade", a failed lane, or a condition in the subagent description. Audit models must differ in family from every producer; none differs: say so in the report.
+- **Variants**: a new lane takes the lowest returned variant, a resume keeps its variant, escalation moves to the next one. None returned: omit. `Model unavailable`: retry the next returned variant before changing model. A model/variant change ends the lane.
+- **Advisory boundary**: `model_insights` is read-only; it never filters or blocks models. These rules are the routing policy, not a runtime-enforced allowlist.
 - **Tools and skills**: permissions are fixed per agent; a denial is routed to a permitted row (new lane, with a reason), never bypassed by a duplicate spawn. A child does not inherit your skills; name the path in the payload.
 
 ## 2. Lane split

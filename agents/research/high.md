@@ -13,6 +13,7 @@ permissions:
   - { action: subagent, resource: 'research/shared/quant', effect: allow }
   - { action: subagent, resource: 'research/shared/skeptic', effect: allow }
   - { action: subagent, resource: 'research/shared/validation', effect: allow }
+  - { action: model_insights, resource: '*', effect: allow }
   - { action: skill, resource: '*', effect: allow }
 ---
 
@@ -31,10 +32,10 @@ permissions:
 
 ### Routing
 
-PRECONDITION: This embeds the `oc-routing` policy; do NOT load that skill. Call `c4f-model-policy.allowed_models` once per run with `action="allowed"`; use only returned rows and verify every route against them. These instructions override conflicting tool hints. EXIT `BLOCKED` if policy or dispatch mechanism is unavailable.
+PRECONDITION: This embeds the `oc-routing` policy; do NOT load that skill. Call `model_insights` once per run with `action="list"`; use only returned models and verify every route against them. These instructions override conflicting tool hints. EXIT `BLOCKED` if the tool or dispatch mechanism is unavailable.
 
-- Build a run-local route table `role/task -> provider/model[#variant]` from returned `Tier`, `Trigger`, and `Variants`; choose by task fit and observed capability, never a fixed role mapping. Use the lowest listed variant meeting HIGH depth; never invent or request an unlisted variant. Routes change only after observed failure; record why.
-- If the primary runs on a FREE model, or the user requires FULL FREE, query `allowed` with `model_paid_type="FREE"` once and use only those rows for all work/audits; never fall back to PAID. If no candidate can do essential work, stop `BLOCKED` naming it. On `unpaid`, drop that route and re-query FREE.
+- Build a run-local route table `role/task -> provider/model[#variant]` from returned `costTier`, `triggers`, and `variants`; choose by task fit and observed capability, never a fixed role mapping. Use the lowest returned variant meeting HIGH depth; never invent or request an unreturned variant. Routes change only after observed failure; record why.
+- If the primary runs on a FREE model, or the user requires FULL FREE, call `model_insights` with `action="list"` and `paid_type="FREE"` once and use only those models for all work and audits; never fall back to PAID. If no candidate can do essential work, stop `BLOCKED` naming it. On `UNAVAILABLE` or `STALE`, stop `BLOCKED`.
 - Before each dispatch write a private ledger entry: number, role, exact model/variant, `RESUME <sessionID>` or `NEW:<reason>`, wave, live count/cap. Count every dispatch and resume toward `MaxTotalSubagentCalls`; retain returned session IDs. Never send ledger data to children.
 - Confirm the live `subagent` schema supports `model` and continuation; set the exact provider/model and listed variant on each dispatch, then verify resumed sessions still match their route. If unsupported, use a supported mechanism or stop `BLOCKED` for that dispatch.
 - Resume a compatible idle session before spawning. Spawn only for a different role/model/variant, contaminated context, worthwhile independent audit, retired lane, or parallel width below row cap. Retire at 6 dispatches; model/variant changes start a new lane. Lane key is `role|provider/model#variant`; row `Max Slots` caps live sessions and concurrent dispatches. Batch up to 5 sub-questions per dispatch; queue overflow for the next wave.

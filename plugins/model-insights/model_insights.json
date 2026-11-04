@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "muse-spark-1.3-contributor",
+      "costTier": 1,
+      "triggers": [
+        "exploration",
+        "analysis",
+        "bulk-edit",
+        "tests",
+        "audit",
+        "documentation"
+      ]
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "costTier": 2,
+      "triggers": [
+        "complex-bug",
+        "root-cause-analysis",
+        "judgment",
+        "architecture",
+        "deep-research",
+        "refactor",
+        "security",
+        "terminal"
+      ]
+    },
+    {
+      "id": "mimo-v2.6-flash",
+      "costTier": 3,
+      "triggers": [
+        "tests",
+        "build",
+        "deploy"
+      ]
+    }
+  ]
+}
