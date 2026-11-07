@@ -9,6 +9,7 @@ permissions:
   - { action: subagent, resource: 'great-builder/sub/worker', effect: allow }
   - { action: skill, resource: 'brainstorming', effect: allow }
   - { action: skill, resource: 'writing-plans', effect: allow }
+  - { action: skill, resource: 'git-commit', effect: allow }
   - { action: skill, resource: 'oc-routing', effect: allow }
 ---
 

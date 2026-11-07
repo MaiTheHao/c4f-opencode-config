@@ -11,6 +11,7 @@ permissions:
   - { action: shell, resource: 'git status *', effect: allow }
   - { action: skill, resource: 'brainstorming', effect: allow }
   - { action: skill, resource: 'writing-plans', effect: allow }
+  - { action: skill, resource: 'git-commit', effect: allow }
   - { action: skill, resource: 'oc-routing', effect: allow }
   - { action: external_directory, resource: '*', effect: ask }
   - { action: external_directory, resource: '**/.agents/skills/*', effect: allow }
