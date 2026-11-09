@@ -19,6 +19,7 @@ export function buildCatalog(runtimeModels, config) {
     const match = metadataFor(metadata, model);
     return Object.freeze({
       ...model,
+      configured: match != null,
       costTier: Number.isInteger(match?.costTier) ? match.costTier : null,
       triggers: Object.freeze(Array.isArray(match?.triggers) ? [...match.triggers] : []),
     });
@@ -31,9 +32,9 @@ export function buildCatalog(runtimeModels, config) {
   });
 }
 
-export function filterCatalog(models, { provider = '', paidType = 'ALL', trigger = '' } = {}) {
+export function filterCatalog(models, { provider = '', paidType = 'CONFIGURED', trigger = '' } = {}) {
   const providerID = normalizeProviderID(provider);
-  const allowedTypes = new Set(['ALL', 'PAID', 'FREE', 'UNPRICED']);
+  const allowedTypes = new Set(['CONFIGURED', 'ALL', 'PAID', 'FREE', 'UNPRICED']);
   const normalizedType = String(paidType).trim().toUpperCase();
   const normalizedTrigger = normalizeTrigger(trigger);
   if (!allowedTypes.has(normalizedType)) {
@@ -43,7 +44,10 @@ export function filterCatalog(models, { provider = '', paidType = 'ALL', trigger
   return models.filter((model) => {
     if (providerID && normalizeProviderID(model.providerID) !== providerID) return false;
     if (normalizedTrigger && !model.triggers.includes(normalizedTrigger)) return false;
-    return normalizedType === 'ALL' || model.classification === normalizedType;
+    if (normalizedType === 'CONFIGURED' || normalizedType === 'PAID' || normalizedType === 'UNPRICED') {
+      if (model.configured !== true) return false;
+    }
+    return normalizedType === 'ALL' || normalizedType === 'CONFIGURED' || model.classification === normalizedType;
   });
 }
 

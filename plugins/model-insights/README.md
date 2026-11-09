@@ -27,7 +27,7 @@ Arguments:
 - `action`: `list` (default), `inspect`, `pricing`, `variants`.
 - `model`: required for `inspect` and `variants`.
 - `provider`: optional provider filter or model disambiguator.
-- `paid_type`: `ALL` (default), `PAID`, `FREE`, `UNPRICED`; applies to `list` and `pricing`.
+- `paid_type`: `CONFIGURED` (default, only models declared in local metadata), `ALL`, `PAID`, `FREE`, `UNPRICED`; applies to `list` and `pricing`. `ALL` and `FREE` widen the scope to every runtime model; `PAID` and `UNPRICED` filter by classification within the configured set, so they can hide paid runtime models that metadata does not declare.
 - `trigger`: optional exact trigger tag filter, for example `architecture`, `bulk-edit`, or `tests`.
 - `limit`: 1–500, default 100.
 

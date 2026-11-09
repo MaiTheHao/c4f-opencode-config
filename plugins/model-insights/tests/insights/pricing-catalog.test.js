@@ -34,12 +34,58 @@ test('joins trigger metadata; provider-specific metadata overrides generic metad
 
 test('supports exact trigger filtering without turning metadata into availability policy', () => {
   const models = [
-    { id: 'model-a', providerID: 'provider-a', classification: 'FREE', triggers: ['analysis', 'tests'] },
-    { id: 'model-b', providerID: 'provider-b', classification: 'PAID', triggers: ['architecture'] },
+    { id: 'model-a', providerID: 'provider-a', classification: 'FREE', triggers: ['analysis', 'tests'], configured: true },
+    { id: 'model-b', providerID: 'provider-b', classification: 'PAID', triggers: ['architecture'], configured: true },
   ];
   assert.equal(filterCatalog(models, { paidType: 'FREE' }).length, 1);
   assert.equal(filterCatalog(models, { provider: 'provider-b' }).length, 1);
   assert.deepEqual(filterCatalog(models, { trigger: ' ARCHITECTURE ' }).map((item) => item.id), ['model-b']);
   assert.equal(resolveModel(models, 'model-a').ambiguous, false);
   assert.equal(resolveModel(models, 'provider-b/model-b').matches[0].providerID, 'provider-b');
+});
+
+test('defaultScopeIsConfigured: default scope returns only configured models', () => {
+  const models = [
+    { id: 'model-a', providerID: 'provider-a', classification: 'PAID', triggers: [], configured: true },
+    { id: 'model-b', providerID: 'provider-b', classification: 'PAID', triggers: [] },
+  ];
+  assert.deepEqual(filterCatalog(models).map((item) => item.id), ['model-a']);
+});
+
+test('allIncludesUnconfigured: ALL returns both configured and unconfigured', () => {
+  const models = [
+    { id: 'model-a', providerID: 'provider-a', classification: 'PAID', triggers: [], configured: true },
+    { id: 'model-b', providerID: 'provider-b', classification: 'PAID', triggers: [], configured: false },
+  ];
+  assert.equal(filterCatalog(models, { paidType: 'ALL' }).length, 2);
+});
+
+test('freeIncludesUnconfiguredFree: FREE returns unconfigured FREE only', () => {
+  const models = [
+    { id: 'model-a', providerID: 'provider-a', classification: 'FREE', triggers: [], configured: false },
+    { id: 'model-b', providerID: 'provider-b', classification: 'PAID', triggers: [], configured: false },
+  ];
+  assert.deepEqual(filterCatalog(models, { paidType: 'FREE' }).map((item) => item.id), ['model-a']);
+});
+
+test('paidStaysInConfiguredScope: PAID returns only configured PAID', () => {
+  const models = [
+    { id: 'model-a', providerID: 'provider-a', classification: 'PAID', triggers: [], configured: true },
+    { id: 'model-b', providerID: 'provider-b', classification: 'PAID', triggers: [], configured: false },
+  ];
+  assert.deepEqual(filterCatalog(models, { paidType: 'PAID' }).map((item) => item.id), ['model-a']);
+});
+
+test('unknownPaidTypeThrows: BOGUS throws listing all five values', () => {
+  assert.throws(
+    () => filterCatalog([], { paidType: 'BOGUS' }),
+    (error) => {
+      assert.match(error.message, /CONFIGURED/);
+      assert.match(error.message, /ALL/);
+      assert.match(error.message, /PAID/);
+      assert.match(error.message, /FREE/);
+      assert.match(error.message, /UNPRICED/);
+      return true;
+    },
+  );
 });

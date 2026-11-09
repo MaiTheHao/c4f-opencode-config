@@ -4,7 +4,8 @@ export const DESCRIPTION = [
   'Inspect models currently available in the OpenCode runtime.',
   'Actions: list (discover available models), inspect (details for one model), pricing (runtime pricing and FREE/PAID/UNPRICED classification), variants (runtime variants for a model).',
   'Each model includes configured triggers: task tags that describe when an agent should consider that model. Use these as selection guidance, not as a forced routing decision.',
-  'Optional filters: provider, paid_type (ALL, PAID, FREE, UNPRICED), trigger (exact configured trigger), and limit.',
+  'Optional filters: provider, paid_type (CONFIGURED, ALL, PAID, FREE, UNPRICED), trigger (exact configured trigger), and limit.',
+  'paid_type defaults to CONFIGURED, which shows only models declared in local metadata. ALL and FREE widen the scope to every runtime model; PAID and UNPRICED filter by classification within the configured set, so they can hide paid runtime models that metadata does not declare.',
   'Triggers and costTier come from local metadata; pricing, enabled status and variants come from the current Runtime registry.',
   'The tool refreshes the Runtime registry before every action and excludes models marked enabled=false. If live refresh fails, it withholds stale model data.',
   'Read-only: this tool never filters, blocks, enables, disables, or modifies OpenCode model availability.',
@@ -28,8 +29,8 @@ export const INPUT_SCHEMA = Object.freeze({
     },
     paid_type: {
       type: 'string',
-      enum: ['ALL', 'PAID', 'FREE', 'UNPRICED'],
-      description: 'Optional pricing classification filter for list and pricing. Defaults to ALL.',
+      enum: ['CONFIGURED', 'ALL', 'PAID', 'FREE', 'UNPRICED'],
+      description: 'Optional pricing classification filter for list and pricing. Defaults to CONFIGURED (only models declared in local metadata). ALL and FREE widen the scope to every runtime model; PAID and UNPRICED filter by classification within the configured set.',
     },
     trigger: {
       type: 'string',

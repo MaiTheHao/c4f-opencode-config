@@ -28,7 +28,7 @@ Loading this skill is the explicit instruction to set `model` and pass `sessionI
 
 ## 2. Lane split
 
-`laneKey = row + providerID/modelID#variant + work stream`. Work stream = one file body, subsystem or question set sharing state.
+`laneKey = row + provider/model#variant + work stream`. Work stream = one file body, subsystem or question set sharing state.
 
 - **Split by work stream, never by unit, wave, row or phase.** Lanes per row <= `Max Slots` (no table: 2; `inf`: no cap), the only hard numeric cap.
 - Fewest lanes covering the work, one writer per file. A lane existing only because a phase/row/unit appeared is a failed split.
@@ -48,7 +48,7 @@ Loading this skill is the explicit instruction to set `model` and pass `sessionI
 
 Forbidden spawn reasons: "new unit", "new file", "next wave", "fix", "another round", "different role same row", "avoid context bleed", "user asked for a fresh agent per item". No a-e = no spawn.
 
-`status`: `idle/stopped` (has `time.idle`, not in active set; a fresh lane is idle immediately) or `running`. Never resume a running lane.
+`status`: `idle/stopped` (a lane you dispatched whose call has returned; a fresh lane is idle immediately) or `running` (its call has not returned yet). Never resume a running lane.
 
 ## 4. Dispatch
 

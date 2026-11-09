@@ -147,3 +147,113 @@ test('registers tool even when runtime is initially unavailable', async () => {
     await cleanup?.();
   }
 });
+
+const partialConfig = {
+  schemaVersion: 1,
+  models: [
+    { id: 'model-a', costTier: 1, triggers: ['analysis'] },
+  ],
+};
+
+function mockRuntimeWithUnconfigured() {
+  return async () => ({ data: [
+    { id: 'model-a', providerID: 'provider-a', enabled: true, cost: freeCost, variants: [] },
+    { id: 'model-b', providerID: 'provider-b', enabled: true, cost: paidCost, variants: [] },
+  ] });
+}
+
+async function setupPartial() {
+  const dir = await mkdtemp(join(tmpdir(), 'model-insights-configured-'));
+  const configFile = join(dir, 'model_insights.json');
+  await writeFile(configFile, JSON.stringify(partialConfig));
+  const { ctx, added } = mockToolContext(mockRuntimeWithUnconfigured(), { configFile });
+  const cleanup = await setup(ctx);
+  return { dir, added, cleanup };
+}
+
+test('listDefaultsToConfigured: default list shows only configured models', async () => {
+  const { dir, added, cleanup } = await setupPartial();
+  try {
+    const list = await added[0].execute({ action: 'list' });
+    assert.match(list.content, /model-a/);
+    assert.doesNotMatch(list.content, /model-b/);
+  } finally {
+    await cleanup?.();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('listAllShowsUnconfigured: paid_type=ALL shows unconfigured models', async () => {
+  const { dir, added, cleanup } = await setupPartial();
+  try {
+    const list = await added[0].execute({ action: 'list', paid_type: 'ALL' });
+    assert.match(list.content, /model-a/);
+    assert.match(list.content, /model-b/);
+  } finally {
+    await cleanup?.();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('hiddenNote: default list points at paid_type=ALL when models are hidden', async () => {
+  const { dir, added, cleanup } = await setupPartial();
+  try {
+    const list = await added[0].execute({ action: 'list' });
+    assert.match(list.content, /paid_type=ALL/);
+  } finally {
+    await cleanup?.();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('noNoteForAll: paid_type=ALL carries no hidden-model note', async () => {
+  const { dir, added, cleanup } = await setupPartial();
+  try {
+    const list = await added[0].execute({ action: 'list', paid_type: 'ALL' });
+    assert.doesNotMatch(list.content, /hidden outside configured metadata/);
+  } finally {
+    await cleanup?.();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('inspectUnaffected: inspect still resolves unconfigured models', async () => {
+  const { dir, added, cleanup } = await setupPartial();
+  try {
+    const inspect = await added[0].execute({ action: 'inspect', model: 'provider-b/model-b' });
+    assert.match(inspect.content, /model-b/);
+  } finally {
+    await cleanup?.();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('emptyConfigYieldsNoRowsWithGuide: models [] yields no data rows plus paid_type=ALL note', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'model-insights-empty-config-'));
+  const configFile = join(dir, 'model_insights.json');
+  await writeFile(configFile, JSON.stringify({ schemaVersion: 1, models: [] }));
+  const { ctx, added } = mockToolContext(mockRuntimeWithUnconfigured(), { configFile });
+  const cleanup = await setup(ctx);
+  try {
+    const list = await added[0].execute({ action: 'list' });
+    assert.doesNotMatch(list.content, /model-a/);
+    assert.doesNotMatch(list.content, /model-b/);
+    assert.match(list.content, /paid_type=ALL/);
+  } finally {
+    await cleanup?.();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('pricingDefaultsToConfigured: default pricing shows only configured models with guide note', async () => {
+  const { dir, added, cleanup } = await setupPartial();
+  try {
+    const pricing = await added[0].execute({ action: 'pricing' });
+    assert.match(pricing.content, /model-a/);
+    assert.doesNotMatch(pricing.content, /model-b/);
+    assert.match(pricing.content, /paid_type=ALL/);
+  } finally {
+    await cleanup?.();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
