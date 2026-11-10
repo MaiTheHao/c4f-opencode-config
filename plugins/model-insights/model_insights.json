@@ -8,9 +8,11 @@
         "exploration",
         "analysis",
         "bulk-edit",
+        "refactor",
         "tests",
-        "audit",
-        "documentation"
+        "terminal",
+        "documentation",
+        "review"
       ]
     },
     {
@@ -22,18 +24,22 @@
         "judgment",
         "architecture",
         "deep-research",
-        "refactor",
         "security",
-        "terminal"
+        "audit",
+        "static-audit",
+        "security-review",
+        "review"
       ]
     },
     {
       "id": "mimo-v2.6-flash",
       "costTier": 3,
       "triggers": [
-        "tests",
         "build",
-        "deploy"
+        "deploy",
+        "audit",
+        "static-audit",
+        "security-review"
       ]
     }
   ]
