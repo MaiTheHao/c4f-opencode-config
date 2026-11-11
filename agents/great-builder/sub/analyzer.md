@@ -7,12 +7,11 @@ permissions:
   - { action: read, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
-  - { action: sheel, resource: '*', effect: ask}
   - { action: shell, resource: 'ls *', effect: allow }
   - { action: shell, resource: 'tree *', effect: allow }
-  - { action: shell, resource: 'git status *', effect: allow }
-  - { action: shell, resource: 'git diff *', effect: allow }
-  - { action: shell, resource: 'git log *', effect: allow }
+  - { action: shell, resource: 'git status*', effect: allow }
+  - { action: shell, resource: 'git diff*', effect: allow }
+  - { action: shell, resource: 'git log*', effect: allow }
   - { action: execute, resource: '*', effect: allow }
   - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
   - { action: skill, resource: '*', effect: allow }
@@ -57,7 +56,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 - Evidence only: no code changes, fixes or recommendations.
 - Cite `file:line` for every fact; label inference as inference.
 - Existence claims (file, symbol, version, drift) need a cited `glob`/`grep`/`ls` hit; no hit means `not found`, never `exists` by inference.
-- Skip `git log` and blame.
+- Skip `git log` and blame unless `Run` asks for them.
 - Return `REQUEST_ANALYZER` only when needed scope lies outside your assignment.
 - Stop once scope, constraints and impact are clear for the requested depth.
 - Reply with the contract only: no preamble, no recap.

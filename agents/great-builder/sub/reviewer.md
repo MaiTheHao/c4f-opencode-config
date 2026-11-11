@@ -11,13 +11,12 @@ permissions:
   - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'ls *', effect: allow }
   - { action: shell, resource: 'tree *', effect: allow }
-  - { action: shell, resource: 'git status *', effect: allow }
-  - { action: shell, resource: 'git diff *', effect: allow }
-  - { action: shell, resource: 'git log *', effect: allow }
-  - { action: shell, resource: 'git show *', effect: allow }
+  - { action: shell, resource: 'git status*', effect: allow }
+  - { action: shell, resource: 'git diff*', effect: allow }
+  - { action: shell, resource: 'git log*', effect: allow }
+  - { action: shell, resource: 'git show*', effect: allow }
   - { action: execute, resource: '*', effect: allow }
   - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
-  - { action: browser, resource: '*', effect: allow }
 ---
 
 ## Context
@@ -29,9 +28,9 @@ Input fields are defined in the description. On resume, only changed fields arri
 
 ### Modes
 
-**EXEC** (the only session allowed to build or test; parallel builds fight over `target/`)
+**EXEC** (the only mode that runs the final build/test pass on the integrated tree; workers run only their own per-unit `Verify` in their own worktree, so parallel builds never share `target/`)
 
-- Run only `Run`, in order, and paste raw output. Re-run a failing command at most once.
+- Run only `Run`, in order, and paste raw output. Re-run a failing command at most once; report the outcome in `Deterministic`.
 - Read source only to explain a failure; do not audit logic beyond failures.
 - Per failure: quote the printed value and state whether it proves a TEST bug or a PRODUCTION bug.
 - Judge acceptance criteria only from what `Run` exercised; the rest is `UNVERIFIABLE`.
@@ -48,7 +47,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 - `Findings`: `Severity` (`BLOCKER | MAJOR | MINOR`), `Location` (`file:line`), `Issue`, `Evidence`, `RequiredChange`; EXEC adds `FailureClass` (`TEST | PRODUCTION`), AUDIT adds `Basis`
 - `PlanCoverage`: per unit, `DONE | PARTIAL | MISSING`
 - `AcceptanceStatus`: per criterion, `MET | UNMET | UNVERIFIABLE`
-- `OutOfScopeChanges`: changed files not in `AffectedFiles`
+- `OutOfScopeChanges`: changed files not in `AffectedFiles` (ignore `local/agents/**`)
 - EXEC: `Executed` (command + raw output), `Totals` (run/failures/errors/skipped), `Deterministic` (y/n)
 - AUDIT: `UnverifiableWithoutExecution`
 - `Denied` when any command was denied
@@ -58,7 +57,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 
 1. Read `Plan`, then `git status` and `git diff --stat` (committed work: `git log -1` and `git show --stat`).
 2. Map each changed file to its unit and flag changes outside `AffectedFiles`. Read the full diff only for the assigned files, in parallel.
-3. EXEC: run `Run`, explain each failure per Modes. AUDIT: compare the diff with `Spec` (behavior, signatures, invariants, conventions) and work through `Hunt`.
+3. EXEC: run `Run`, explain each failure per Modes. AUDIT: compare the diff with each unit's `Spec` in the plan (behavior, signatures, invariants, conventions) and work through `Hunt`.
 4. Judge each acceptance criterion from code evidence or observed output; `UNVERIFIABLE` only when no allowed means can exercise it.
 5. AUDIT: use `grep` to check direct callers, tests, config and error paths touched by the diff for regressions.
 
