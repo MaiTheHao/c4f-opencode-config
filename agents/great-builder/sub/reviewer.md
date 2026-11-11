@@ -34,7 +34,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 
 ### Modes
 
-**EXEC** (the only mode that runs the final build/test pass on the integrated tree; workers run only their own per-unit `Verify` in their own worktree, so parallel builds never share `target/`)
+**EXEC** (the only mode that runs the final build/test pass on the integrated tree; workers run only their own per-unit `Verify` on the same tree, so the final regression runs once here)
 
 - Run only `Run`, in order, and paste raw output. Re-run a failing command at most once; report the outcome in `Deterministic`.
 - Read source only to explain a failure; do not audit logic beyond failures.

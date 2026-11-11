@@ -191,7 +191,7 @@ npm install
 │   ├── great-builder/       # Implementation pipelines, split by effort
 │   │   ├── build-low.md     # Primary: direct edit of one small change (≤2 files)
 │   │   ├── build-medium.md  # Primary: analyzer, one checkpoint, direct edit or ≤5 workers
-│   │   ├── build-high.md    # Primary: plan-driven waves, up to 5 workers, mandatory review before report
+│   │   ├── build-high.md    # Primary: plan-driven, one plan at a time, mandatory review before report
 │   │   └── sub/             # Read-only specialist subagents
 │   │       ├── analyzer.md  # Scope discovery and codebase analysis
 │   │       ├── bulk.md      # Mechanical, spec-complete edits

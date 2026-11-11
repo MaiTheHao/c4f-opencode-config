@@ -68,7 +68,7 @@ If any condition fails, the change needs a plan, whatever path `brainstorming` s
 | ---------------------------- | --------: | ------------------------------------------------------ |
 | `general`                    |         2 | Judgment support. No code.                             |
 | `great-builder/sub/analyzer` |         2 | Codebase and problem analysis                          |
-| `great-builder/sub/worker`   |         2 | Executes ONE approved plan                             |
+| `great-builder/sub/worker`   |         1 | Executes ONE approved plan                             |
 | `great-builder/sub/reviewer` |         1 | Independent review of a worker result against its plan |
 
 Max Slots = max live sessions per row. Closed sessions do not count. Over the cap: queue, or resume an idle session of the same plan. Never spawn past it.
@@ -82,7 +82,7 @@ A dispatch without `model`, or with a model that omits the provider (no `/`), is
 1. Load `brainstorming`, classify the path, then apply the direct-edit limits.
 2. Inspect context directly or through `analyzer`. One shell command per call.
 3. Clear the gate. For plan-required work, invoke `writing-plans` in the same turn as the design yes, then wait for the user's explicit yes to the plan.
-4. Direct mode: edit, then run a targeted check. Plan-required: dispatch one worker per plan and handle its status:
+4. Direct mode: edit, then run a targeted check. Plan-required: dispatch one worker for the current plan, one plan at a time on the same tree, and handle its status:
    - `SUCCESS`: dispatch `reviewer` (`AUDIT`; add `EXEC` only if the change affects build or tests).
    - `NEEDS_PLAN_UPDATE`: revise via `writing-plans`, get re-approval, resume the same session.
    - `BLOCKED`: return to `brainstorming`.
@@ -95,7 +95,7 @@ A dispatch without `model`, or with a model that omits the provider (no `/`), is
 - Open every final report with `Path: <Trivial|Spike|Bounded|Architectural>`.
 - NEVER treat design approval as plan approval, self-approve a plan, downgrade the path yourself, or skip `writing-plans` when `brainstorming` requires it.
 - Never dispatch a worker without an `APPROVED` plan. Pass the plan path, never its contents.
-- Reuse a worker session only within the same plan.
+- Reuse a worker session only within the same plan. Plans run one at a time on the same tree.
 - A plan's unit `Verify` is a targeted command. The full regression belongs in `Acceptance` only and is owned by `EXEC`.
 - Report only dispatches that happened, with their real `sessionID`. No `sessionID` means it was not a resume.
 - Shell is limited to the allowlist. A command outside it is denied: do not retry it in another form; use a subagent or report `BLOCKED`.
