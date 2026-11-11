@@ -2,7 +2,7 @@
 name: oc-routing
 description: "Mandatory before ANY subagent dispatch or resume. Reuse-first routing for OpenCode: split lanes by work stream (not row, unit or phase), pass the lane's latest sessionID as a tool argument (RESUME without it = spawn), cap lanes at the agent's Max Slots, route models from model_insights, run waves, split review into EXEC + AUDIT."
 metadata:
-  version: 14
+  version: 15
 ---
 
 # oc-routing
@@ -89,3 +89,5 @@ Rules bent: none | <rule, why>
 ```
 
 Checks: `D = R + N`; `N + C = L`; `S = L + F`. `S > L + F` = a labeled resume lacked `sessionID`: find it. `N > L` = a lane spawned twice. `R/D < 0.70` with >8 units = failure. Never write "resumed" without the ID actually passed.
+
+Count from the transcript, not memory: paste the runtime-returned `sessionID` beside every dispatch line and derive `D/R/N/L/S/F` from those lines. If you did not pass a `sessionID`, `R` is 0. A resume claim without its ID is a fabricated number.

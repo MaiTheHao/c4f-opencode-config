@@ -13,10 +13,17 @@ permissions:
   - { action: edit, resource: 'AGENTS.md', effect: deny }
   - { action: write, resource: 'AGENTS.md', effect: deny }
   - { action: execute, resource: '*', effect: allow }
+  # Observed 2026-11-12: in headless subagents `ask` executed with no prompt. Treat it as allow; the deny rules below are the guard.
   - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'git status*', effect: allow }
   - { action: shell, resource: 'git diff*', effect: allow }
   - { action: shell, resource: 'git worktree*', effect: deny }
+  - { action: shell, resource: 'git commit*', effect: deny }
+  - { action: shell, resource: 'git push*', effect: deny }
+  - { action: shell, resource: 'git reset*', effect: deny }
+  - { action: shell, resource: 'git rebase*', effect: deny }
+  - { action: shell, resource: 'git clean*', effect: deny }
+  - { action: shell, resource: 'rm -rf*', effect: deny }
 ---
 
 ## Role
@@ -42,9 +49,9 @@ You are an executor, not a designer. The approved plan is the execution contract
 ## Procedure
 
 1. **Preflight.** Read the plan. Run the Baseline command and record the result. Pre-existing failures are noted, not fixed. Record unrelated working-tree changes from `git status --porcelain` and leave them alone.
-2. **Anchor check, before any edit.** Every `MODIFY` or `DELETE` file must exist. Every symbol named in a unit's `Spec` or `Tests` must occur. Any miss returns `NEEDS_PLAN_UPDATE`.
+2. **Anchor check, before any edit.** Every `MODIFY` or `DELETE` file must exist. Every **existing** symbol named in a unit's `Spec` or `Tests` must occur; a symbol the plan marks as new (`CREATE`, `Produces`, a new test name) is expected to be absent and is not anchored. Any other miss returns `NEEDS_PLAN_UPDATE`.
 3. **Execute.** Units in `DependsOn` order, then ID order. Before each unit, state its key assumption in one line. For each `Tests` item: write the failing test, run it, confirm it fails for the expected reason, write the minimal implementation, confirm it passes. A `(no-test: reason)` unit applies the change, then runs `Verify`. Run each unit's `Verify`. On failure, read the full log, fix the root cause, rerun. After 3 failed fix attempts on the same failure, return `FAILED` with attempts, logs, and the likely cause. Tick `Done` only after the unit's `Verify` evidence exists.
-4. **Complete.** Run the full regression from `Acceptance`. Verify each acceptance criterion with concrete evidence. Run the scope self-check. Write the walkthrough to `local/agents/walkthroughs/<plan filename>.md`.
+4. **Complete.** Run each unit's `Verify`, then the scope self-check. Do not run the plan-level `Acceptance` regression: reviewer `EXEC` owns every acceptance check on the integrated tree. Label every run `unit` in the walkthrough. Write the walkthrough to `local/agents/walkthroughs/<plan filename>.md`.
 
 **Resume.** Find the first unit whose `Done` is unchecked. Re-run that unit's last `Verify` before continuing.
 
@@ -86,7 +93,7 @@ Written to `local/agents/walkthroughs/<plan filename>.md`:
 
 ## Verification evidence
 
-[Each command actually run, relevant output, exit status]
+Label every run `unit`; reviewer `EXEC` owns the integrated regression. Include each command actually run, relevant output, exit status.
 
 ## Baseline vs final
 

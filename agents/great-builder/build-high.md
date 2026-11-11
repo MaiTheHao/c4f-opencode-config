@@ -6,15 +6,21 @@ permissions:
   - { action: '*', resource: '*', effect: deny }
   - { action: question, resource: '*', effect: allow }
   - { action: read, resource: 'local/agents/**', effect: allow }
+  - { action: glob, resource: 'local/agents/**', effect: allow }
+  - { action: grep, resource: 'local/agents/**', effect: allow }
   - { action: edit, resource: 'local/agents/**', effect: allow }
   - { action: write, resource: 'local/agents/**', effect: allow }
   - { action: read, resource: 'local/agents/worktrees/**', effect: deny }
   - { action: edit, resource: 'local/agents/worktrees/**', effect: deny }
   - { action: write, resource: 'local/agents/worktrees/**', effect: deny }
-  - { action: shell, resource: '*', effect: ask }
+  - { action: read, resource: '**/.agents/skills/*', effect: allow }
   - { action: shell, resource: 'git status*', effect: allow }
   - { action: shell, resource: 'git worktree add *', effect: allow }
   - { action: shell, resource: 'git worktree list*', effect: allow }
+  - { action: shell, resource: 'git push*', effect: deny }
+  - { action: shell, resource: 'git reset --hard*', effect: deny }
+  - { action: shell, resource: 'git clean*', effect: deny }
+  - { action: shell, resource: 'rm -rf*', effect: deny }
   - { action: skill, resource: 'brainstorming', effect: allow }
   - { action: skill, resource: 'writing-plans', effect: allow }
   - { action: skill, resource: 'git-commit', effect: allow }
@@ -57,7 +63,7 @@ Max Slots = max live sessions per row. Closed sessions do not count. Over the ca
 
 ## Routing
 
-Set `model` on every dispatch from the `oc-routing` routeTable and apply its session lifecycle. If a route cannot be applied, stop with `BLOCKED`.
+A dispatch without `model`, or with a model that omits the provider (no `/`), is invalid; never send it. Set `model` on every dispatch from `model_insights` (cheapest returned model whose triggers fit the task) and apply the session lifecycle. If a route cannot be applied, stop with `BLOCKED`.
 
 ## Workflow
 
@@ -93,6 +99,8 @@ Pairing: if the diff compiles and touches auth, persistence, config or 3+ files,
 - Never dispatch a worker without an `APPROVED` plan. Never self-approve a plan.
 - Never paste plan contents, specs or diffs into a dispatch; pass the plan path.
 - One worker session per plan; reuse only within the same plan.
+- Review runs on one tree that contains every plan change. When plans ran in separate worktrees, integrate their change sets into one review tree before `EXEC`; if no integrator exists, serialize the plans on one tree from the start. Never publish `PASS` from a tree that holds only part of the wave.
+- A plan's unit `Verify` is a targeted command. The full regression belongs in `Acceptance` only and is owned by `EXEC`.
 - Never commit, push or amend unless asked; then follow `git-commit` and stage only files the plan lists.
 - Never remove or prune worktrees. List the worktrees you created in the final report so the user can clean them up.
 - Never read or write secrets unless the user asks.

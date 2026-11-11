@@ -8,6 +8,7 @@ permissions:
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
   - { action: skill, resource: '*', effect: allow }
+  # Observed 2026-11-12: in headless subagents `ask` executed with no prompt. Treat it as allow; the deny rules below are the guard.
   - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'ls *', effect: allow }
   - { action: shell, resource: 'tree *', effect: allow }
@@ -15,6 +16,11 @@ permissions:
   - { action: shell, resource: 'git diff*', effect: allow }
   - { action: shell, resource: 'git log*', effect: allow }
   - { action: shell, resource: 'git show*', effect: allow }
+  - { action: shell, resource: 'git commit*', effect: deny }
+  - { action: shell, resource: 'git push*', effect: deny }
+  - { action: shell, resource: 'git reset*', effect: deny }
+  - { action: shell, resource: 'git clean*', effect: deny }
+  - { action: shell, resource: 'rm -rf*', effect: deny }
   - { action: execute, resource: '*', effect: allow }
   - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
 ---
@@ -55,7 +61,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 
 ## Workflow
 
-1. Read `Plan`, then `git status` and `git diff --stat` (committed work: `git log -1` and `git show --stat`).
+1. Read `Plan`, then `git status` and `git diff --stat` (committed work: `git log -1` and `git show --stat`). If `Scope` names several plans, confirm every plan's change is present before running `Run`; a missing one is `BLOCKED`, never `PASS`.
 2. Map each changed file to its unit and flag changes outside `AffectedFiles`. Read the full diff only for the assigned files, in parallel.
 3. EXEC: run `Run`, explain each failure per Modes. AUDIT: compare the diff with each unit's `Spec` in the plan (behavior, signatures, invariants, conventions) and work through `Hunt`.
 4. Judge each acceptance criterion from code evidence or observed output; `UNVERIFIABLE` only when no allowed means can exercise it.
