@@ -18,12 +18,6 @@ permissions:
   - { action: shell, resource: 'git status*', effect: allow }
   - { action: shell, resource: 'git diff*', effect: allow }
   - { action: shell, resource: 'git worktree*', effect: deny }
-  - { action: shell, resource: 'git commit*', effect: deny }
-  - { action: shell, resource: 'git push*', effect: deny }
-  - { action: shell, resource: 'git reset*', effect: deny }
-  - { action: shell, resource: 'git rebase*', effect: deny }
-  - { action: shell, resource: 'git clean*', effect: deny }
-  - { action: shell, resource: 'rm -rf*', effect: deny }
 ---
 
 ## Role
