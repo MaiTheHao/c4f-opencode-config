@@ -1,6 +1,6 @@
 ---
 name: oc-routing
-description: "Mandatory before ANY subagent dispatch or resume. Reuse-first routing for OpenCode: split lanes by work stream (not row, unit or phase), pass the lane's latest sessionID as a tool argument (RESUME without it = spawn), cap lanes at the agent's Max Slots, route models from model_insights, run waves, split review into EXEC + AUDIT."
+description: "MUST use before ANY OpenCode subagent dispatch or resume. Route work by independent work-stream lanes, reuse the latest sessionID when resuming, respect agent Max Slots, select models via `model_insights`, execute in waves, and split reviews into EXEC and AUDIT."
 metadata:
   version: 15
 ---

@@ -1,6 +1,6 @@
 ---
 name: oc-agent-config
-description: "Authoritative spec, validator and authoring rules for native OpenCode V2 Markdown agents in this repo. MUST be used whenever the user creates, edits, reviews, audits or migrates an agent file (.opencode/agents/*.md, agents/**/build-*.md), its frontmatter, permissions, subagent table, slot limits, routing precondition or required skills, or asks to validate/accept an agent. Also use for 'agent config', 'primary/subagent', 'effort tier', 'Max Slots', 'oc-routing precondition', 'validate_agent'."
+description: "MUST use when creating, editing, reviewing, auditing, migrating, or validating native OpenCode V2 agent files (`.opencode/agents/*.md`, `agents/**/build-*.md`), including frontmatter, permissions, subagent rules, slot limits, routing preconditions, and required skills. Also use for agent config, primary/subagent, effort tier, Max Slots, `oc-routing` precondition, or `validate_agent` questions."
 ---
 
 # OpenCode Agent Configuration
