@@ -1,0 +1,25 @@
+{
+  "name": "c4f-status",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "C4F status plugin: startup checks for the C4F configuration repositories, and the home for future status features.",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@opencode/plugin": "latest"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check index.js && node --test"
+  }
+}

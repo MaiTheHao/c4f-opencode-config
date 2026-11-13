@@ -84,30 +84,6 @@ A background refresh also runs every 60 seconds. Concurrent refresh calls are co
 
 Metadata file errors do not disable Runtime discovery; models are still listed with empty triggers and no cost tier, with a diagnostic warning.
 
-## Update check (`c4f-check-for-update`)
-
-The plugin also checks whether the two C4F repositories are behind. The check runs once at setup, before the model registry refresh, and never blocks startup:
-
-- Probes both repos with `git fetch` + ahead/behind (4 s timeout each, in parallel).
-- Caches the result in `~/.cache/opencode/c4f-update-state.json` for 30 minutes, so repeated starts do not hit the network.
-- While a repo is behind or missing, appends one `<c4f-update-check>` system part per request: the model tells the user once, in their language, and offers the update.
-- Posts one synthetic banner per session, so the suggestion is visible in the transcript.
-- Keeps the `c4f-update` skill mapped: if it lives outside a directory the runtime scans, the plugin registers it (`autoinvoke: true`). Standard installs are left to discovery, so no duplicate entries appear.
-
-It never runs `git pull`, edits files or bypasses approval. After the user agrees, the agent follows the `c4f-update` skill (`scripts/c4f_update.py install`).
-
-| Option (`ctx.options.updateCheck`) | Default | Meaning |
-| --- | --- | --- |
-| `enabled` | `true` | Disable the whole check |
-| `ttlMs` | `1800000` | Cache lifetime and background refresh interval |
-| `fetchTimeoutMs` | `4000` | Per-repo git timeout |
-| `banner` | `true` | Synthetic session banner |
-| `mapSkill` | `true` | Register the `c4f-update` skill when missing |
-| `skillPath` | `~/.config/opencode/skills/c4f-update/SKILL.md` | Skill source |
-| `repos` | the two C4F repos | Override the probe targets |
-
-`C4F_UPDATE_CHECK=0` disables the check without touching configuration.
-
 ## Installation
 
 For a global installation, place this directory at `~/.config/opencode/plugins/model-insights/`. For a project-local installation, use `.opencode/plugins/model-insights/`. OpenCode loads local plugin files from these directories at startup.

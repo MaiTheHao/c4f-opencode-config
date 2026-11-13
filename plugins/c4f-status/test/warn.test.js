@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildBanner, buildInstruction, MARKER } from '../src/warn.js';
+import { buildBanner, buildInstruction, MARKER } from '../src/modules/check-for-update/warn.js';
 
 const behind = {
   version: 1,

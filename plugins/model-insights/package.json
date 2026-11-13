@@ -1,15 +1,14 @@
 {
   "name": "model-insights",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "type": "module",
-  "description": "Read-only OpenCode model availability, pricing, variants and agent-selection metadata, plus a startup check for C4F config updates.",
+  "description": "Read-only OpenCode model availability, pricing, variants and agent-selection metadata.",
   "exports": {
     ".": "./index.js"
   },
   "files": [
     "index.js",
-    "c4f-check-for-update",
     "src",
     "model_insights.json",
     "README.md",

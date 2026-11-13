@@ -209,6 +209,7 @@ npm install
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
 ├── plugins/                 # Native plugins (loaded by OpenCode)
 │   ├── model-insights/      # Live availability, pricing, variants, task triggers (read-only)
+│   ├── c4f-status/          # Startup update check for the two C4F repos
 │   └── c4f-retrieval/       # Verified-context retrieval plugin
 ├── AGENTS.md                # Repo-level agent instructions (currently empty)
 ├── package.json             # Dependencies (@opencode/plugin, effect, typescript)

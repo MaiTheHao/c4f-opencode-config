@@ -1,10 +1,7 @@
-import { createProbe, defaultStateFile, defaultTargets, needsAction, DEFAULT_TTL_MS, DEFAULT_FETCH_TIMEOUT_MS } from './src/probe.js';
-import { buildBanner, buildInstruction, MARKER } from './src/warn.js';
-import { defaultSkillPath, mapUpdateSkill } from './src/skill.js';
+import { createProbe, defaultStateFile, defaultTargets, isFresh, needsAction, DEFAULT_TTL_MS, DEFAULT_FETCH_TIMEOUT_MS } from './probe.js';
+import { buildBanner, buildInstruction, MARKER } from './warn.js';
 
-export { buildBanner, buildInstruction, needsAction, defaultStateFile };
-
-export function normalizeOptions(input = {}, env = process.env) {
+function normalizeOptions(input = {}, env = process.env) {
   const repos = Array.isArray(input.repos) && input.repos.length > 0 ? input.repos : defaultTargets();
   const ttlMs = Number.isFinite(input.ttlMs) && input.ttlMs > 0 ? input.ttlMs : DEFAULT_TTL_MS;
   return {
@@ -13,9 +10,6 @@ export function normalizeOptions(input = {}, env = process.env) {
     fetchTimeoutMs: Number.isFinite(input.fetchTimeoutMs) && input.fetchTimeoutMs > 0 ? input.fetchTimeoutMs : DEFAULT_FETCH_TIMEOUT_MS,
     repos,
     stateFile: input.stateFile ?? defaultStateFile(),
-    skillPath: input.skillPath ?? defaultSkillPath(),
-    skillId: input.skillId ?? 'c4f-update',
-    mapSkill: input.mapSkill !== false,
     banner: input.banner !== false,
   };
 }
@@ -23,29 +17,25 @@ export function normalizeOptions(input = {}, env = process.env) {
 const MAX_TRACKED_SESSIONS = 500;
 
 /**
- * Startup update check: probe the C4F repos, inject a WARN into the system
- * prompt while they are behind, show one banner per session and keep the
- * `c4f-update` skill mapped into the runtime. It never runs git writes.
+ * Module entry point: probe the C4F repos, inject a WARN into the system
+ * prompt while they are behind, and show one banner per session. It never
+ * runs git writes.
  */
-export async function startUpdateCheck(ctx, input = {}) {
+export async function run(ctx, input = {}) {
   const options = normalizeOptions(input, ctx?.env ?? process.env);
   if (!options.enabled) {
     return { options, state: () => undefined, refresh: async () => undefined, dispose: async () => {} };
   }
 
-  const probe = createProbe(options);
-  await probe.load();
+  const probe = createProbe({
+    targets: options.repos,
+    stateFile: options.stateFile,
+    fetchTimeoutMs: options.fetchTimeoutMs,
+  });
+  const cached = await probe.load();
 
   const registrations = [];
   const seenSessions = new Set();
-
-  if (options.mapSkill) {
-    try {
-      await mapUpdateSkill(ctx, options);
-    } catch {
-      // A missing or malformed skill file must not disable the check.
-    }
-  }
 
   const register = async (name, callback) => {
     if (typeof ctx?.session?.hook !== 'function') return;
@@ -60,7 +50,7 @@ export async function startUpdateCheck(ctx, input = {}) {
   await register('context', (request) => {
     const state = probe.get();
     if (!needsAction(state)) return;
-    const text = buildInstruction(state, options);
+    const text = buildInstruction(state);
     if (!text) return;
     if (!Array.isArray(request?.system)) return;
     if (request.system.some((part) => typeof part?.text === 'string' && part.text.includes(MARKER))) return;
@@ -74,7 +64,7 @@ export async function startUpdateCheck(ctx, input = {}) {
       if (!input_?.sessionID || seenSessions.has(input_.sessionID)) return;
       if (seenSessions.size >= MAX_TRACKED_SESSIONS) seenSessions.clear();
       seenSessions.add(input_.sessionID);
-      const text = buildBanner(state, options);
+      const text = buildBanner(state);
       if (!text) return;
       try {
         await ctx.session.synthetic({
@@ -88,17 +78,43 @@ export async function startUpdateCheck(ctx, input = {}) {
     });
   }
 
-  const timer = setInterval(() => {
-    void probe.refresh();
-  }, options.ttlMs);
-  timer.unref?.();
+  let disposed = false;
+  let timer;
+
+  const schedule = (delay) => {
+    if (disposed) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      void refreshSoon();
+    }, Math.max(0, Math.min(options.ttlMs, delay)));
+    timer.unref?.();
+  };
+
+  const refreshSoon = async () => {
+    if (disposed) return;
+    try {
+      await probe.refresh();
+    } catch {
+      // Keep the scheduler alive; the next attempt may succeed.
+    } finally {
+      if (!disposed) schedule(options.ttlMs);
+    }
+  };
+
+  if (isFresh(cached, options.ttlMs)) {
+    // Align the next refresh with the cache age, not with process start time.
+    schedule(cached.checkedAt + options.ttlMs - Date.now());
+  } else {
+    void refreshSoon();
+  }
 
   return {
     options,
     state: () => probe.get(),
     refresh: () => probe.refresh(),
     dispose: async () => {
-      clearInterval(timer);
+      disposed = true;
+      clearTimeout(timer);
       for (const registration of registrations) {
         try {
           await registration?.dispose?.();
