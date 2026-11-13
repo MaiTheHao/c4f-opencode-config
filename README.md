@@ -203,6 +203,7 @@ npm install
 │       └── shared/          # Research subagents (scout, deep, quant, skeptic, validation, timeline)
 ├── skills/                  # Local repo skills
 │   ├── oc-agent-config/     # Agent authoring spec, validator, and references
+│   ├── c4f-update/          # Bootstrap, update, deps/config seeding, post-update verify
 │   ├── oc-research-tiering/ # T1/T2/T3 evidence rubric + ResearchReport schema
 │   ├── oc-retrieval/        # Retrieval skill (`c4f-retrieval` namespace tools)
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
@@ -240,6 +241,7 @@ Installed agent IDs are **namespaced by directory** — e.g. `great-builder/buil
 | Tier rubric | `skills/oc-research-tiering/` | T1/T2/T3 evidence rubric + `ResearchReport` schema |
 | Retrieval | `skills/oc-retrieval/` | `c4f-retrieval` namespace tooling |
 | Authoring spec | `skills/oc-agent-config/` | V2 spec, validator, references |
+| Repo update | `skills/c4f-update/` | `status` / `install` / `verify` for both C4F repos |
 
 **How routing resolves:**
 

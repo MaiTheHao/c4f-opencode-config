@@ -25,7 +25,7 @@ An agent is an instruction provider: frontmatter = selection metadata, body = sy
 | `references/native-permissions.md`  | Rule matching, action/resource names, hard policies                                                                                                                                  |
 | `references/native-tools-skills.md` | Tool availability/invocation, skill discovery                                                                                                                                        |
 | `references/sources.md`             | Source register, open schema/generation conflicts                                                                                                                                    |
-| `references/update-c4f-repo.md`     | The task is to version-check, update or resolve update conflicts in `~/.config/opencode` or `~/.agents/skills`. Load it FIRST for that task; do not load it for ordinary agent edits |
+| `c4f-update` skill                 | The task is to version-check, update or resolve update conflicts in `~/.config/opencode` or `~/.agents/skills`. Stop here: that skill owns the git flow, this one owns authoring |
 
 ## Contract at a glance
 
