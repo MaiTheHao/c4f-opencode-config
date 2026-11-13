@@ -1,59 +1,69 @@
 ---
 name: oc-agent-config
-description: "MUST use when creating, editing, reviewing, auditing, migrating, or validating native OpenCode V2 agent files (`.opencode/agents/*.md`, `agents/**/build-*.md`), including frontmatter, permissions, subagent rules, slot limits, routing preconditions, and required skills. Also use for agent config, primary/subagent, effort tier, Max Slots, `oc-routing` precondition, or `validate_agent` questions."
+description: 'Use when looking up, verifying, troubleshooting, or auditing OpenCode V2 configurations (`opencode.json`, `opencode.jsonc`, `.opencode/agents/*.md`, `~/.config/opencode/**`, MCP servers, permissions, tools, models, and skills) against official V2 documentation, schemas, and live runtime behavior.'
 ---
 
-# OpenCode Agent Configuration
+# OpenCode V2 Configuration Verification
 
-An agent is an instruction provider: frontmatter = selection metadata, body = system prompt. Detail lives in `references/`; the validator is `scripts/validate_agent.py` (execute it, never read it into context).
+This skill directs you to authoritative sources and verification steps so OpenCode V2 configurations work reliably at runtime. It enforces **no** custom file layouts, prompt templates, or repository style rules—always verify directly against official V2 documentation and the target runtime environment.
 
-## Non-negotiable (read before touching any agent file)
+## Core Verification Principles
 
-1. **Plan line first.** Before writing, output one line:
-   `AGENT-PLAN: kind=<delegating|solo|specialist> | path=<resolved> | children=<id:slots,...> | skills=<ids> | validate=<command>`
-2. **Never finish without the validator.** Run `python3 scripts/validate_agent.py <files>`; paste its result. Fix the agent, never weaken a rule or add a blanket allow to pass.
-3. **Slots bind session count.** For every child row, `Max Slots` = max live sessions = max concurrent dispatches. Delegating primaries MUST carry the `### Subagents` table and `### Routing` precondition (`references/project-authoring.md` s4-s5).
-4. **Classify claims**: `NATIVE` (official V2 docs), `PROJECT` (this family's policy), `UNVERIFIED` (needs live check). Never label a project rule or an `S*`-only claim `NATIVE`. Evidence conflict: record it, leave `UNVERIFIED`, never migrate major versions silently.
-5. **Mutate agent files only when asked.** Editing this spec is not a request to rewrite every profile.
+1. **Fetch official sources instead of guessing.** Never assume OpenCode V2 field names, permission action names (`shell`/`subagent` vs legacy `bash`/`task`), or defaults from memory or other frameworks. Look up the exact `/v2/docs/` URL in the source register below and fetch it.
+2. **Classify every claim by evidence authority:**
+   - `NATIVE`: Confirmed directly in official OpenCode V2 documentation (`D1`–`D8` at `https://opencode.ai/v2/docs/*`).
+   - `UNVERIFIED`: Derived from unversioned `/docs/` pages (`S1`–`S4`), third-party references, or environment-specific behavior; must be verified against `D1`–`D8`, live tool schemas, or the installed OpenCode binary before relying on it.
+3. **Never mix V1 and V2 config syntax.** OpenCode has two documented generations (`permission` object with `bash`/`task` in V1 vs `permissions` ordered array with `shell`/`subagent` in V2). Inspect existing config files before editing so you do not introduce mixed syntax or silently migrate a working setup.
+4. **Verify the merged configuration.** OpenCode merges global config (`~/.config/opencode/opencode.json(c)`), project config (`./opencode.json(c)` or `./.opencode/opencode.json(c)`), and agent Markdown files in layers. Always inspect the effective merged result rather than a single file in isolation.
 
-## Load references by trigger (never preload the set)
+## Verification Workflow
 
-| Load                                | When                                                                                                                                                                                 |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `references/acceptance.md`          | Before declaring any agent change done                                                                                                                                               |
-| `references/native-agents.md`       | Field shapes, rejected keys, model selectors, pinning                                                                                                                                |
-| `references/native-permissions.md`  | Rule matching, action/resource names, hard policies                                                                                                                                  |
-| `references/native-tools-skills.md` | Tool availability/invocation, skill discovery                                                                                                                                        |
-| `references/sources.md`             | Source register, open schema/generation conflicts                                                                                                                                    |
-| `c4f-update` skill                 | The task is to version-check, update or resolve update conflicts in `~/.config/opencode` or `~/.agents/skills`. Stop here: that skill owns the git flow, this one owns authoring |
+1. **Identify the configuration surface** being questioned or modified (agent frontmatter, `mode`, `model` selector, `permissions` array, `experimental.policies`, `mcp` servers, built-in `tools`, or `skills` discovery).
+2. **Map to the official source & check conflict traps** using the registers below.
+3. **Retrieve and inspect authoritative sources:**
+   - Fetch the relevant `https://opencode.ai/v2/docs/...` page(s) to confirm exact field shapes, types, and precedence rules.
+   - When operating inside a workspace, also check the installed CLI/runtime version, active `~/.config/opencode/` and `./.opencode/` files, and live tool/provider schemas exposed in the session.
+4. **Report with clear attribution:** Separate confirmed `NATIVE` facts (citing `D1`–`D8`) from `UNVERIFIED` or runtime-dependent items, and explicitly flag any conflict between official V2 docs, JSON schemas, and local config files.
 
-## Contract at a glance
+## Official V2 Source Register (`D1`–`D8`)
 
-**Frontmatter**: UTF-8, one `---` pair, YAML mapping, unique keys, non-empty body.
+Fetch the matching `/v2/docs/` endpoint directly to verify native V2 behavior:
 
-- Required: `description`, `mode`, `permissions`. Optional: `model` (string), `color` (hex), `steps`, `hidden`, `disabled`, `request`.
-- NEVER add `$schema`, provider blocks, `skills`, concurrency keys. Reject `permission`, `tools`, `prompt`, `disable`, `maxSteps`, `temperature`, `top_p`; author `shell`/`subagent`, not `bash`/`task`.
+| ID   | Topic                | Official URL                              | What to Verify                                                                                         |
+| :--- | :------------------- | :---------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| `D1` | **V2 Agents**        | `https://opencode.ai/v2/docs/agents`      | Agent file locations, frontmatter fields, `mode`, `model` inheritance, config merging, built-in agents |
+| `D2` | **V2 Permissions**   | `https://opencode.ai/v2/docs/permissions` | `{ action, resource, effect }` rules, wildcard matching, evaluation precedence, approvals              |
+| `D3` | **V2 Tools**         | `https://opencode.ai/v2/docs/tools`       | Built-in tool names (`read`, `edit`, `shell`, `subagent`, `execute`), parameters, session continuation |
+| `D4` | **V2 Skills**        | `https://opencode.ai/v2/docs/skills`      | Skill search paths, `name.md` vs `name/SKILL.md`, case-sensitive IDs, skill frontmatter                |
+| `D5` | **V2 Models**        | `https://opencode.ai/v2/docs/models`      | `provider/model#variant` selector format, case sensitivity, provider catalog resolution                |
+| `D6` | **V2 Config**        | `https://opencode.ai/v2/docs/config`      | Global vs project config file locations, directory walk-up discovery, layer precedence                 |
+| `D7` | **Published Schema** | `https://opencode.ai/config.json`         | JSON Schema reference (see conflict warning below before applying to V2 agents)                        |
+| `D8` | **V2 Policies**      | `https://opencode.ai/v2/docs/policies`    | `experimental.policies` hard allow/deny rules outside standard agent permissions                       |
 
-**Permissions**: ordered `{ action, resource, effect }`, last match wins.
+## Supplementary Source Register (`S1`–`S4`)
 
-- Open with `{ action: '*', resource: '*', effect: deny }`, then grant the minimum. Only a designated open agent (named in its own `description`, declared in `scripts/accepted_exceptions.json`) may open otherwise.
-- Leaf subagents: `{ action: subagent, resource: '*', effect: deny }`. Grant only catalog-confirmed child and skill IDs.
-- Review the merged ruleset: a later broad allow reopens an earlier global deny.
+These pages cover areas not fully detailed on `/v2/docs/` (legacy V1 syntax, MCP server blocks, cross-OS path expansion). Treat claims from `S1`–`S4` as `UNVERIFIED` for V2 until confirmed in the target runtime:
 
-**Body** (exact order): `## Context` (role; delegating primaries add `### Gates` optional, `### Subagents`, `### Routing`) -> `## Workflow` -> `## Rules` (flat bullets, last; declares required skills). One owner per rule; Workflow references, never restates. Budgets: primary 150/160 lines, specialist 90/120.
+| ID   | URL                                       | Covers                                                                                                                               |
+| :--- | :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| `S1` | `https://opencode.ai/docs/config`         | Unversioned config precedence, `instructions` array, root keys (`model`, `small_model`, `default_agent`, `agent`), `mcp` block shape |
+| `S2` | `https://opencode.ai/docs/permissions`    | Legacy V1 `permission` object syntax, V1 tool keys (`bash`, `task`, `doom_loop`), `~`/`$HOME` path expansion                         |
+| `S3` | `https://v2.opencode.ai/docs/permissions` | V2 `permissions` array syntax, `--auto` flag behavior, saved approval interaction with `deny`                                        |
+| `S4` | `https://learnopencode.com`               | Third-party reference; use only as a navigation aid, never as sole authority                                                         |
 
-## Authoring flow
+## Known Conflicts to Watch For When Verifying
 
-1. **Identify** kind and deployment path; resolve the installed ID.
-2. **Classify** claims; refresh `references/sources.md` evidence only if native behavior is load-bearing.
-3. **Check capabilities**: every action maps to a callable, permitted tool (`project-authoring.md` s2).
-4. **Write** to layout and budget; table + precondition for delegating primaries; required skills in `## Rules`.
-5. **Permissions** from a fragment in `project-permissions.md`, then merged-ruleset review.
-6. **Validate** with `references/acceptance.md`; report `NATIVE`, `PROJECT`, `UNVERIFIED` results separately.
+### 1. Published JSON Schema (`D7`) vs. V2 Agent Docs (`D1`, `D2`, `D6`)
 
-## Maintenance
+- **Conflict:** `https://opencode.ai/config.json` (`D7`) exposes legacy `AgentConfig` keys (`permission`, `maxSteps`, `tools`) and a root `agent` mapping, contradicting the V2 Markdown agent contract (`permissions` array, `steps`, `shell`/`subagent` actions) in `D1`/`D2`/`D6`.
+- **Verification action:** Do not convert V2 `permissions` arrays into V1 `permission` objects just to satisfy `D7`. Verify against the installed OpenCode binary or live parser.
 
-- Bump the spec revision when fields, permissions, routing, skills, contracts or gates change; record the rule and affected profiles. Current: **2.3.0**.
-- Recheck sources on an OpenCode upgrade; this snapshot does not cover future V2 releases.
-- Keep native incompatibility, project-policy failure and missing dependency distinct in reviews.
-- NEVER edit agents, skills, provider settings or policies just to make a status look complete.
+### 2. V1 vs. V2 Permission Syntax Across Config Layers (`S1`, `S2`, `S3`)
+
+- **Conflict:** Global config (`~/.config/opencode/opencode.jsonc`) may still use V1 `permission` object syntax (`bash`, `task`) while `.opencode/agents/*.md` uses V2 `permissions` array syntax (`shell`, `subagent`).
+- **Verification action:** Inspect both layers in the user's environment before editing so you do not introduce mixed syntax into a single file or break an existing global config.
+
+### 3. `subagent` Tool `model` Parameter (`D1`, `D3`)
+
+- **Conflict:** `D1` and `D3` document `subagent` accepting target agent, description, prompt, background execution, and `sessionID` for continuation, whereas live runtimes may expose an optional `model` parameter.
+- **Verification action:** Check the live `subagent` tool schema in the active session before passing a `model` override at dispatch time.
