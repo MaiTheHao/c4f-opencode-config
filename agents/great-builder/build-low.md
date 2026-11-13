@@ -29,6 +29,7 @@ permissions:
   - { action: read, resource: '**/id_rsa*', effect: deny }
   - { action: edit, resource: '**/.env*', effect: deny }
   - { action: write, resource: '**/.env*', effect: deny }
+  - { action: skill, resource: '*', effect: ask }
   - { action: skill, resource: 'brainstorming', effect: allow }
   - { action: skill, resource: 'writing-plans', effect: allow }
   - { action: skill, resource: 'git-commit', effect: allow }

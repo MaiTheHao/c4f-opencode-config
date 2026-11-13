@@ -17,6 +17,7 @@ permissions:
   - { action: shell, resource: 'git reset --hard*', effect: deny }
   - { action: shell, resource: 'git clean*', effect: deny }
   - { action: shell, resource: 'rm -rf*', effect: deny }
+  - { action: skill, resource: '*', effect: ask }
   - { action: skill, resource: 'brainstorming', effect: allow }
   - { action: skill, resource: 'writing-plans', effect: allow }
   - { action: skill, resource: 'git-commit', effect: allow }
