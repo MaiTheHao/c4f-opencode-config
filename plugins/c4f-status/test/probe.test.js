@@ -113,6 +113,24 @@ test('probeRepo accepts a .git file from a worktree', async (t) => {
   assert.equal(result.path, tree);
 });
 
+test('probeRepo falls back to origin/<branch> when the branch has no upstream', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'c4f-probe-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const { work, clone } = await makePair(root);
+  await git(clone, 'branch', '--unset-upstream');
+
+  await writeFile(join(work, 'b.txt'), 'b\n');
+  await git(work, 'add', '-A');
+  await git(work, 'commit', '-qm', 'next');
+  await git(work, 'push', '-q', 'origin', 'master');
+
+  const result = await probeRepo({ name: 'repo', role: 'main', path: clone, branch: 'master' });
+  assert.equal(result.state, 'behind');
+  assert.equal(result.behind, 1);
+  assert.equal(result.upstream, 'origin/master');
+  assert.equal(result.inferredUpstream, true);
+});
+
 test('probeRepo reports unknown when the branch has no upstream', async (t) => {
   const root = await mkdtemp(join(tmpdir(), 'c4f-probe-'));
   t.after(() => rm(root, { recursive: true, force: true }));

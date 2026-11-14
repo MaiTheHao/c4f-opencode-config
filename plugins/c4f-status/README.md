@@ -7,7 +7,7 @@ An independent OpenCode plugin for C4F repository status. Features live under `s
 The check runs once at setup and never blocks startup:
 
 - Probes both C4F repos with `git fetch` + ahead/behind (4 s timeout each, in parallel).
-- Resolves the upstream from `@{u}` and fetches that remote, so remotes other than `origin` are supported.
+- Resolves the upstream from `@{u}` and fetches that remote, so remotes other than `origin` are supported. When a branch has no upstream set (for example after `git init` + `git pull`), it falls back to `origin/<branch>` if that ref exists.
 - Caches the result in `~/.cache/opencode/c4f-update-state.json` for 30 minutes, so repeated starts do not hit the network.
 - Aligns the next refresh with `checkedAt + ttlMs`, so a warm cache refreshes when it expires instead of one full TTL after startup.
 - Keeps the last known state for each repo when `git fetch` fails (offline or timeout), and marks it `offline`.

@@ -99,8 +99,8 @@ function reuseState(previous, base, upstream, error) {
   };
 }
 
-async function readCounts(repoPath, timeout) {
-  const counts = await git(repoPath, ['rev-list', '--left-right', '--count', 'HEAD...@{u}'], timeout);
+async function readCounts(repoPath, ref, timeout) {
+  const counts = await git(repoPath, ['rev-list', '--left-right', '--count', `HEAD...${ref}`], timeout);
   if (!counts.ok) return undefined;
 
   const [ahead, behind] = counts.stdout.split(/\s+/).map((value) => Number.parseInt(value, 10) || 0);
@@ -116,12 +116,21 @@ export async function probeRepo(target, { fetchTimeoutMs = DEFAULT_FETCH_TIMEOUT
     return { ...base, state: 'not-installed' };
   }
 
+  // Prefer the tracked upstream; fall back to origin/<branch> for repos that
+  // were bootstrapped with init + pull (which leaves no @{u}).
   const upstreamResult = await git(base.path, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'], fetchTimeoutMs);
-  if (!upstreamResult.ok) {
-    return { ...base, state: 'unknown', error: 'no upstream tracking' };
+  let upstream;
+  if (upstreamResult.ok) {
+    upstream = upstreamResult.stdout;
+  } else {
+    const fallback = `origin/${base.branch}`;
+    const verified = await git(base.path, ['rev-parse', '--verify', '--quiet', fallback], fetchTimeoutMs);
+    if (!verified.ok) {
+      return { ...base, state: 'unknown', error: 'no upstream tracking' };
+    }
+    upstream = fallback;
+    base.inferredUpstream = true;
   }
-
-  const upstream = upstreamResult.stdout;
   const slash = upstream.indexOf('/');
   if (slash <= 0 || slash === upstream.length - 1) {
     return { ...base, state: 'unknown', upstream, error: 'invalid upstream' };
@@ -137,7 +146,7 @@ export async function probeRepo(target, { fetchTimeoutMs = DEFAULT_FETCH_TIMEOUT
 
   // Offline with no previous state: still try local refs for a best-effort answer.
   const offline = fetched.ok ? undefined : true;
-  const counts = await readCounts(base.path, fetchTimeoutMs);
+  const counts = await readCounts(base.path, upstream, fetchTimeoutMs);
   if (!counts) {
     return { ...base, state: 'unknown', offline, error: fetched.error ?? 'cannot compare with upstream' };
   }
