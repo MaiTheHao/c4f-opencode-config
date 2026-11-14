@@ -51,10 +51,10 @@ Every edit runs from a plan, even a one-unit plan for a Trivial change. For Triv
 
 | Name                         | Max Slots | Purpose                                                |
 | ---------------------------- | --------: | ------------------------------------------------------ |
-| `great-builder/sub/analyzer` |         4 | Codebase inspection, evidence gathering                |
+| `great-builder/sub/analyzer` |         3 | Codebase inspection, evidence gathering                |
 | `general`                    |         2 | Technical judgment, architecture trade-offs. No code.  |
-| `great-builder/sub/worker`   |         1 | Executes ONE approved plan. One session per plan.      |
-| `great-builder/sub/reviewer` |         2 | Independent review of a worker result against its plan |
+| `great-builder/sub/worker`   |         3 | Executes ONE approved plan. One session per plan.      |
+| `great-builder/sub/reviewer` |         5 | Independent review of a worker result against its plan |
 
 Max Slots = max live sessions per row. Closed sessions do not count. Over the cap: queue, or resume an idle session of the same plan. Never spawn past it.
 

@@ -69,8 +69,8 @@ If any condition fails, the change needs a plan, whatever path `brainstorming` s
 | ---------------------------- | --------: | ------------------------------------------------------ |
 | `general`                    |         2 | Judgment support. No code.                             |
 | `great-builder/sub/analyzer` |         2 | Codebase and problem analysis                          |
-| `great-builder/sub/worker`   |         1 | Executes ONE approved plan                             |
-| `great-builder/sub/reviewer` |         1 | Independent review of a worker result against its plan |
+| `great-builder/sub/worker`   |         2 | Executes ONE approved plan                             |
+| `great-builder/sub/reviewer` |         3 | Independent review of a worker result against its plan |
 
 Max Slots = max live sessions per row. Closed sessions do not count. Over the cap: queue, or resume an idle session of the same plan. Never spawn past it.
 
