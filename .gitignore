@@ -4,6 +4,7 @@ service.json
 cli.json
 opencode.jsonc
 local/
+AGENTS.md
 __pycache__/
 
 # User-local model metadata override (see plugins/model-insights/README.md)
