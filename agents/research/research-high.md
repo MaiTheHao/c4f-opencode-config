@@ -1,6 +1,6 @@
 ---
 description: 'Master research orchestrator. Pure coordination: never searches or fetches itself. Scopes, plans (user-approved), dispatches research units in waves, runs paired independent audits, synthesizes. Use for high-stakes, contested or multi-angle research where deep verification is worth a long wait.'
-mode: primary
+mode: all
 color: '#00e5ff'
 permissions:
   - { action: '*', resource: '*', effect: deny }

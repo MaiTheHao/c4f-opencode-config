@@ -4,42 +4,36 @@
     {
       "id": "muse-spark-1.3-contributor",
       "costTier": 1,
-      "triggers": [
-        "exploration",
-        "analysis",
-        "bulk-edit",
-        "refactor",
-        "tests",
-        "terminal",
-        "documentation",
-        "review"
-      ]
+      "triggers": ["exploration", "retrieval", "inspection", "implementation", "bulk-edit", "simple-refactor", "routine-bugfix", "tests", "documentation", "build", "deploy"]
     },
     {
       "id": "deepseek-v4.1-flash",
       "costTier": 2,
-      "triggers": [
-        "complex-bug",
-        "root-cause-analysis",
-        "judgment",
-        "architecture",
-        "deep-research",
-        "security",
-        "audit",
-        "static-audit",
-        "security-review",
-        "review"
-      ]
+      "triggers": ["complex-implementation", "architecture-analysis", "complex-bug", "root-cause-analysis", "judgment-support", "deep-research", "problem-solving", "security-analysis"]
     },
     {
       "id": "mimo-v2.6-flash",
       "costTier": 3,
+      "triggers": ["review", "code-review", "audit", "code-audit", "static-audit", "security-review", "security-audit", "dependency-audit"]
+    },
+    {
+      "id": "glm-5.3-flash",
+      "costTier": 4,
       "triggers": [
-        "build",
-        "deploy",
-        "audit",
-        "static-audit",
-        "security-review"
+        "orchestration",
+        "scope-definition",
+        "solution-design",
+        "architecture",
+        "technical-decision",
+        "planning",
+        "task-decomposition",
+        "agent-coordination",
+        "dispatch",
+        "delegation",
+        "workflow-orchestration",
+        "adaptive-planning",
+        "result-synthesis",
+        "reporting"
       ]
     }
   ]

@@ -1,6 +1,6 @@
 ---
 description: 'Delegating research orchestrator. Never searches or fetches itself. Plans, dispatches research units, runs one selective independent audit, synthesizes. Use for ordinary research where speed and reliability both matter.'
-mode: primary
+mode: all
 color: '#4ade5b'
 permissions:
   - { action: '*', resource: '*', effect: deny }
