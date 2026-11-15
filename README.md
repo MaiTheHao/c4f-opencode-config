@@ -25,8 +25,9 @@
 | [Overview](#overview) | [Agents](#agents) |
 | [Quick Start](#quick-start) | [Routing & Skills](#routing--skills) |
 | [External Skills Setup](#external-skills-setup-required) | [Validation](#validation) |
-| [Installation](#installation) | [Tooling & Diagnostics](#tooling--diagnostics) |
-| [Directory Structure](#directory-structure) | [FAQ & Troubleshooting](#faq--troubleshooting) |
+| [Installation](#installation) | [Sync & Update](#sync--update) |
+| [Directory Structure](#directory-structure) | [Tooling & Diagnostics](#tooling--diagnostics) |
+| [FAQ & Troubleshooting](#faq--troubleshooting) | |
 
 ---
 
@@ -46,22 +47,21 @@ This repository ships **two families of agents** plus the skills and tooling tha
 ## Quick Start
 
 > [!TIP]
-> The three commands below are the fastest path to a working global install (Linux / macOS).
+> The two commands below are the fastest path to a working global install (Linux / macOS).
 > Windows equivalents are in [Installation](#installation).
 
 ```bash
-# 1) Required: workflow skills
-mkdir -p ~/.agents
-git clone https://github.com/MaiTheHao/c4f-agent-skills.git ~/.agents/skills
-
-# 2) Config
+# 1) Config
 git clone https://github.com/MaiTheHao/c4f-opencode-config.git ~/.config/opencode
 
-# 3) Dependencies
-cd ~/.config/opencode && npm install
+# 2) Bootstrap: clones c4f-agent-skills, installs deps, seeds opencode.jsonc, verifies
+python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install
 ```
 
-Then validate the agent files before you ship anything:
+`install` is idempotent — the same command is the first-run bootstrap and the everyday
+[sync](#sync--update), so it is safe to re-run at any time.
+
+Re-run validation manually at any time:
 
 ```bash
 python3 skills/oc-agent-config/scripts/validate_agent.py \
@@ -92,7 +92,7 @@ git clone https://github.com/MaiTheHao/c4f-agent-skills.git ~/.agents/skills
 **Update:**
 
 ```bash
-git -C ~/.agents/skills pull
+python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install --only skills
 ```
 
 </details>
@@ -109,7 +109,7 @@ git clone https://github.com/MaiTheHao/c4f-agent-skills.git "$HOME\.agents\skill
 **Update:**
 
 ```powershell
-git -C "$HOME\.agents\skills" pull
+python3 "$HOME\.config\opencode\skills\c4f-update\scripts\c4f_update.py" install --only skills
 ```
 
 </details>
@@ -152,9 +152,8 @@ Clone this repository into your **global OpenCode configuration directory**:
 # Clone opencode config
 git clone https://github.com/MaiTheHao/c4f-opencode-config.git ~/.config/opencode
 
-# Install dependencies
-cd ~/.config/opencode
-npm install
+# Bootstrap or update: deps, skills repo, opencode.jsonc, verification
+python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install
 ```
 
 </details>
@@ -166,9 +165,8 @@ npm install
 # Clone opencode config
 git clone https://github.com/MaiTheHao/c4f-opencode-config.git "$HOME\.config\opencode"
 
-# Install dependencies
-cd "$HOME\.config\opencode"
-npm install
+# Bootstrap or update: deps, skills repo, opencode.jsonc, verification
+python3 "$HOME\.config\opencode\skills\c4f-update\scripts\c4f_update.py" install
 ```
 
 </details>
@@ -180,6 +178,51 @@ npm install
 
 > [!WARNING]
 > `opencode.jsonc` is gitignored and holds machine-local configuration; it is never pushed. Keep a local backup.
+
+---
+
+## Sync & Update
+
+Both C4F repos are synced by **one idempotent script**, not by hand-written `git pull`
+sequences — a bare `git pull` skips dependency installs, the skills repo, `opencode.jsonc`
+seeding, and post-update validation.
+
+| Command | What it does |
+|---|---|
+| `status` | Read-only preflight + divergence verdict (`--json`, `--no-fetch`) |
+| `install` | Clone what is missing, fast-forward what is behind, install deps, seed `opencode.jsonc`, verify |
+| `verify` | Validate agents and classify failures as `local` / `introduced` / `upstream` |
+
+```bash
+# Am I behind? (read-only, changes nothing)
+python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py status
+
+# Bootstrap or update both repos
+python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install
+
+# One repo only
+python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install --only main
+python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install --only skills
+
+# Validation gate on its own
+python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py verify
+```
+
+| Exit | Meaning | Next move |
+|:---:|---|---|
+| `0` | Done / already up to date | Nothing to pull (review warnings) |
+| `10` | Update available (`status` only) | Run `install` |
+| `11` | Human decision required | Manual flow in [`references/manual-update.md`](skills/c4f-update/references/manual-update.md) |
+| `20` | Fatal precondition | Fix the clone: wrong origin/branch, detached HEAD, merge/rebase in progress |
+
+> [!IMPORTANT]
+> The script only fast-forwards. Dirty trees, local commits, diverged branches and untracked
+> clashes stop it by design — it never runs `reset --hard`, `checkout -- .`, `clean`, or a blind
+> stash. It also never stages, commits or pushes, and never rewrites an existing `opencode.jsonc`,
+> `cli.json`, `service.json`, `local/` or `node_modules`.
+
+Windows: run the same commands in PowerShell with the script path
+`"$HOME\.config\opencode\skills\c4f-update\scripts\c4f_update.py"`. There is no separate wrapper.
 
 ---
 
@@ -300,7 +343,7 @@ dir "%USERPROFILE%\.agents\skills"     # Windows
 ```
 
 For per-project installs, skills may also live in `.opencode/skills/`.
-Update an existing clone with `git -C ~/.agents/skills pull`.
+Update an existing clone with `python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install --only skills`.
 
 </details>
 
