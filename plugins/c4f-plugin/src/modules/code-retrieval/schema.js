@@ -1,7 +1,13 @@
 export const TOOL_NAME = 'code_retrieval';
 
 export const DESCRIPTION = [
-  'Search this repository\'s code, config and docs by symbol or keyword.'
+  "Semantic search over this repository's code, config and docs by symbol or technical keyword.",
+  'Use this BEFORE any grep/read/shell exploration when: the question asks HOW/WHY/WHERE something works;',
+  'it describes a behavior without naming the implementation; it spans multiple components; or it touches',
+  'config, migrations or infrastructure files — even if it sounds operational. Also retrieve first for',
+  'anything involving schema, permissions, scheduling, tokens or providers.',
+  'Rewrite a business-level question into technical terms before querying, and start with top_k: 8.',
+  'Skip only for trivial edits to files you already know or questions outside this repository.',
 ].join(' ');
 
 export const INPUT_SCHEMA = Object.freeze({
