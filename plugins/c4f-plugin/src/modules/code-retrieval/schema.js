@@ -1,13 +1,15 @@
 export const TOOL_NAME = 'code_retrieval';
 
+// NOTE: tool catalogs truncate descriptions (~140 chars visible). The first
+// sentence(s) below MUST carry the retrieval trigger rule so the rule survives
+// truncation; the rest reinforces. Agents can read the full text via
+// search({ query: "code_retrieval" }).
 export const DESCRIPTION = [
-  "Semantic search over this repository's code, config and docs by symbol or technical keyword.",
-  'Use this BEFORE any grep/read/shell exploration when: the question asks HOW/WHY/WHERE something works;',
-  'it describes a behavior without naming the implementation; it spans multiple components; or it touches',
-  'config, migrations or infrastructure files — even if it sounds operational. Also retrieve first for',
-  'anything involving schema, permissions, scheduling, tokens or providers.',
-  'Rewrite a business-level question into technical terms before querying, and start with top_k: 8.',
-  'Skip only for trivial edits to files you already know or questions outside this repository.',
+  'Semantic code+config+docs search. Use BEFORE grep/read/shell for HOW/WHY/WHERE,',
+  'unnamed behaviors, multi-component flows, config/migration/infra topics,',
+  'and anything touching schema, permissions, scheduling, tokens or providers.',
+  'Rewrite business questions into technical terms, start with top_k: 8.',
+  'Skip only trivial edits to files you already know or non-repo questions.'
 ].join(' ');
 
 export const INPUT_SCHEMA = Object.freeze({
