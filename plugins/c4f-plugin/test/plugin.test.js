@@ -14,22 +14,8 @@ const behind = stateFileFor([
   { name: 'c4f-agent-skills', label: '~/.agents/skills', branch: 'master', state: 'up-to-date', ahead: 0, behind: 0 },
 ]);
 
-function mockCtx() {
-  const hooks = {};
-  const synthetic = [];
-  const ctx = {
-    env: {},
-    session: {
-      hook: async (name, callback) => {
-        hooks[name] = callback;
-        return { dispose() {} };
-      },
-      synthetic: async (input) => {
-        synthetic.push(input);
-      },
-    },
-  };
-  return { ctx, hooks, synthetic };
+function mockCtx(env = {}) {
+  return { env };
 }
 
 async function setup(t, { repos = behind.repos, options = {} } = {}) {
@@ -37,10 +23,9 @@ async function setup(t, { repos = behind.repos, options = {} } = {}) {
   t.after(() => rm(dir, { recursive: true, force: true }));
   const stateFile = join(dir, 'state.json');
   await writeFile(stateFile, JSON.stringify(stateFileFor(repos)));
-  const { ctx, hooks, synthetic } = mockCtx();
-  const check = await run(ctx, { stateFile, ttlMs: 60_000, ...options });
+  const check = await run(mockCtx(), { stateFile, ttlMs: 60_000, ...options });
   t.after(() => check.dispose());
-  return { hooks, synthetic, check };
+  return { check, stateFile };
 }
 
 async function waitFor(predicate, timeoutMs = 1_000) {
@@ -52,33 +37,13 @@ async function waitFor(predicate, timeoutMs = 1_000) {
   throw new Error('timed out waiting for condition');
 }
 
-test('injects one WARN part per request while behind', async (t) => {
-  const { hooks } = await setup(t);
-  const request = { system: [] };
-  hooks.context(request);
-  assert.equal(request.system.length, 1);
-
-  hooks.context(request);
-  assert.equal(request.system.length, 1, 'the marker prevents duplicate injection');
-});
-
-test('stays silent when the cached state is current', async (t) => {
-  const { hooks } = await setup(t, {
-    repos: [{ name: 'a', label: '~/a', branch: 'master', state: 'up-to-date', ahead: 0, behind: 0 }],
-  });
-  const request = { system: [] };
-  hooks.context(request);
-  assert.equal(request.system.length, 0);
-});
-
-test('banner is posted once per session', async (t) => {
-  const { hooks, synthetic } = await setup(t);
-  await hooks.prompt({ sessionID: 's1' });
-  await hooks.prompt({ sessionID: 's1' });
-  assert.equal(synthetic.length, 1);
-
-  await hooks.prompt({ sessionID: 's2' });
-  assert.equal(synthetic.length, 2);
+test('exposes the cached state without touching the model', async (t) => {
+  const { check } = await setup(t);
+  const state = check.state();
+  assert.equal(state.repos[0].name, 'c4f-opencode-config');
+  assert.equal(state.repos[0].state, 'behind');
+  // The module returns no hook registrations; its only output is the state file.
+  assert.deepEqual(Object.keys(check).sort(), ['dispose', 'options', 'refresh', 'state']);
 });
 
 test('returns stale cache immediately and refreshes the configured repos', async (t) => {
@@ -91,8 +56,7 @@ test('returns stale cache immediately and refreshes the configured repos', async
     repos: [{ name: 'stale', state: 'up-to-date' }],
   }));
 
-  const { ctx } = mockCtx();
-  const check = await run(ctx, {
+  const check = await run(mockCtx(), {
     stateFile,
     ttlMs: 60_000,
     repos: [{ name: 'custom', role: 'main', path: join(dir, 'missing'), branch: 'master' }],
@@ -119,8 +83,7 @@ test('schedules from cache age and stops after dispose', async (t) => {
     repos: [{ name: 'stale', state: 'up-to-date' }],
   }));
 
-  const { ctx } = mockCtx();
-  const check = await run(ctx, {
+  const check = await run(mockCtx(), {
     stateFile,
     ttlMs,
     repos: [{ name: 'custom', role: 'main', path: join(dir, 'missing'), branch: 'master' }],
@@ -139,22 +102,19 @@ test('schedules from cache age and stops after dispose', async (t) => {
   assert.equal(JSON.parse(await readFile(stateFile, 'utf8')).checkedAt, written);
 });
 
-test('disabled by env or option registers nothing', async (t) => {
+test('disabled by env or option writes nothing', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'c4f-check-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
-  const { ctx, hooks } = mockCtx();
-  const check = await run(ctx, {
-    enabled: false,
-    stateFile: join(dir, 'state.json'),
-  });
-  t.after(() => check.dispose());
-  assert.deepEqual(Object.keys(hooks), []);
+  const stateFile = join(dir, 'state.json');
 
-  const second = mockCtx();
-  second.ctx.env = { C4F_UPDATE_CHECK: '0' };
-  const fromEnv = await run(second.ctx, {
-    stateFile: join(dir, 'state.json'),
-  });
+  const check = await run(mockCtx(), { enabled: false, stateFile });
+  t.after(() => check.dispose());
+  assert.equal(check.state(), undefined);
+  await check.refresh();
+  await assert.rejects(readFile(stateFile, 'utf8'));
+
+  const fromEnv = await run(mockCtx({ C4F_UPDATE_CHECK: '0' }), { stateFile });
   t.after(() => fromEnv.dispose());
-  assert.deepEqual(Object.keys(second.hooks), []);
+  assert.equal(fromEnv.state(), undefined);
+  await assert.rejects(readFile(stateFile, 'utf8'));
 });

@@ -1,4 +1,5 @@
 import * as checkForUpdate from './check-for-update/index.js';
+import * as codeRetrieval from './code-retrieval/index.js';
 
 /**
  * Ordered module registry. Each value is a module namespace that exposes
@@ -6,5 +7,6 @@ import * as checkForUpdate from './check-for-update/index.js';
  * execution order and the option namespace under `ctx.options`.
  */
 export const registry = {
+  codeRetrieval,
   updateCheck: checkForUpdate,
 };

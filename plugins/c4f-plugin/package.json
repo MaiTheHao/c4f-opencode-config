@@ -1,14 +1,16 @@
 {
-  "name": "c4f-status",
+  "name": "c4f-plugin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "C4F status plugin: startup checks for the C4F configuration repositories, and the home for future status features.",
+  "description": "C4F plugin: repository update checks and the native code_retrieval (Tree-sitter + BM25) tool.",
   "exports": {
-    ".": "./index.js"
+    ".": "./index.js",
+    "./tui": "./tui.js"
   },
   "files": [
     "index.js",
+    "tui.js",
     "src",
     "README.md"
   ],

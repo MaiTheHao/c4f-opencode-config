@@ -205,13 +205,11 @@ npm install
 │   ├── oc-agent-config/     # Agent authoring spec, validator, and references
 │   ├── c4f-update/          # Bootstrap, update, deps/config seeding, post-update verify
 │   ├── oc-research-tiering/ # T1/T2/T3 evidence rubric + ResearchReport schema
-│   ├── oc-retrieval/        # Retrieval skill (`c4f-retrieval` namespace tools)
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
 ├── plugins/                 # Native plugins (loaded by OpenCode)
 │   ├── model-insights/      # Live availability, pricing, variants, task triggers (read-only)
-│   ├── c4f-status/          # Startup update check for the two C4F repos
-│   └── c4f-retrieval/       # Verified-context retrieval plugin
-├── AGENTS.md                # Repo-level agent instructions (currently empty)
+│   └── c4f-plugin/          # Repo update check + native code_retrieval tool
+├── AGENTS.md                # Global working agreement (retrieval, evidence, change, safety rules)
 ├── package.json             # Dependencies (@opencode/plugin, effect, typescript)
 └── opencode.jsonc           # Local OpenCode config (gitignored)
 ```
@@ -240,7 +238,6 @@ Installed agent IDs are **namespaced by directory** — e.g. `great-builder/buil
 |---|---|---|
 | Routing skill | `skills/oc-routing/` | Single routing skill for **dev + research** lanes; session reuse |
 | Tier rubric | `skills/oc-research-tiering/` | T1/T2/T3 evidence rubric + `ResearchReport` schema |
-| Retrieval | `skills/oc-retrieval/` | `c4f-retrieval` namespace tooling |
 | Authoring spec | `skills/oc-agent-config/` | V2 spec, validator, references |
 | Repo update | `skills/c4f-update/` | `status` / `install` / `verify` for both C4F repos |
 
@@ -281,7 +278,7 @@ Add `--json` for machine-readable output.
 | Surface | Purpose |
 |---|---|
 | `model_insights` tool (`list`, `inspect`, `pricing`, `variants`) | Live models: provider, cost class, cost tier, triggers, variants |
-| `c4f-retrieval` tools (`context_lookup`, `context_upsert`, `context_invalidate`, `code_outline`) | Verified repository context |
+| `code_retrieval` tool (`search`, `index`) | Tree-sitter AST + BM25 code search; initialized per repo by `action=index` |
 | `python3 skills/oc-agent-config/scripts/validate_agent.py <files>` | Validate agent files |
 
 `model-insights` is read-only: it never filters, blocks, enables, or disables models.

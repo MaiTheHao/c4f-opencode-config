@@ -22,7 +22,7 @@ permissions:
   - { action: shell, resource: 'git clean*', effect: deny }
   - { action: shell, resource: 'rm -rf*', effect: deny }
   - { action: execute, resource: '*', effect: allow }
-  - { action: 'c4f-retrieval_*', resource: '*', effect: allow }
+  - { action: code_retrieval, resource: '*', effect: allow }
 ---
 
 ## Context
