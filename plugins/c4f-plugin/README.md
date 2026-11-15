@@ -48,8 +48,8 @@ session to another workspace therefore searches that workspace immediately — t
 only a fallback for runtimes without session lookup.
 
 The startup warm-up is the exception: it warms the location known at setup. After a workspace switch
-the first search refreshes the new workspace itself (`--sync`, ~0.26 s per 900 files), so results are
-still correct; only the pre-warm is skipped.
+the first search refreshes the new workspace itself (`--sync`), so results are still current; only the
+pre-warm is skipped.
 
 ### Opt-in flag: the database file
 
@@ -58,10 +58,23 @@ The tool does not maintain its own sync flag. The **index database is the flag**
 - `<root>/local/agents/retrieval/code_bm25.db` missing → `search` returns `NOT_INITIALIZED` and no
   Python process is spawned. A session that never touches code never pays for a repository scan.
 - Database present (created by an explicit `action=index`) → `search` refreshes it incrementally
-  first, so results are never stale.
+  first.
 - `C4F_RETRIEVAL_DB` / `codeRetrieval.db` relocate the database if needed.
 
 `local/` is gitignored in the target repos, so initialization is per checkout and per worktree.
+
+### Incremental vocabulary rebuilds
+
+The postings and BM25 vocabulary share one transaction. The vocabulary is rebuilt when indexing
+changes postings or when its saved state is missing/unknown. An unchanged sync reuses the existing
+vocabulary. To repair a hand-edited database, run
+`python3 src/modules/code-retrieval/scripts/index.py index --root <root> --rebuild`.
+The index remains under the gitignored `local/agents/retrieval/` directory.
+
+On an unchanged synthetic tree of 3,000 files (13.6 MB), a no-op sync measured 0.18–0.24 s end to
+end across repeated runs (interpreter startup and imports included) and 0.11 s for the scan itself.
+A ~90-file repository resyncs in ~0.09 s end to end. A no-op sync neither rewrites postings nor
+rebuilds the vocabulary, and it never imports the Tree-sitter grammars.
 
 ### Startup warm-up
 
@@ -81,8 +94,10 @@ without a database. `C4F_RETRIEVAL_AUTOSYNC=0` disables it, `C4F_RETRIEVAL_TOOL=
 | `db` | `<root>/local/agents/retrieval/code_bm25.db` | Explicit database file |
 | `codemode` | `true` | Code Mode tool; `false` exposes a first-class tool |
 
-Failures are returned as tool content, never thrown: missing interpreter, timeout, non-zero exit,
-invalid JSON and missing `tree-sitter` modules each carry the command that fixes them.
+Failures are returned as tool content, never thrown: a search sync timeout retries against the
+existing index and labels the hits `index not refreshed: sync timed out`. Other timeout and failure
+cases keep the error output; missing interpreter, non-zero exit, invalid JSON and missing `tree-sitter`
+modules carry the command that fixes them.
 
 ## Module: check-for-update
 

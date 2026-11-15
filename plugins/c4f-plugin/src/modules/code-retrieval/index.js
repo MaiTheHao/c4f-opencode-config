@@ -139,14 +139,50 @@ export async function registerCodeRetrievalTool({ ctx, options, runner }) {
 
           const scriptsDir = await resolveScriptsDir(options);
           const sync = args.action === 'index' ? false : (args.sync ?? initialized);
+          const script = `${scriptsDir}/index.py`;
           const result = await runPython({
-            args: [`${scriptsDir}/index.py`, ...buildArgs({ options, args, root, sync })],
+            args: [script, ...buildArgs({ options, args, root, sync })],
             cwd: root,
             timeoutMs: options.timeoutMs,
             signal: context?.signal,
           });
 
-          if (!result.ok) return { content: failureContent({ result, options }) };
+          if (!result.ok) {
+            if (args.action === 'search' && sync && result.timedOut) {
+              let retry;
+              try {
+                retry = await runPython({
+                  args: [script, ...buildArgs({ options, args, root, sync: false })],
+                  cwd: root,
+                  timeoutMs: options.timeoutMs,
+                  signal: context?.signal,
+                });
+              } catch {
+                return { content: failureContent({ result, options }) };
+              }
+              if (retry.ok) {
+                let payload;
+                try {
+                  payload = parseStdout(retry);
+                } catch {
+                  return { content: failureContent({ result, options }) };
+                }
+                return {
+                  content: renderSearch(payload, { degraded: 'sync-timeout' }),
+                  metadata: {
+                    action: 'search',
+                    root,
+                    db: payload?.db ?? dbPath,
+                    hits: Array.isArray(payload?.hits) ? payload.hits.length : 0,
+                    initialized: true,
+                    synced: false,
+                    degraded: 'sync-timeout',
+                  },
+                };
+              }
+            }
+            return { content: failureContent({ result, options }) };
+          }
 
           const payload = parseStdout(result);
           if (args.action === 'index') {
@@ -166,6 +202,7 @@ export async function registerCodeRetrievalTool({ ctx, options, runner }) {
               db: payload?.db ?? dbPath,
               hits: Array.isArray(payload?.hits) ? payload.hits.length : 0,
               initialized: true,
+              synced: true,
             },
           };
         } catch (error) {

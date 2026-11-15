@@ -95,6 +95,7 @@ test('search on an initialized repo syncs and renders a hit table', async (t) =>
   assert.match(out.content, /`validateToken`/);
   assert.equal(out.metadata.hits, 2);
   assert.equal(out.metadata.initialized, true);
+  assert.equal(out.metadata.synced, true);
 });
 
 test('search without a database reports NOT_INITIALIZED and never spawns python', async (t) => {
@@ -238,6 +239,65 @@ test('a timeout is reported with the configured budget', async (t) => {
     options: { timeoutMs: 1234 },
   });
   assert.match(out.content, /timed out after 1234 ms/);
+});
+
+test('falls back to an unsynced search on a sync timeout', async (t) => {
+  let attempts = 0;
+  const { out, calls, registration, dir } = await execute(t, {
+    input: { query: 'jwt' },
+    result: () => {
+      attempts += 1;
+      return attempts === 1
+        ? { ok: false, code: null, stdout: '', stderr: '', timedOut: true }
+        : { ok: true, code: 0, stdout: JSON.stringify(HITS_PAYLOAD), stderr: '' };
+    },
+  });
+
+  assert.equal(calls.length, 2);
+  assert.ok(calls[0].args.includes('--sync'));
+  assert.ok(!calls[1].args.includes('--sync'));
+  assert.match(out.content, /index not refreshed: sync timed out/);
+  assert.equal(out.metadata.synced, false);
+  assert.equal(out.metadata.degraded, 'sync-timeout');
+  assert.equal(registration.lastSyncedAt.has(dir), false);
+});
+
+test('no fallback when sync is false', async (t) => {
+  const { out, calls } = await execute(t, {
+    input: { query: 'jwt', sync: false },
+    result: { ok: false, code: null, stdout: '', stderr: '', timedOut: true },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.match(out.content, /^\*\*ERROR\*\*/);
+});
+
+test('no fallback for action=index', async (t) => {
+  const { out, calls } = await execute(t, {
+    input: { action: 'index' },
+    result: { ok: false, code: null, stdout: '', stderr: '', timedOut: true },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.match(out.content, /^\*\*ERROR\*\*/);
+});
+
+test('reports the original failure when the retry also fails', async (t) => {
+  let attempts = 0;
+  const { out, calls } = await execute(t, {
+    input: { query: 'jwt' },
+    options: { timeoutMs: 1234 },
+    result: () => {
+      attempts += 1;
+      return attempts === 1
+        ? { ok: false, code: null, stdout: '', stderr: '', timedOut: true }
+        : { ok: false, code: 1, stdout: '', stderr: 'retry failed' };
+    },
+  });
+
+  assert.equal(calls.length, 2);
+  assert.match(out.content, /timed out after 1234 ms/);
+  assert.doesNotMatch(out.content, /retry failed/);
 });
 
 test('a failing indexer surfaces stderr and the dependency hint', async (t) => {

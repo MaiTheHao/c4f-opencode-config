@@ -15,11 +15,12 @@ function syncSummary(stats) {
   return `index: ${stats.indexed} updated, ${stats.skipped} unchanged, ${stats.removed} removed`;
 }
 
-export function renderSearch(payload) {
+export function renderSearch(payload, options = {}) {
   const hits = Array.isArray(payload?.hits) ? payload.hits : [];
   const root = payload?.root ?? '';
+  const degradedNote = options.degraded ? ' — index not refreshed: sync timed out' : '';
   const lines = [
-    `**${hits.length} hit(s)** for \`${oneLine(payload?.query)}\` in \`${root}\` — ${syncSummary(payload?.index)}`,
+    `**${hits.length} hit(s)** for \`${oneLine(payload?.query)}\` in \`${root}\` — ${syncSummary(payload?.index)}${degradedNote}`,
   ];
 
   if (hits.length === 0) {

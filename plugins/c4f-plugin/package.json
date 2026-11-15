@@ -21,7 +21,7 @@
     "@opencode/plugin": "latest"
   },
   "scripts": {
-    "test": "node --test",
-    "check": "node --check index.js && node --test"
+    "test": "node --test && python3 -m unittest discover -s test -p \"test_*.py\"",
+    "check": "node --check index.js && node --test && python3 -m unittest discover -s test -p \"test_*.py\""
   }
 }

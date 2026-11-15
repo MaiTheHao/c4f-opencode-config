@@ -3,28 +3,34 @@ import json
 import os
 import sys
 from dataclasses import asdict
+from importlib import import_module
 from pathlib import Path
 
 try:  # import khi dùng như package: python3 -c "from scripts.index import ..."
     from .config import IGNORE_DIRS, TARGET_EXTENSIONS, resolve_db_path, resolve_project_root
     from .models import SearchHit
-    from .parser import TreeSitterCodeParser
     from .searcher import BM25Retriever
     from .storage import SQLiteBM25Store
 except ImportError:  # chạy trực tiếp: python3 index.py
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from config import IGNORE_DIRS, TARGET_EXTENSIONS, resolve_db_path, resolve_project_root
     from models import SearchHit
-    from parser import TreeSitterCodeParser
     from searcher import BM25Retriever
     from storage import SQLiteBM25Store
 
 __all__ = ["index_codebase", "search_code", "main", "SearchHit"]
 
 
+def _load_parser():
+    """Nạp parser Tree-sitter theo nhu cầu: một lượt sync không đổi file thì không cần grammar."""
+    module = f"{__package__}.parser" if __package__ else "parser"
+    return import_module(module).TreeSitterCodeParser
+
+
 def index_codebase(
     root_dir: str | Path = ".",
     db_path: str | Path | None = None,
+    force_rebuild: bool = False,
 ) -> dict[str, object]:
     """
     Quét toàn bộ mã nguồn và tài liệu/cấu hình dưới `root_dir`
@@ -35,37 +41,56 @@ def index_codebase(
     """
     root = resolve_project_root(root_dir)
     db = resolve_db_path(root, db_path)
+    root_prefix = str(root) + os.sep
 
     store = SQLiteBM25Store(db)
-    parser = TreeSitterCodeParser()
+    parser = None
+    known_hashes = store.file_hashes()
 
-    stats: dict[str, object] = {"indexed": 0, "skipped": 0, "removed": 0, "db": str(db)}
+    stats: dict[str, object] = {"indexed": 0, "skipped": 0, "removed": 0, "db": str(db), "rebuilt": False}
     active_paths: set[str] = set()
 
-    try:
-        for current_root, dirs, files in os.walk(root):
-            dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
+    def scan(current_root: str) -> None:
+        nonlocal parser
+        with os.scandir(current_root) as entries:
+            for entry in entries:
+                if entry.is_dir(follow_symlinks=False):
+                    if entry.name not in IGNORE_DIRS:
+                        scan(entry.path)
+                    continue
+                if not entry.is_file():
+                    continue
 
-            for filename in files:
-                file_path = Path(current_root) / filename
-                ext = file_path.suffix.lower()
+                file_path = entry.path
+                ext = os.path.splitext(entry.name)[1].lower()
                 if ext not in TARGET_EXTENSIONS:
                     continue
 
-                rel_path = str(file_path.relative_to(root))
+                # entry.path luôn nằm dưới root_prefix, nên cắt tiền tố rẻ hơn os.path.relpath.
+                rel_path = (
+                    file_path[len(root_prefix):]
+                    if file_path.startswith(root_prefix)
+                    else os.path.relpath(file_path, root)
+                ).replace(os.sep, "/")
                 active_paths.add(rel_path)
                 file_hash = store.compute_hash(file_path)
 
-                if store.is_file_unchanged(rel_path, file_hash):
+                if known_hashes.get(rel_path) == file_hash:
                     stats["skipped"] += 1
                     continue
 
-                chunks = parser.parse_file(file_path)
+                if parser is None:
+                    parser = _load_parser()()
+                chunks = parser.parse_file(Path(file_path))
                 store.upsert_file_chunks(rel_path, ext.lstrip("."), file_hash, chunks)
                 stats["indexed"] += 1
 
+    try:
+        scan(str(root))
+
         stats["removed"] = store.remove_deleted_files(active_paths)
-        store.rebuild_bm25_stats()
+        if force_rebuild or stats["indexed"] or stats["removed"] or store.vocab_state() != "valid":
+            stats["rebuilt"] = store.rebuild_bm25_stats(force=force_rebuild)
     finally:
         store.close()
 
@@ -106,6 +131,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     index_parser = subparsers.add_parser("index", help="Đồng bộ chỉ mục (mặc định)")
     add_common(index_parser)
+    index_parser.add_argument("--rebuild", action="store_true", help="Buộc xây dựng lại thống kê BM25")
 
     search_parser = subparsers.add_parser("search", help="Tìm kiếm theo BM25")
     search_parser.add_argument("query", help="Từ khóa hoặc tên symbol cần tìm")
@@ -159,7 +185,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         return 0
 
-    stats = index_codebase(root_dir=args.root, db_path=args.db)
+    stats = index_codebase(root_dir=args.root, db_path=args.db, force_rebuild=args.rebuild)
     if args.json:
         print(json.dumps(stats, ensure_ascii=False))
         return 0

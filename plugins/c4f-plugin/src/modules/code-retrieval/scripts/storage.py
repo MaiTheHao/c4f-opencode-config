@@ -21,6 +21,7 @@ class SQLiteBM25Store:
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(str(self.db_path))
+        self.conn.execute("PRAGMA busy_timeout = 5000;")
         self.conn.execute("PRAGMA foreign_keys = ON;")
         self.conn.execute("PRAGMA journal_mode = WAL;")
         self.conn.execute("PRAGMA synchronous = NORMAL;")
@@ -67,14 +68,24 @@ class SQLiteBM25Store:
                 value TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS sync_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_postings_term ON bm25_postings(term);
             CREATE INDEX IF NOT EXISTS idx_chunks_file_id ON chunks(file_id);
         """)
         self.conn.commit()
 
     @staticmethod
-    def compute_hash(file_path: Path) -> str:
-        return hashlib.sha256(file_path.read_bytes()).hexdigest()
+    def compute_hash(file_path: str | Path) -> str:
+        with open(file_path, "rb") as handle:
+            return hashlib.sha256(handle.read()).hexdigest()
+
+    def file_hashes(self) -> dict[str, str]:
+        """Ảnh chụp {file_path: file_hash} để so sánh hàng loạt khi quét."""
+        return dict(self.conn.execute("SELECT file_path, file_hash FROM files").fetchall())
 
     def is_file_unchanged(self, rel_path: str, file_hash: str) -> bool:
         row = self.conn.execute(
@@ -84,6 +95,7 @@ class SQLiteBM25Store:
         return bool(row and row[0] == file_hash)
 
     def upsert_file_chunks(self, rel_path: str, language: str, file_hash: str, chunks: list[CodeChunk]) -> None:
+        self.mark_vocab_dirty()
         cur = self.conn.cursor()
         cur.execute("DELETE FROM files WHERE file_path = ?", (rel_path,))
         cur.execute(
@@ -117,10 +129,28 @@ class SQLiteBM25Store:
         existing_rows = self.conn.execute("SELECT file_path FROM files").fetchall()
         stale_paths = [r[0] for r in existing_rows if r[0] not in active_rel_paths]
         if stale_paths:
+            self.mark_vocab_dirty()
             self.conn.executemany("DELETE FROM files WHERE file_path = ?", [(p,) for p in stale_paths])
         return len(stale_paths)
 
-    def rebuild_bm25_stats(self) -> None:
+    def vocab_state(self) -> str:
+        row = self.conn.execute("SELECT value FROM sync_meta WHERE key = 'vocab_state'").fetchone()
+        if row is None:
+            return "unknown"
+        return row[0] if row[0] in {"valid", "dirty"} else "unknown"
+
+    def mark_vocab_dirty(self) -> None:
+        self.conn.execute(
+            """
+            INSERT INTO sync_meta (key, value) VALUES ('vocab_state', 'dirty')
+            ON CONFLICT(key) DO UPDATE SET value = 'dirty'
+            """
+        )
+
+    def rebuild_bm25_stats(self, force: bool = False) -> bool:
+        if not force and self.vocab_state() == "valid":
+            return False
+
         cur = self.conn.cursor()
         total_docs, avgdl = cur.execute("SELECT COUNT(*), COALESCE(AVG(doc_length), 0) FROM chunks").fetchone()
         total_docs = int(total_docs)
@@ -143,7 +173,14 @@ class SQLiteBM25Store:
             ]
             cur.executemany("INSERT INTO bm25_vocab (term, df, idf) VALUES (?, ?, ?)", vocab_data)
 
+        cur.execute(
+            """
+            INSERT INTO sync_meta (key, value) VALUES ('vocab_state', 'valid')
+            ON CONFLICT(key) DO UPDATE SET value = 'valid'
+            """
+        )
         self.conn.commit()
+        return True
 
     def close(self) -> None:
         self.conn.close()
