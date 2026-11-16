@@ -13,6 +13,7 @@ permissions:
   - { action: edit, resource: 'AGENTS.md', effect: deny }
   - { action: write, resource: 'AGENTS.md', effect: deny }
   - { action: execute, resource: '*', effect: allow }
+  - { action: skill, resource: '*', effect: ask }
   # Observed 2026-11-12: in headless subagents `ask` executed with no prompt. Treat it as allow; the deny rules below are the guard.
   - { action: shell, resource: '*', effect: ask }
   - { action: shell, resource: 'git status*', effect: allow }
