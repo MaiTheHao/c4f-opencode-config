@@ -127,6 +127,10 @@ Because the block is appended to the user's message, the user sees it in the tra
 `git pull`, edits files or bypasses approval. After the user agrees, the agent loads the `c4f-update`
 skill and runs `scripts/c4f_update.py install`.
 
+There is no slash command: the user triggers an update by asking the agent in plain language (for
+example "update my C4F config"). Child sessions are sessions too, so a subagent can receive one block;
+the text tells the model not to act on its own.
+
 | Option (`ctx.options.updateCheck`) | Default | Meaning |
 | --- | --- | --- |
 | `enabled` | `true` | Disable the whole check |
