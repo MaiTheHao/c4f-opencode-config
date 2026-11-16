@@ -5,12 +5,10 @@
   "type": "module",
   "description": "C4F plugin: repository update checks and the native code_retrieval (Tree-sitter + BM25) tool.",
   "exports": {
-    ".": "./index.js",
-    "./tui": "./tui.js"
+    ".": "./index.js"
   },
   "files": [
     "index.js",
-    "tui.js",
     "src",
     "README.md"
   ],

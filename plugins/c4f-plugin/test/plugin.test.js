@@ -15,7 +15,26 @@ const behind = stateFileFor([
 ]);
 
 function mockCtx(env = {}) {
-  return { env };
+  const hooks = {};
+  const disposed = [];
+  return {
+    ctx: {
+      env,
+      session: {
+        hook: async (name, callback) => {
+          hooks[name] = callback;
+          return {
+            dispose: async () => {
+              delete hooks[name];
+              disposed.push(name);
+            },
+          };
+        },
+      },
+    },
+    hooks,
+    disposed,
+  };
 }
 
 async function setup(t, { repos = behind.repos, options = {} } = {}) {
@@ -23,9 +42,10 @@ async function setup(t, { repos = behind.repos, options = {} } = {}) {
   t.after(() => rm(dir, { recursive: true, force: true }));
   const stateFile = join(dir, 'state.json');
   await writeFile(stateFile, JSON.stringify(stateFileFor(repos)));
-  const check = await run(mockCtx(), { stateFile, ttlMs: 60_000, ...options });
+  const { ctx, hooks, disposed } = mockCtx();
+  const check = await run(ctx, { stateFile, ttlMs: 60_000, ...options });
   t.after(() => check.dispose());
-  return { check, stateFile };
+  return { ctx, hooks, disposed, check, stateFile };
 }
 
 async function waitFor(predicate, timeoutMs = 1_000) {
@@ -37,13 +57,56 @@ async function waitFor(predicate, timeoutMs = 1_000) {
   throw new Error('timed out waiting for condition');
 }
 
-test('exposes the cached state without touching the model', async (t) => {
-  const { check } = await setup(t);
+test('exposes the cached state and registers the prompt hook', async (t) => {
+  const { check, hooks } = await setup(t);
   const state = check.state();
   assert.equal(state.repos[0].name, 'c4f-opencode-config');
   assert.equal(state.repos[0].state, 'behind');
-  // The module returns no hook registrations; its only output is the state file.
   assert.deepEqual(Object.keys(check).sort(), ['dispose', 'options', 'refresh', 'state']);
+  assert.equal(typeof hooks.prompt, 'function');
+  assert.equal(hooks.context, undefined, 'the system prompt is never rewritten');
+});
+
+test('appends the advisory to the first prompt of a session only', async (t) => {
+  const { hooks } = await setup(t);
+
+  const first = { sessionID: 's1', prompt: { text: 'hello' } };
+  await hooks.prompt(first);
+  assert.match(first.prompt.text, /^hello\n\n<c4f-update-check>/);
+  assert.match(first.prompt.text, /~\/\.config\/opencode: 3 commit\(s\) behind origin\/master/);
+  assert.doesNotMatch(first.prompt.text, /~\/\.agents\/skills/, 'current repos are not listed');
+
+  const second = { sessionID: 's1', prompt: { text: 'again' } };
+  await hooks.prompt(second);
+  assert.equal(second.prompt.text, 'again', 'one advisory per session');
+
+  const other = { sessionID: 's2', prompt: { text: 'hi' } };
+  await hooks.prompt(other);
+  assert.match(other.prompt.text, /<c4f-update-check>/);
+});
+
+test('stays silent when the cached state is current', async (t) => {
+  const { hooks } = await setup(t, {
+    repos: [{ name: 'a', label: '~/a', branch: 'master', state: 'up-to-date', ahead: 0, behind: 0 }],
+  });
+  const event = { sessionID: 's1', prompt: { text: 'hello' } };
+  await hooks.prompt(event);
+  assert.equal(event.prompt.text, 'hello');
+});
+
+test('never duplicates the advisory when the prompt already carries it', async (t) => {
+  const { hooks } = await setup(t);
+  const event = { sessionID: 's1', prompt: { text: 'hello\n\n<c4f-update-check>old</c4f-update-check>' } };
+  await hooks.prompt(event);
+  assert.equal(event.prompt.text, 'hello\n\n<c4f-update-check>old</c4f-update-check>');
+});
+
+test('dispose releases the prompt hook', async (t) => {
+  const { check, hooks, disposed } = await setup(t);
+  assert.equal(typeof hooks.prompt, 'function');
+  await check.dispose();
+  assert.deepEqual(disposed, ['prompt']);
+  assert.equal(hooks.prompt, undefined);
 });
 
 test('returns stale cache immediately and refreshes the configured repos', async (t) => {
@@ -56,7 +119,8 @@ test('returns stale cache immediately and refreshes the configured repos', async
     repos: [{ name: 'stale', state: 'up-to-date' }],
   }));
 
-  const check = await run(mockCtx(), {
+  const { ctx } = mockCtx();
+  const check = await run(ctx, {
     stateFile,
     ttlMs: 60_000,
     repos: [{ name: 'custom', role: 'main', path: join(dir, 'missing'), branch: 'master' }],
@@ -83,7 +147,8 @@ test('schedules from cache age and stops after dispose', async (t) => {
     repos: [{ name: 'stale', state: 'up-to-date' }],
   }));
 
-  const check = await run(mockCtx(), {
+  const { ctx } = mockCtx();
+  const check = await run(ctx, {
     stateFile,
     ttlMs,
     repos: [{ name: 'custom', role: 'main', path: join(dir, 'missing'), branch: 'master' }],
@@ -102,19 +167,23 @@ test('schedules from cache age and stops after dispose', async (t) => {
   assert.equal(JSON.parse(await readFile(stateFile, 'utf8')).checkedAt, written);
 });
 
-test('disabled by env or option writes nothing', async (t) => {
+test('disabled by env or option writes nothing and registers no hook', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'c4f-check-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const stateFile = join(dir, 'state.json');
 
-  const check = await run(mockCtx(), { enabled: false, stateFile });
+  const off = mockCtx();
+  const check = await run(off.ctx, { enabled: false, stateFile });
   t.after(() => check.dispose());
   assert.equal(check.state(), undefined);
+  assert.deepEqual(off.hooks, {});
   await check.refresh();
   await assert.rejects(readFile(stateFile, 'utf8'));
 
-  const fromEnv = await run(mockCtx({ C4F_UPDATE_CHECK: '0' }), { stateFile });
+  const env = mockCtx({ C4F_UPDATE_CHECK: '0' });
+  const fromEnv = await run(env.ctx, { stateFile });
   t.after(() => fromEnv.dispose());
   assert.equal(fromEnv.state(), undefined);
+  assert.deepEqual(env.hooks, {});
   await assert.rejects(readFile(stateFile, 'utf8'));
 });

@@ -6,7 +6,7 @@ independent and is registered in `src/modules/registry.js`.
 | Module | Purpose |
 | --- | --- |
 | `codeRetrieval` | Native `code_retrieval` tool: Tree-sitter AST + BM25 code/docs search |
-| `updateCheck` | Background probe of both C4F config repos, surfaced as a TUI toast |
+| `updateCheck` | Background probe of both C4F config repos, surfaced as an advisory in the next prompt |
 
 ## Module: code-retrieval
 
@@ -101,10 +101,11 @@ modules carry the command that fixes them.
 
 ## Module: check-for-update
 
-Two parts, one cache file. The server module only probes and writes state; the TUI part only reads it.
-Nothing here reaches the model unless the user asks for an update.
+One cache file, one hook. The module probes the C4F repos and appends a single advisory block to the
+next admitted prompt, so the model learns about an outdated config through the conversation. The
+system prompt is never rewritten and there is no UI notification.
 
-The server module runs once at setup and never blocks startup:
+The probe runs once at setup and never blocks startup:
 
 - Probes both C4F repos with `git fetch` + ahead/behind (4 s timeout each, in parallel).
 - Resolves the upstream from `@{u}` and fetches that remote, so remotes other than `origin` are supported. When a branch has no upstream set (for example after `git init` + `git pull`), it falls back to `origin/<branch>` if that ref exists.
@@ -112,25 +113,27 @@ The server module runs once at setup and never blocks startup:
 - Aligns the next refresh with `checkedAt + ttlMs`, so a warm cache refreshes when it expires instead of one full TTL after startup.
 - Keeps the last known state for each repo when `git fetch` fails (offline or timeout), and marks it `offline`.
 - Writes the cache atomically (temp file + rename), so a concurrent read never sees partial JSON.
-- `index.js` returns `{ state, refresh, dispose }` and no hook registrations: there is no system-prompt injection and no synthetic banner, so a behind repo costs zero tokens.
 
-The TUI part (`tui.js`) is what the user sees:
+The `prompt` hook (`ctx.session.hook('prompt', …)`) is the only channel:
 
-- Reads the cache every `pollMs` (default 60 s) and shows one toast per distinct advisory state (`repo:state:behind`), so the 30-minute refresh never re-toasts for the same counts.
-- Registers the `/c4f-update` slash command. It prompts the running session to load the `c4f-update` skill, so the model learns about the update only when the user runs the command.
-- Passes the current session to the toast, so it can offer to open that session when its family is not focused.
-- Needs a TUI: a headless server or `opencode run` still writes the cache, but shows nothing.
+- Runs at prompt admission, before attachment and skill resolution and durable inbox admission, so the edit becomes the canonical persisted user input.
+- Appends a `<c4f-update-check>` block listing every repo that is `behind` or `not-installed`, including its last known count when the fetch was offline.
+- Injects once per session per advisory signature (`repo:state:behind`), so the 30-minute refresh never repeats the block for the same counts.
+- Clears the per-session memory when nothing is pending, so a later regression with the same counts notifies again.
+- Skips prompts that already carry the marker, which keeps retries and concurrent admissions idempotent.
+- Degrades to probe-only when the runtime does not expose `session.hook`.
 
-It never runs `git pull`, edits files or bypasses approval. After the user agrees, the agent loads the `c4f-update` skill and runs `scripts/c4f_update.py install`.
+Because the block is appended to the user's message, the user sees it in the transcript. It never runs
+`git pull`, edits files or bypasses approval. After the user agrees, the agent loads the `c4f-update`
+skill and runs `scripts/c4f_update.py install`.
 
 | Option (`ctx.options.updateCheck`) | Default | Meaning |
 | --- | --- | --- |
-| `enabled` | `true` | Disable the whole check (server probe and TUI part) |
+| `enabled` | `true` | Disable the whole check |
 | `ttlMs` | `1800000` | Cache lifetime and background refresh interval |
 | `fetchTimeoutMs` | `4000` | Per-repo git timeout |
 | `repos` | the two C4F repos | Override the probe targets |
-| `stateFile` | `~/.cache/opencode/c4f-update-state.json` | Cache location shared with the TUI part |
-| `pollMs` | `60000` | TUI-only: how often the toast reads the cache |
+| `stateFile` | `~/.cache/opencode/c4f-update-state.json` | Cache location |
 
 `C4F_UPDATE_CHECK=0` disables the check without touching configuration.
 
@@ -139,7 +142,6 @@ It never runs `git pull`, edits files or bypasses approval. After the user agree
 ```text
 c4f-plugin/
 ├── index.js                          # Server part: Plugin.define({ id: 'c4f-plugin', setup })
-├── tui.js                            # TUI part: toast + /c4f-update command
 ├── src/
 │   ├── setup.js                      # Sequential registry runner + lifecycle
 │   └── modules/
@@ -152,11 +154,10 @@ c4f-plugin/
 │       │   ├── schema.js             # Tool name, description, input schema
 │       │   └── scripts/              # Python indexer (config, index, parser, searcher, storage, tokenizer)
 │       │       └── parsers/          # Một file cho mỗi định dạng (code AST, python, yaml, markdown, json, html, css, xml)
-│       └── check-for-update/         # run(ctx, options) → probe + cache
-│           ├── index.js              # Probe scheduler (no model hooks)
+│       └── check-for-update/         # run(ctx, options) → probe + prompt advisory
+│           ├── index.js              # Probe scheduler + prompt hook
 │           ├── probe.js              # git probe + state file
-│           ├── warn.js               # Toast text
-│           └── notify.js             # Toast/session helpers shared with tui.js
+│           └── warn.js               # Advisory block + signature
 └── test/
 ```
 
@@ -178,29 +179,6 @@ To add a feature:
 
 1. Create `src/modules/<name>/index.js` with `export async function run(ctx, options)`.
 2. Import it into `src/modules/registry.js` in the desired execution order.
-
-## TUI part
-
-`tui.js` is a second entrypoint in the same package. OpenCode resolves the `tui` subpath beside the
-server entrypoint when the plugin directory is discovered (`<global-config>/plugins/c4f-plugin/tui.js`),
-so no extra registration is needed:
-
-```js
-import { Plugin } from '@opencode/plugin/tui';
-
-export default Plugin.define({
-  id: 'c4f-plugin.tui',
-  setup(context) {
-    context.ui.toast.show({ message: 'Ready', variant: 'success' });
-  },
-});
-```
-
-Only the TUI part can show a toast (`context.ui.toast.show`) or a desktop notification
-(`context.ui.attention.notify`). The server part has no UI API — its only user-facing channels are
-session messages and the model context, which is why `check-for-update` uses neither. The TUI part reads
-the same cache file and shows the toast, and the toast text points at `/c4f-update`; the model is only
-involved when the user runs that command.
 
 ## Installation
 
