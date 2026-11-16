@@ -114,6 +114,10 @@ The probe runs once at setup and never blocks startup:
 - Keeps the last known state for each repo when `git fetch` fails (offline or timeout), and marks it `offline`.
 - Writes the cache atomically (temp file + rename), so a concurrent read never sees partial JSON.
 
+`scripts/c4f_update.py install` drops the entries of the repos it cloned or pulled, so a repo that was
+just updated is not announced as behind on the next start. A running server keeps its in-memory state
+until it restarts.
+
 The `prompt` hook (`ctx.session.hook('prompt', …)`) is the only channel:
 
 - Runs at prompt admission, before attachment and skill resolution and durable inbox admission, so the edit becomes the canonical persisted user input.

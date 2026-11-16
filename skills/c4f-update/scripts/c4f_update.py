@@ -448,8 +448,62 @@ def _ensure_config(repo: Path, enabled: bool) -> tuple[str, int]:
     return "created opencode.jsonc (subagent_depth 2)", EXIT_OK
 
 
+STATE_VERSION = 1
+
+
+def update_state_file() -> Path:
+    """Advisory cache the c4f-plugin update check reads. Mirrors its default location."""
+    base = os.environ.get("XDG_CACHE_HOME")
+    if not base and os.name == "nt":
+        base = os.environ.get("LOCALAPPDATA")
+    root = Path(base).expanduser() if base else Path.home() / ".cache"
+    return root / "opencode" / "c4f-update-state.json"
+
+
+def forget_update_cache(targets: list[Target]) -> str | None:
+    """Drop the advisory entries of the repos this run changed.
+
+    The plugin caches ahead/behind counts for 30 minutes, so without this a repo
+    that was just updated is still announced as behind on the next start. Repos
+    this run did not touch keep their entries. Best-effort: an unreadable or
+    foreign cache file is already ignored by the plugin, so it is left alone and
+    never fails an install. Returns a line to print only when the file changed
+    (or could not be rewritten).
+    """
+    file = update_state_file()
+    try:
+        data = json.loads(file.read_text("utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict) or data.get("version") != STATE_VERSION or not isinstance(data.get("repos"), list):
+        return None
+
+    names = {target.name for target in targets}
+    dropped: set[str] = set()
+    kept = []
+    for repo in data["repos"]:
+        name = repo.get("name") if isinstance(repo, dict) else None
+        if isinstance(name, str) and name in names:
+            dropped.add(name)
+            continue
+        kept.append(repo)
+    if not dropped:
+        return None
+
+    data["repos"] = kept
+    temp = file.with_name(f"{file.name}.{os.getpid()}.tmp")
+    try:
+        file.parent.mkdir(parents=True, exist_ok=True)
+        temp.write_text(json.dumps(data, indent=2), "utf-8")
+        os.replace(temp, file)
+    except OSError:
+        temp.unlink(missing_ok=True)
+        return "skipped — state file not writable, the cached counts are stale"
+    return f"dropped {', '.join(sorted(dropped))} — next OpenCode start re-probes"
+
+
 def _install_one(target: Target, deps: bool, config: bool,
-                 pulled: dict[str, tuple[str, str]]) -> tuple[int, list[str]]:
+                 pulled: dict[str, tuple[str, str]], changed_repos: set[str]) -> tuple[int, list[str]]:
     lines: list[str] = []
     code = EXIT_OK
     ready, state = _path_state(target)
@@ -460,6 +514,7 @@ def _install_one(target: Target, deps: bool, config: bool,
         ok, message = _clone(target)
         if not ok:
             return EXIT_MANUAL, [f"  clone      FAILED: {message}"]
+        changed_repos.add(target.name)
         lines.append(f"  clone      ok -> {git(target.path, 'rev-parse', '--short', 'HEAD')[1]}")
 
     snap = collect(target, do_fetch=True)
@@ -479,6 +534,7 @@ def _install_one(target: Target, deps: bool, config: bool,
             _, files, _ = git(target.path, "diff", "--name-only", f"{old}..{new}")
             changed = [line for line in files.splitlines() if line.strip()]
             pulled[target.name] = (old, new)
+            changed_repos.add(target.name)
             lines.append(f"  update     {old} -> {new}  ({commits or '0'} commit(s), {len(changed)} file(s))")
             lines.extend(f"    {path}" for path in changed[:8])
             if len(changed) > 8:
@@ -507,15 +563,21 @@ def _install_one(target: Target, deps: bool, config: bool,
 
 def cmd_install(targets: list[Target], run_verify: bool, deps: bool, config: bool) -> int:
     pulled: dict[str, tuple[str, str]] = {}
+    changed_repos: set[str] = set()
     codes: list[int] = []
     for index, target in enumerate(targets):
         if index:
             print()
         print(f"{target.name}  {target.label}", flush=True)
-        code, lines = _install_one(target, deps, config, pulled)
+        code, lines = _install_one(target, deps, config, pulled, changed_repos)
         codes.append(code)
         for line in lines:
             print(line)
+
+    cache_line = forget_update_cache([t for t in targets if t.name in changed_repos]) if changed_repos else None
+    if cache_line:
+        print()
+        print(f"cache      {cache_line}")
 
     code = EXIT_FATAL if EXIT_FATAL in codes else (EXIT_MANUAL if EXIT_MANUAL in codes else EXIT_OK)
     if run_verify:

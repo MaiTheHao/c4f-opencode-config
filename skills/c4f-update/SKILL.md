@@ -26,8 +26,14 @@ Three commands, one script. `install` is idempotent: it is both the first-run bo
 | Deps | `npm install` when `package.json` exists and `node_modules` is missing (`--no-deps` skips) |
 | Config | Create `opencode.jsonc` (`$schema`, `experimental.subagent_depth: 2`) **only when absent**; an existing file is never rewritten (`--no-config` skips) |
 | Verify | Validator across `agents/**/*.md`, failures classified by ownership |
+| Advisory cache | Drop the entries of the repos this run cloned or pulled from `$XDG_CACHE_HOME/opencode/c4f-update-state.json`, so the next session is not told they are behind |
 
 Repos are handled independently: a blocked `main` does not stop `skills` from being installed.
+
+The advisory cache is best-effort. Repos this run did not touch keep their entries, and a missing,
+unreadable or foreign-shaped file is left alone (the plugin ignores or re-probes it on its own). A
+running OpenCode server keeps its in-memory copy until it restarts, so the drop applies from the next
+start; an unchanged install prints no cache line.
 
 ## Contract
 
