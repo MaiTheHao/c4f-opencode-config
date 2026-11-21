@@ -1,9 +1,8 @@
 import { access } from 'node:fs/promises';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { realpathSync } from 'node:fs';
+import { basename, dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const DEFAULT_TIMEOUT_MS = 120_000;
-export const DEFAULT_WARMUP_TIMEOUT_MS = 5_000;
 export const DEFAULT_TOP_K = 5;
 export const MAX_TOP_K = 50;
 
@@ -15,19 +14,12 @@ const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
 // The Python indexer ships inside this module; there is no separate skill copy.
 export const DEFAULT_SCRIPTS_DIR = resolve(MODULE_DIR, 'scripts');
 
-export const DEFAULT_PYTHON = 'python3';
-export const FALLBACK_PYTHON = 'python';
-
 export class RetrievalConfigError extends Error {
   constructor(message, details = {}) {
     super(message);
     this.name = 'RetrievalConfigError';
     this.details = details;
   }
-}
-
-function positiveInt(value, fallback) {
-  return Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
 /**
@@ -39,14 +31,8 @@ export function normalizeOptions(input = {}, env = process.env) {
   return {
     enabled: input.enabled !== false && env.C4F_RETRIEVAL_TOOL !== '0',
     scriptsDir: String(input.scriptsDir ?? env.C4F_RETRIEVAL_SCRIPTS ?? DEFAULT_SCRIPTS_DIR),
-    python: String(input.python ?? env.C4F_RETRIEVAL_PYTHON ?? DEFAULT_PYTHON),
     root: String(input.root ?? env.C4F_RETRIEVAL_ROOT ?? ''),
     db: String(input.db ?? env.C4F_RETRIEVAL_DB ?? ''),
-    timeoutMs: positiveInt(input.timeoutMs, DEFAULT_TIMEOUT_MS),
-    warmupTimeoutMs: positiveInt(input.warmupTimeoutMs, DEFAULT_WARMUP_TIMEOUT_MS),
-    // The index database itself is the opt-in flag: no database, no scan.
-    // C4F_RETRIEVAL_AUTOSYNC=0 still disables the startup warm-up entirely.
-    autoSync: input.autoSync !== false && env.C4F_RETRIEVAL_AUTOSYNC !== '0',
     // Code Mode keeps parity with model_insights; set codemode: false for a first-class tool.
     codemode: input.codemode !== false,
   };
@@ -84,14 +70,40 @@ export async function resolveRoot({ options, ctx, input = {}, sessionID } = {}) 
   return isAbsolute(candidate) ? candidate : resolve(base, candidate);
 }
 
+/** Pin a path to its canonical location, resolving symlinks where possible. */
+function canonicalize(dbPath) {
+  try {
+    return realpathSync(dbPath);
+  } catch {
+    // The database file typically does not exist yet: realpath the nearest
+    // existing ancestor and re-attach the remainder.
+  }
+  let current = dbPath;
+  const tail = [];
+  for (;;) {
+    const parent = dirname(current);
+    if (parent === current) return dbPath;
+    tail.unshift(basename(current));
+    try {
+      return resolve(realpathSync(parent), ...tail);
+    } catch {
+      current = parent;
+    }
+  }
+}
+
 /** Index database for a root; mirrors the Python precedence (--db, env, project local/). */
 export function resolveDbPath({ options, root }) {
   const configured = String(options?.db ?? '');
-  if (!configured) return resolve(root, DEFAULT_DB_REL_PATH);
-  return isAbsolute(configured) ? configured : resolve(root, configured);
+  const candidate = !configured
+    ? resolve(root, DEFAULT_DB_REL_PATH)
+    : isAbsolute(configured)
+      ? configured
+      : resolve(root, configured);
+  return canonicalize(candidate);
 }
 
-/** The database is the opt-in flag: it exists only after an explicit `action=index`. */
+/** The database is the opt-in flag: it exists only after an explicit index. */
 export async function indexExists(dbPath) {
   try {
     await access(dbPath);
@@ -101,7 +113,7 @@ export async function indexExists(dbPath) {
   }
 }
 
-/** Fail early with an actionable message instead of a Python traceback. */
+/** Fail early with an actionable message instead of a missing-file search. */
 export async function resolveScriptsDir(options) {
   const scriptsDir = options.scriptsDir;
   const entry = resolve(scriptsDir, 'index.py');

@@ -8,6 +8,8 @@ except ImportError:  # chạy trực tiếp: python3 index.py
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from config import CODE_STOPWORDS
 
+TOKENIZER_VERSION = 1
+
 
 def tokenize_code(text: str) -> list[str]:
     """Chuẩn hóa định danh code (camelCase, PascalCase, snake_case) thành token cho BM25."""

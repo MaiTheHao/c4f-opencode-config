@@ -8,14 +8,3 @@ class CodeChunk:
     start_line: int
     end_line: int
     content: str
-
-
-@dataclass(frozen=True)
-class SearchHit:
-    score: float
-    file_path: str
-    symbol: str
-    node_type: str
-    start_line: int
-    end_line: int
-    content: str

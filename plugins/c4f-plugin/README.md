@@ -12,14 +12,15 @@ independent and is registered in `src/modules/registry.js`.
 
 Registers one Code Mode tool, `code_retrieval`, backed by the Python indexer in
 `src/modules/code-retrieval/scripts/` (the scripts ship with the plugin — there is no separate skill).
+Reads go through a readonly FTS5 store; indexing happens exclusively via the
+indexer CLI (`scripts/index.py`, incl. `--watch`).
 
 | Action | Purpose |
 | --- | --- |
-| `search` (default) | Ranked code chunks for a symbol name or technical keyword. |
-| `index` | Build/refresh the index. This is the "init retrieval" step the user must request. |
+| `search` (only) | Ranked code chunks for a symbol name or technical keyword. To build or refresh the index, run the indexer CLI once, then search again. |
 
 Arguments: `query` (required for search), `top_k` (1–50, default 5), `root` (defaults to the session
-directory), `sync` (refresh before search; defaults to true only when the index already exists).
+directory).
 
 ### Supported file types
 
@@ -47,9 +48,9 @@ current location (`session.get(sessionID).location.directory`) > the plugin setu
 session to another workspace therefore searches that workspace immediately — the setup location is
 only a fallback for runtimes without session lookup.
 
-The startup warm-up is the exception: it warms the location known at setup. After a workspace switch
-the first search refreshes the new workspace itself (`--sync`), so results are still current; only the
-pre-warm is skipped.
+The startup path does nothing in the background: there is no warm-up, no sync and
+no spawned process. After a workspace switch the first search reads the new
+workspace's database immediately.
 
 ### Opt-in flag: the database file
 
@@ -57,47 +58,37 @@ The tool does not maintain its own sync flag. The **index database is the flag**
 
 - `<root>/local/agents/retrieval/code_bm25.db` missing → `search` returns `NOT_INITIALIZED` and no
   Python process is spawned. A session that never touches code never pays for a repository scan.
-- Database present (created by an explicit `action=index`) → `search` refreshes it incrementally
-  first.
+- Database present (created by an explicit indexer CLI run) → `search` reads it directly.
 - `C4F_RETRIEVAL_DB` / `codeRetrieval.db` relocate the database if needed.
 
 `local/` is gitignored in the target repos, so initialization is per checkout and per worktree.
 
-### Incremental vocabulary rebuilds
+### Indexing with the CLI
 
-The postings and BM25 vocabulary share one transaction. The vocabulary is rebuilt when indexing
-changes postings or when its saved state is missing/unknown. An unchanged sync reuses the existing
-vocabulary. To repair a hand-edited database, run
-`python3 src/modules/code-retrieval/scripts/index.py index --root <root> --rebuild`.
+The postings live in one FTS5 table (`fts_chunks`); the indexer CLI owns all writes.
+To repair a hand-edited or stale database, run
+`python3 src/modules/code-retrieval/scripts/index.py --root <root> --rebuild`.
 The index remains under the gitignored `local/agents/retrieval/` directory.
 
-On an unchanged synthetic tree of 3,000 files (13.6 MB), a no-op sync measured 0.18–0.24 s end to
-end across repeated runs (interpreter startup and imports included) and 0.11 s for the scan itself.
-A ~90-file repository resyncs in ~0.09 s end to end. A no-op sync neither rewrites postings nor
-rebuilds the vocabulary, and it never imports the Tree-sitter grammars.
+A no-op indexer pass over an unchanged tree imports no Tree-sitter grammars
+(the parser loads lazily only when a file hash actually changed).
 
-### Startup warm-up
+### Startup behavior
 
-`autoSync` (default `true`) refreshes initialized repositories once in the background after setup,
-capped by `warmupTimeoutMs` (default 5 s). It never blocks startup and never runs for repositories
-without a database. `C4F_RETRIEVAL_AUTOSYNC=0` disables it, `C4F_RETRIEVAL_TOOL=0` disables the tool.
+There is no warm-up and no background sync: setup registers the tool and never
+spawns the indexer. `C4F_RETRIEVAL_TOOL=0` disables the tool.
 
 | Option (`ctx.options.codeRetrieval`) | Default | Meaning |
 | --- | --- | --- |
 | `enabled` | `true` | Register the tool at all |
-| `autoSync` | `true` | Background refresh for initialized repos |
-| `timeoutMs` | `120000` | Per tool call timeout |
-| `warmupTimeoutMs` | `5000` | Startup warm-up timeout |
-| `python` | `python3` | Interpreter (falls back to `python`) |
 | `scriptsDir` | `<module>/scripts` | Python indexer location |
 | `root` | session directory | Default project root |
 | `db` | `<root>/local/agents/retrieval/code_bm25.db` | Explicit database file |
 | `codemode` | `true` | Code Mode tool; `false` exposes a first-class tool |
 
-Failures are returned as tool content, never thrown: a search sync timeout retries against the
-existing index and labels the hits `index not refreshed: sync timed out`. Other timeout and failure
-cases keep the error output; missing interpreter, non-zero exit, invalid JSON and missing `tree-sitter`
-modules carry the command that fixes them.
+Failures are returned as tool content, never thrown. A search against a missing
+index explains how to build it; a stale index names the rebuild command; without
+a SQLite FTS5 driver the tool reports which runtime to use.
 
 ## Module: check-for-update
 
@@ -157,10 +148,11 @@ c4f-plugin/
 │       ├── code-retrieval/           # Native tool + Python indexer
 │       │   ├── index.js              # run(ctx, options) + tool registration
 │       │   ├── config.js             # Options, root/db/scripts resolution
-│       │   ├── python.js             # Spawn wrapper (timeout, abort, fallback)
+│       │   ├── store.js              # Readonly FTS5 store (node:sqlite, bun:sqlite fallback)
+│       │   ├── tokenize.js           # Tokenizer (mirrors the Python side)
 │       │   ├── render.js             # Markdown output
 │       │   ├── schema.js             # Tool name, description, input schema
-│       │   └── scripts/              # Python indexer (config, index, parser, searcher, storage, tokenizer)
+│       │   └── scripts/              # Python indexer (config, index, parser, storage, tokenizer)
 │       │       └── parsers/          # Một file cho mỗi định dạng (code AST, python, yaml, markdown, json, html, css, xml)
 │       └── check-for-update/         # run(ctx, options) → probe + prompt advisory
 │           ├── index.js              # Probe scheduler + prompt hook
@@ -204,6 +196,6 @@ npm run check
 The indexer can also be used directly:
 
 ```bash
-python3 src/modules/code-retrieval/scripts/index.py index --root /path/to/repo
-python3 src/modules/code-retrieval/scripts/index.py search "jwt validate" --root /path/to/repo --top-k 5
+python3 src/modules/code-retrieval/scripts/index.py --root /path/to/repo
+python3 src/modules/code-retrieval/scripts/index.py --root /path/to/repo --rebuild
 ```

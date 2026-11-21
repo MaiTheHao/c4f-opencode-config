@@ -2,21 +2,20 @@ import {
   DEFAULT_TOP_K,
   MAX_TOP_K,
   RetrievalConfigError,
-  indexExists,
   normalizeOptions,
   resolveDbPath,
   resolveRoot,
   resolveScriptsDir,
 } from './config.js';
-import { createPythonRunner } from './python.js';
-import { renderFailure, renderIndex, renderNotInitialized, renderSearch } from './render.js';
-import { DESCRIPTION, INPUT_SCHEMA, TOOL_NAME } from './schema.js';
-
-const ACTIONS = new Set(['search', 'index']);
-
-const PYTHON_HINT = 'Install the Python dependencies: pip install tree-sitter tree-sitter-java tree-sitter-javascript tree-sitter-typescript (optional: tree-sitter-python for AST-level Python chunks; Python falls back to indentation parsing without it)';
-
-const MISSING_PYTHON_HINT = 'Python 3.10+ is required. Set codeRetrieval.python or C4F_RETRIEVAL_PYTHON to an interpreter that has tree-sitter installed.';
+import {
+  renderFailure,
+  renderNotInitialized,
+  renderSearch,
+  renderStaleIndex,
+  renderUnsupported,
+} from './render.js';
+import { DESCRIPTION, INPUT_SCHEMA, MAX_QUERY_LENGTH, TOOL_NAME } from './schema.js';
+import { disposeSearchStores, openSearchStore } from './store.js';
 
 export class RetrievalArgsError extends Error {
   constructor(message) {
@@ -26,14 +25,12 @@ export class RetrievalArgsError extends Error {
 }
 
 export function normalizeArgs(input = {}) {
-  const action = String(input.action ?? 'search').trim().toLowerCase();
-  if (!ACTIONS.has(action)) {
-    throw new RetrievalArgsError(`unknown action ${JSON.stringify(action)}; valid actions: search | index`);
-  }
-
   const query = String(input.query ?? '').trim();
-  if (action === 'search' && !query) {
-    throw new RetrievalArgsError('query is required for action=search (symbol name or technical terms)');
+  if (!query) {
+    throw new RetrievalArgsError('query is required (symbol name or technical terms)');
+  }
+  if (query.length > MAX_QUERY_LENGTH) {
+    throw new RetrievalArgsError(`query must be at most ${MAX_QUERY_LENGTH} characters`);
   }
 
   const topK = input.top_k === undefined ? DEFAULT_TOP_K : input.top_k;
@@ -42,80 +39,28 @@ export function normalizeArgs(input = {}) {
   }
 
   return {
-    action,
     query,
     topK,
-    // undefined = auto: only re-sync when the index database already exists.
-    sync: typeof input.sync === 'boolean' ? input.sync : undefined,
     root: String(input.root ?? '').trim(),
   };
 }
 
-export function buildArgs({ options, args, root, sync }) {
-  const shared = ['--root', root, '--json'];
-  if (options.db) shared.push('--db', options.db);
-
-  if (args.action === 'index') return ['index', ...shared];
-
-  const cliArgs = ['search', args.query, '--top-k', String(args.topK), ...shared];
-  if (sync) cliArgs.push('--sync');
-  return cliArgs;
-}
-
-function parseStdout(result) {
-  const text = String(result?.stdout ?? '').trim();
-  if (!text) throw new Error('indexer produced no output');
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(`indexer returned invalid JSON: ${text.slice(0, 300)}`);
-  }
-}
-
-function failureContent({ result, options, error }) {
+function failureContent({ options, error }) {
   if (error instanceof RetrievalConfigError || error instanceof RetrievalArgsError) {
     return renderFailure({ message: error.message });
   }
-  if (error) {
-    return renderFailure({ message: error.message });
-  }
-
-  if (result?.spawnError?.code === 'ENOENT') {
-    return renderFailure({
-      message: `Python interpreter not found (${options.python}).`,
-      hint: MISSING_PYTHON_HINT,
-    });
-  }
-  if (result?.timedOut) {
-    return renderFailure({
-      message: `Indexer timed out after ${options.timeoutMs} ms.`,
-      hint: 'Raise codeRetrieval.timeoutMs or narrow the repository root.',
-    });
-  }
-
-  const stderr = String(result?.stderr ?? '').trim();
-  const hint = /ModuleNotFoundError|No module named/.test(stderr) ? PYTHON_HINT : undefined;
-  return renderFailure({
-    message: `Indexer exited with code ${result?.code ?? 'unknown'}${result?.aborted ? ' (aborted)' : ''}.`,
-    detail: stderr || String(result?.stdout ?? '').trim(),
-    hint,
-  });
+  return renderFailure({ message: error?.message ?? 'Unknown retrieval failure.' });
 }
 
 /**
- * Registers the native `code_retrieval` tool.
+ * Registers the native `code_retrieval` tool (search-only).
  *
- * Opt-in model: the SQLite database is the flag. `search` never creates an
- * index — it reports NOT_INITIALIZED instead, so a repository is only indexed
- * after an explicit `action=index` ("init retrieval"). Once the database
- * exists, searches refresh it incrementally, and the startup warm-up may run
- * too (see `run`).
+ * Reads go through the readonly FTS5 store; indexing happens exclusively via
+ * the Python CLI (`scripts/index.py`, incl. `--watch`). `openStore` is
+ * injectable for tests and defaults to {@link openSearchStore}.
  */
-export async function registerCodeRetrievalTool({ ctx, options, runner }) {
+export async function registerCodeRetrievalTool({ ctx, options, openStore = openSearchStore }) {
   if (typeof ctx?.tool?.transform !== 'function') return undefined;
-
-  const runPython = runner ?? createPythonRunner({ python: options.python });
-  const lastSyncedAt = new Map();
 
   const transformResult = await ctx.tool.transform((editor) => {
     editor.add({
@@ -128,82 +73,40 @@ export async function registerCodeRetrievalTool({ ctx, options, runner }) {
           const args = normalizeArgs(input);
           const root = await resolveRoot({ options, ctx, input: args, sessionID: context?.sessionID });
           const dbPath = resolveDbPath({ options, root });
-          const initialized = await indexExists(dbPath);
+          const store = await openStore(dbPath);
 
-          if (args.action === 'search' && !initialized) {
+          if (store.status === 'NOT_INITIALIZED') {
+            const scriptsDir = await resolveScriptsDir(options);
             return {
-              content: renderNotInitialized({ root, dbPath }),
-              metadata: { action: 'search', root, db: dbPath, initialized: false },
+              content: renderNotInitialized({ root, dbPath, scriptsDir }),
+              metadata: { root, db: dbPath, initialized: false, hits: 0 },
             };
           }
-
-          const scriptsDir = await resolveScriptsDir(options);
-          const sync = args.action === 'index' ? false : (args.sync ?? initialized);
-          const script = `${scriptsDir}/index.py`;
-          const result = await runPython({
-            args: [script, ...buildArgs({ options, args, root, sync })],
-            cwd: root,
-            timeoutMs: options.timeoutMs,
-            signal: context?.signal,
-          });
-
-          if (!result.ok) {
-            if (args.action === 'search' && sync && result.timedOut) {
-              let retry;
-              try {
-                retry = await runPython({
-                  args: [script, ...buildArgs({ options, args, root, sync: false })],
-                  cwd: root,
-                  timeoutMs: options.timeoutMs,
-                  signal: context?.signal,
-                });
-              } catch {
-                return { content: failureContent({ result, options }) };
-              }
-              if (retry.ok) {
-                let payload;
-                try {
-                  payload = parseStdout(retry);
-                } catch {
-                  return { content: failureContent({ result, options }) };
-                }
-                return {
-                  content: renderSearch(payload, { degraded: 'sync-timeout' }),
-                  metadata: {
-                    action: 'search',
-                    root,
-                    db: payload?.db ?? dbPath,
-                    hits: Array.isArray(payload?.hits) ? payload.hits.length : 0,
-                    initialized: true,
-                    synced: false,
-                    degraded: 'sync-timeout',
-                  },
-                };
-              }
-            }
-            return { content: failureContent({ result, options }) };
-          }
-
-          const payload = parseStdout(result);
-          if (args.action === 'index') {
-            lastSyncedAt.set(root, Date.now());
+          if (store.status === 'STALE_INDEX') {
+            const scriptsDir = await resolveScriptsDir(options);
             return {
-              content: renderIndex(payload, root),
-              metadata: { action: 'index', root, db: payload.db, indexed: payload.indexed, initialized: true },
+              content: renderStaleIndex({ root, dbPath, scriptsDir }),
+              metadata: { root, db: dbPath, initialized: false, hits: 0, stale: true },
             };
           }
+          if (store.status === 'DRIVER_UNSUPPORTED') {
+            return {
+              content: renderUnsupported(),
+              metadata: { root, db: dbPath, initialized: true, hits: 0 },
+            };
+          }
+          if (store.status !== 'OK') {
+            return { content: failureContent({ options, error: new Error(`Search store is ${store.status}.`) }) };
+          }
 
-          if (payload?.index) lastSyncedAt.set(root, Date.now());
+          const result = await store.search(args.query, args.topK);
+          if (result.status !== 'OK') {
+            return { content: failureContent({ options, error: new Error(`Search failed with status ${result.status}.`) }) };
+          }
+          const { hits } = result;
           return {
-            content: renderSearch(payload),
-            metadata: {
-              action: 'search',
-              root,
-              db: payload?.db ?? dbPath,
-              hits: Array.isArray(payload?.hits) ? payload.hits.length : 0,
-              initialized: true,
-              synced: true,
-            },
+            content: renderSearch({ query: args.query, root, hits }),
+            metadata: { root, db: dbPath, initialized: true, hits: hits.length },
           };
         } catch (error) {
           return { content: failureContent({ options, error }) };
@@ -213,36 +116,29 @@ export async function registerCodeRetrievalTool({ ctx, options, runner }) {
   });
 
   return {
-    lastSyncedAt,
     async dispose() {
       if (typeof transformResult === 'function') {
         await transformResult();
       } else {
         await transformResult?.dispose?.();
       }
+      await disposeSearchStores();
     },
   };
 }
 
-/**
- * Module entry point.
- *
- * Nothing is scanned until the repository has an index database. The startup
- * warm-up therefore only fires for repositories the user already initialized,
- * and `C4F_RETRIEVAL_AUTOSYNC=0` turns even that off.
- */
+/** Module entry point: search-only, no warm-up, no sync, no spawned processes. */
 export async function run(ctx, input = {}, deps = {}) {
   const options = normalizeOptions(input, ctx?.env ?? process.env);
   if (!options.enabled) {
     return { options, dispose: async () => {} };
   }
 
-  const registration = await registerCodeRetrievalTool({ ctx, options, runner: deps.runner });
-
-  if (options.autoSync && registration) {
-    // Fire-and-forget warm-up: never block or fail plugin setup.
-    void warmUp({ ctx, options, registration, runner: deps.runner }).catch(() => {});
-  }
+  const registration = await registerCodeRetrievalTool({
+    ctx,
+    options,
+    openStore: deps.openStore,
+  });
 
   return {
     options,
@@ -250,21 +146,4 @@ export async function run(ctx, input = {}, deps = {}) {
       await registration?.dispose?.();
     },
   };
-}
-
-async function warmUp({ ctx, options, registration, runner }) {
-  const root = await resolveRoot({ options, ctx });
-  if (registration.lastSyncedAt.has(root)) return;
-
-  const dbPath = resolveDbPath({ options, root });
-  if (!(await indexExists(dbPath))) return; // not initialized: the user never asked for retrieval
-
-  const scriptsDir = await resolveScriptsDir(options);
-  const runPython = runner ?? createPythonRunner({ python: options.python });
-  const result = await runPython({
-    args: [`${scriptsDir}/index.py`, 'index', '--root', root, '--json'],
-    cwd: root,
-    timeoutMs: Math.min(options.timeoutMs, options.warmupTimeoutMs),
-  });
-  if (result.ok) registration.lastSyncedAt.set(root, Date.now());
 }

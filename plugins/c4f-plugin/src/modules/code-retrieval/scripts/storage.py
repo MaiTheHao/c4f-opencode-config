@@ -1,21 +1,23 @@
-import hashlib
-import math
 import sqlite3
 import sys
-from collections import Counter
 from pathlib import Path
 
 try:
     from .models import CodeChunk
-    from .tokenizer import tokenize_code
+    from .tokenizer import TOKENIZER_VERSION, tokenize_code
 except ImportError:  # chạy trực tiếp: python3 index.py
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from models import CodeChunk
-    from tokenizer import tokenize_code
+    from tokenizer import TOKENIZER_VERSION, tokenize_code
+
+SCHEMA_VERSION = 2
+INDEXER_VERSION = 1
+
+_LEGACY_TABLES = ("chunks", "bm25_vocab", "bm25_postings", "bm25_meta", "sync_meta")
 
 
-class SQLiteBM25Store:
-    """Lưu trữ dữ liệu chunk và chỉ mục nghịch đảo BM25 vào SQLite."""
+class SQLiteFTSStore:
+    """Ghi chunk + chỉ mục FTS5 vào SQLite. Không chứa logic search (TS đọc trực tiếp)."""
 
     def __init__(self, db_path: Path) -> None:
         self.db_path = db_path
@@ -27,7 +29,14 @@ class SQLiteBM25Store:
         self.conn.execute("PRAGMA synchronous = NORMAL;")
         self._init_schema()
 
+    def _tables(self) -> set[str]:
+        return {row[0] for row in self.conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+
     def _init_schema(self) -> None:
+        tables = self._tables()
+        legacy = [name for name in _LEGACY_TABLES if name in tables]
+        # Tạo schema mới trước để files/fts_chunks luôn tồn tại cho bước wipe;
+        # DB chỉ có bảng legacy mà thiếu files không còn lỗi DELETE.
         self.conn.executescript("""
             CREATE TABLE IF NOT EXISTS files (
                 file_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,49 +46,40 @@ class SQLiteBM25Store:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
-            CREATE TABLE IF NOT EXISTS chunks (
-                chunk_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                file_id INTEGER NOT NULL,
-                symbol_name TEXT NOT NULL,
-                node_type TEXT NOT NULL,
-                start_line INTEGER NOT NULL,
-                end_line INTEGER NOT NULL,
-                doc_length INTEGER NOT NULL,
-                content TEXT NOT NULL,
-                FOREIGN KEY (file_id) REFERENCES files(file_id) ON DELETE CASCADE
+            CREATE VIRTUAL TABLE IF NOT EXISTS fts_chunks USING fts5(
+                symbol, path, content,
+                file_path UNINDEXED, node_type UNINDEXED,
+                start_line UNINDEXED, end_line UNINDEXED
             );
 
-            CREATE TABLE IF NOT EXISTS bm25_vocab (
-                term TEXT PRIMARY KEY,
-                df INTEGER NOT NULL,
-                idf REAL NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS bm25_postings (
-                term TEXT NOT NULL,
-                chunk_id INTEGER NOT NULL,
-                tf INTEGER NOT NULL,
-                PRIMARY KEY (term, chunk_id),
-                FOREIGN KEY (chunk_id) REFERENCES chunks(chunk_id) ON DELETE CASCADE
-            );
-
-            CREATE TABLE IF NOT EXISTS bm25_meta (
+            CREATE TABLE IF NOT EXISTS meta (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
             );
-
-            CREATE TABLE IF NOT EXISTS sync_meta (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_postings_term ON bm25_postings(term);
-            CREATE INDEX IF NOT EXISTS idx_chunks_file_id ON chunks(file_id);
         """)
         self.conn.commit()
 
+        tables = self._tables()
+        if "fts_chunks" not in tables:
+            raise RuntimeError("fts_chunks table could not be created (FTS5 unavailable?)")
+
+        for name in legacy:
+            self.conn.execute(f"DROP TABLE IF EXISTS {name}")
+        meta = dict(self.conn.execute("SELECT key, value FROM meta").fetchall())
+        version_ok = (
+            meta.get("schema_version") == str(SCHEMA_VERSION)
+            and meta.get("tokenizer_version") == str(TOKENIZER_VERSION)
+        )
+        if legacy or not version_ok:
+            # DB lạ/phiên bản khác -> xóa sạch, index lại từ đầu (không gate COUNT).
+            self.conn.execute("DELETE FROM fts_chunks")
+            self.conn.execute("DELETE FROM files")
+            self.conn.commit()
+
     @staticmethod
     def compute_hash(file_path: str | Path) -> str:
+        import hashlib
+
         with open(file_path, "rb") as handle:
             return hashlib.sha256(handle.read()).hexdigest()
 
@@ -94,93 +94,73 @@ class SQLiteBM25Store:
         ).fetchone()
         return bool(row and row[0] == file_hash)
 
-    def upsert_file_chunks(self, rel_path: str, language: str, file_hash: str, chunks: list[CodeChunk]) -> None:
-        self.mark_vocab_dirty()
+    def upsert_file_chunks(
+        self, rel_path: str, language: str, file_hash: str, chunks: list[CodeChunk]
+    ) -> None:
         cur = self.conn.cursor()
+        cur.execute("DELETE FROM fts_chunks WHERE file_path = ?", (rel_path,))
         cur.execute("DELETE FROM files WHERE file_path = ?", (rel_path,))
         cur.execute(
             "INSERT INTO files (file_path, language, file_hash) VALUES (?, ?, ?)",
             (rel_path, language, file_hash),
         )
-        file_id = cur.lastrowid
-
+        path_tokens = " ".join(tokenize_code(rel_path))
         for chunk in chunks:
-            enriched_text = f"{chunk.symbol_name} {rel_path}\n{chunk.content}"
-            tokens = tokenize_code(enriched_text)
-            if not tokens:
-                continue
-
-            tf_counts = Counter(tokens)
+            symbol_tokens = " ".join(tokenize_code(chunk.symbol_name))
+            content_tokens = " ".join(
+                tokenize_code(f"{chunk.symbol_name} {rel_path}\n{chunk.content}")
+            )
             cur.execute(
                 """
-                INSERT INTO chunks (file_id, symbol_name, node_type, start_line, end_line, doc_length, content)
+                INSERT INTO fts_chunks
+                    (symbol, path, content, file_path, node_type, start_line, end_line)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (file_id, chunk.symbol_name, chunk.node_type, chunk.start_line, chunk.end_line, len(tokens), chunk.content),
+                (
+                    symbol_tokens,
+                    path_tokens,
+                    content_tokens,
+                    rel_path,
+                    chunk.node_type,
+                    chunk.start_line,
+                    chunk.end_line,
+                ),
             )
-            chunk_id = cur.lastrowid
-
-            cur.executemany(
-                "INSERT INTO bm25_postings (term, chunk_id, tf) VALUES (?, ?, ?)",
-                [(term, chunk_id, tf) for term, tf in tf_counts.items()],
-            )
+        self.conn.commit()
 
     def remove_deleted_files(self, active_rel_paths: set[str]) -> int:
         existing_rows = self.conn.execute("SELECT file_path FROM files").fetchall()
         stale_paths = [r[0] for r in existing_rows if r[0] not in active_rel_paths]
         if stale_paths:
-            self.mark_vocab_dirty()
+            self.conn.executemany("DELETE FROM fts_chunks WHERE file_path = ?", [(p,) for p in stale_paths])
             self.conn.executemany("DELETE FROM files WHERE file_path = ?", [(p,) for p in stale_paths])
+            self.conn.commit()
         return len(stale_paths)
 
-    def vocab_state(self) -> str:
-        row = self.conn.execute("SELECT value FROM sync_meta WHERE key = 'vocab_state'").fetchone()
-        if row is None:
-            return "unknown"
-        return row[0] if row[0] in {"valid", "dirty"} else "unknown"
-
-    def mark_vocab_dirty(self) -> None:
-        self.conn.execute(
-            """
-            INSERT INTO sync_meta (key, value) VALUES ('vocab_state', 'dirty')
-            ON CONFLICT(key) DO UPDATE SET value = 'dirty'
-            """
-        )
-
-    def rebuild_bm25_stats(self, force: bool = False) -> bool:
-        if not force and self.vocab_state() == "valid":
-            return False
-
-        cur = self.conn.cursor()
-        total_docs, avgdl = cur.execute("SELECT COUNT(*), COALESCE(AVG(doc_length), 0) FROM chunks").fetchone()
-        total_docs = int(total_docs)
-        avgdl = float(avgdl)
-
-        cur.execute("DELETE FROM bm25_vocab")
-        cur.execute("DELETE FROM bm25_meta")
-        cur.executemany(
-            "INSERT INTO bm25_meta (key, value) VALUES (?, ?)",
-            [("total_docs", str(total_docs)), ("avgdl", str(avgdl))],
-        )
-
-        if total_docs > 0:
-            df_rows = cur.execute(
-                "SELECT term, COUNT(DISTINCT chunk_id) FROM bm25_postings GROUP BY term"
-            ).fetchall()
-            vocab_data = [
-                (term, df, math.log(1.0 + (total_docs - df + 0.5) / (df + 0.5)))
-                for term, df in df_rows
-            ]
-            cur.executemany("INSERT INTO bm25_vocab (term, df, idf) VALUES (?, ?, ?)", vocab_data)
-
-        cur.execute(
-            """
-            INSERT INTO sync_meta (key, value) VALUES ('vocab_state', 'valid')
-            ON CONFLICT(key) DO UPDATE SET value = 'valid'
-            """
+    def write_meta(self) -> None:
+        self.conn.executemany(
+            "INSERT INTO meta (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            [
+                ("schema_version", str(SCHEMA_VERSION)),
+                ("tokenizer_version", str(TOKENIZER_VERSION)),
+                ("indexer_version", str(INDEXER_VERSION)),
+            ],
         )
         self.conn.commit()
-        return True
+
+    def checkpoint(self) -> None:
+        self.conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
+
+    def abort(self) -> None:
+        """Hủy transaction dở dang rồi đóng kết nối (đường lỗi của index pass)."""
+        try:
+            self.conn.rollback()
+        finally:
+            self.conn.close()
 
     def close(self) -> None:
-        self.conn.close()
+        try:
+            self.conn.commit()
+        finally:
+            self.conn.close()

@@ -10,46 +10,65 @@ function truncate(text, limit = MAX_DETAIL) {
   return `${value.slice(0, limit)}…`;
 }
 
-function syncSummary(stats) {
-  if (!stats) return 'index: not synced';
-  return `index: ${stats.indexed} updated, ${stats.skipped} unchanged, ${stats.removed} removed`;
+/** Escape one markdown table cell: pipes, backticks and line breaks. */
+function sanitizeCell(text) {
+  return String(text ?? '')
+    .replace(/\r\n|\r|\n/g, ' ')
+    .replace(/\|/g, '\\|')
+    .replace(/`/g, "'");
 }
 
-export function renderSearch(payload, options = {}) {
-  const hits = Array.isArray(payload?.hits) ? payload.hits : [];
-  const root = payload?.root ?? '';
-  const degradedNote = options.degraded ? ' — index not refreshed: sync timed out' : '';
+/** Pure renderer: search hits as a rank/symbol/file/lines table, best (lowest bm25) first. */
+export function renderSearch({ query, root, hits }) {
+  const ordered = [...(Array.isArray(hits) ? hits : [])].sort((a, b) => a.score - b.score);
   const lines = [
-    `**${hits.length} hit(s)** for \`${oneLine(payload?.query)}\` in \`${root}\` — ${syncSummary(payload?.index)}${degradedNote}`,
+    `**${ordered.length} hit(s)** for \`${sanitizeCell(oneLine(query))}\` in \`${sanitizeCell(root)}\``,
   ];
 
-  if (hits.length === 0) {
+  if (ordered.length === 0) {
     lines.push('', 'No matching chunk. Try a different symbol or technical term (index may not cover this file type).');
     return lines.join('\n');
   }
 
   lines.push('', '| # | Score | Symbol | Location | Lines |', '| --- | --- | --- | --- | --- |');
-  hits.forEach((hit, index) => {
+  ordered.forEach((hit, index) => {
     lines.push(
-      `| ${index + 1} | ${Number(hit.score).toFixed(2)} | \`${hit.symbol}\` | \`${hit.file_path}\` | ${hit.start_line}-${hit.end_line} |`,
+      `| ${index + 1} | ${Number(hit.score).toFixed(2)} | \`${sanitizeCell(hit.symbol)}\` | \`${sanitizeCell(hit.file_path)}\` | ${hit.start_line}-${hit.end_line} |`,
     );
   });
   lines.push('', 'Read the file at the returned line range for full context; excerpts are omitted to keep this output small.');
   return lines.join('\n');
 }
 
-export function renderIndex(payload, root) {
-  return [
-    `Index synced for \`${root}\`: ${payload.indexed} updated, ${payload.skipped} unchanged, ${payload.removed} removed.`,
-    `DB: \`${payload.db}\``,
-  ].join('\n');
-}
-
-export function renderNotInitialized({ root, dbPath }) {
+export function renderNotInitialized({ root, dbPath, scriptsDir }) {
   return [
     `**NOT_INITIALIZED** Retrieval is not enabled for \`${root}\` (no index at \`${dbPath}\`).`,
     '',
-    'A search never creates an index. To opt in, call this tool with `action: "index"` (the user asks to init retrieval), then search again.',
+    'A search never creates an index. To opt in, build it once with the indexer CLI, then search again:',
+    '',
+    '```sh',
+    `python3 ${scriptsDir}/index.py --root ${root}`,
+    '```',
+  ].join('\n');
+}
+
+export function renderStaleIndex({ root, dbPath, scriptsDir, detail }) {
+  return [
+    `**STALE_INDEX** The index at \`${dbPath}\` was built with an incompatible version (schema, tokenizer or indexer version mismatch${detail ? `: ${detail}` : ''}).`,
+    '',
+    'Rebuild it with the indexer CLI, then search again:',
+    '',
+    '```sh',
+    `python3 ${scriptsDir}/index.py --root ${root} --rebuild`,
+    '```',
+  ].join('\n');
+}
+
+export function renderUnsupported() {
+  return [
+    '**DRIVER_UNSUPPORTED** No SQLite FTS5 driver is available.',
+    '',
+    'The search hot path needs `bun:sqlite` (Bun) or `node:sqlite` (Node >= 22.13). Run this tool under one of those runtimes.',
   ].join('\n');
 }
 

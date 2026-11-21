@@ -1,0 +1,42 @@
+[
+  {
+    "input": "validateToken",
+    "tokens": ["validatetoken", "validate", "token"]
+  },
+  {
+    "input": "stableSymbol0",
+    "tokens": ["stablesymbol0", "stable", "symbol0"]
+  },
+  {
+    "input": "freshlySearchableSymbol",
+    "tokens": ["freshlysearchablesymbol", "freshly", "searchable", "symbol"]
+  },
+  {
+    "input": "get_user_by_id",
+    "tokens": ["get_user_by_id", "get", "user", "by", "id"]
+  },
+  {
+    "input": "HTTPServerResponse",
+    "tokens": ["httpserverresponse", "http", "server", "response"]
+  },
+  {
+    "input": "JwtProvider",
+    "tokens": ["jwtprovider", "jwt", "provider"]
+  },
+  {
+    "input": "def validate_token",
+    "tokens": ["validate_token", "validate", "token"]
+  },
+  {
+    "input": "ORDER BY",
+    "tokens": ["order", "by"]
+  },
+  {
+    "input": "createdAt",
+    "tokens": ["createdat", "created", "at"]
+  },
+  {
+    "input": "snake_case_name",
+    "tokens": ["snake_case_name", "snake", "name"]
+  }
+]

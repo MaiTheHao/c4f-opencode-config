@@ -1,5 +1,9 @@
 export const TOOL_NAME = 'code_retrieval';
 
+// Independent of the store-side token cap: overlong input is rejected here
+// (OpenCode layer) and again in normalizeArgs (direct calls), never indexed.
+export const MAX_QUERY_LENGTH = 256;
+
 // NOTE: tool catalogs truncate descriptions (~140 chars visible). The first
 // sentence(s) below MUST carry the retrieval trigger rule so the rule survives
 // truncation; the rest reinforces. Agents can read the full text via
@@ -15,14 +19,10 @@ export const DESCRIPTION = [
 export const INPUT_SCHEMA = Object.freeze({
   type: 'object',
   properties: {
-    action: {
-      type: 'string',
-      enum: ['search', 'index'],
-      description: 'Retrieval operation. Defaults to search.',
-    },
     query: {
       type: 'string',
-      description: 'Symbol name or technical keywords, required for search (e.g. "jwt validate").',
+      maxLength: MAX_QUERY_LENGTH,
+      description: 'Symbol name or technical keywords to search (e.g. "jwt validate").',
     },
     top_k: {
       type: 'integer',
@@ -33,10 +33,6 @@ export const INPUT_SCHEMA = Object.freeze({
     root: {
       type: 'string',
       description: 'Project root to search. Defaults to the session directory.',
-    },
-    sync: {
-      type: 'boolean',
-      description: 'Refresh the index before searching. Defaults to true when the index already exists; a search never creates one.',
     },
   },
   required: [],
