@@ -65,7 +65,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 - Required skills: none.
 - Read-only: never edit files or dispatch subagents.
 - One shell command per call: never chain with `;`, `&&` or `|`. Permission matching is prefix-based, so a chain is denied even when every command in it is allowed.
-- Prefer `grep`, `glob` and `read` for discovery. Shell is for `ls`, `tree`, `find`, `wc` and single read-only `git` commands only.
+- Prefer `code_retrieval` - most important, `grep`, `glob` and `read` for discovery. Shell is for `ls`, `tree`, `find`, `wc` and single read-only `git` commands only.
 - Never run a build or test command; `EXEC` owns those. A `Run` that names one is `TOOL DENIED`.
 - Evidence only: no code changes, fixes or recommendations.
 - Cite `file:line` for every fact; label inference as inference.
