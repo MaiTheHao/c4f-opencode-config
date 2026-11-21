@@ -4,36 +4,39 @@
     {
       "id": "muse-spark-1.3-contributor",
       "costTier": 1,
-      "triggers": ["exploration", "retrieval", "inspection", "implementation", "bulk-edit", "simple-refactor", "routine-bugfix", "tests", "documentation", "build", "deploy"]
+      "triggers": [
+        "Khám phá codebase nhanh, tra cứu file/hàm và đọc hiểu ngữ cảnh để nắm cấu trúc dự án",
+        "Triển khai tính năng đơn giản và sửa lỗi thường gặp theo hướng dẫn rõ ràng",
+        "Chỉnh sửa hàng loạt (bulk edit) và refactor nhỏ, cập nhật đồng bộ nhiều vị trí",
+        "Viết và chạy test, bổ sung tài liệu, xử lý build/deploy cơ bản"
+      ]
     },
     {
       "id": "deepseek-v4.1-flash",
       "costTier": 2,
-      "triggers": ["complex-implementation", "architecture-analysis", "complex-bug", "root-cause-analysis", "judgment-support", "deep-research", "problem-solving", "security-analysis"]
+      "triggers": [
+        "Triển khai tính năng phức tạp và phân tích kiến trúc hệ thống ở mức sâu",
+        "Điều tra lỗi khó, tìm root cause và đề xuất cách khắc phục triệt để",
+        "Nghiên cứu chuyên sâu và giải quyết vấn đề đòi hỏi suy luận nhiều bước",
+        "Hỗ trợ ra quyết định kỹ thuật và phân tích bảo mật ở mức logic"
+      ]
     },
     {
       "id": "mimo-v2.6-flash",
       "costTier": 3,
-      "triggers": ["review", "code-review", "audit", "code-audit", "static-audit", "security-review", "security-audit", "dependency-audit"]
+      "triggers": [
+        "Review code và audit chất lượng mã, phát hiện lỗi tiềm ẩn và vấn đề thiết kế",
+        "Kiểm tra dependency, phiên bản và rủi ro chuỗi cung ứng phần mềm"
+      ]
     },
     {
       "id": "glm-5.3-flash",
       "costTier": 4,
       "triggers": [
-        "orchestration",
-        "scope-definition",
-        "solution-design",
-        "architecture",
-        "technical-decision",
-        "planning",
-        "task-decomposition",
-        "agent-coordination",
-        "dispatch",
-        "delegation",
-        "workflow-orchestration",
-        "adaptive-planning",
-        "result-synthesis",
-        "reporting"
+        "Đánh giá bảo mật mã nguồn và rà soát lỗ hổng theo checklist",
+        "Audit tĩnh (static audit) và kiểm tra tuân thủ quy ước, pattern trong dự án",
+        "Tổng hợp kết quả từ nhiều nguồn và viết báo cáo cuối cùng",
+        "Review kiến trúc và đánh giá tác động của thay đổi ở mức hệ thống"
       ]
     }
   ]
