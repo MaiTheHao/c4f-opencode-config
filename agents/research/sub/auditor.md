@@ -61,6 +61,7 @@ Compare the claim's scope with the wording of its cited source ("often 100x" is 
 - SKEPTIC: `ClaimTested`, `Assessment`, `CounterEvidence` (`{CredibleDissent, Source, Tier, SupportingEvidence}`), `OverclaimFlags` (`{Claim, SourceCited, ActualScope}`), `Confidence`
 - VERIFY: `ClaimsChecked` (`{Claim, Status, Tier, Confidence}`), `ContradictionsFound` (`{ClaimedFact, DiscoveredFact, DiscoveredFactTier}`), `StaleRiskClaims`, `MythCandidates` (`{Claim, Reason}`)
 - `Sources`; `BlockingQuestions` when `BLOCKED`
+- Reply with the `AuditResult` only: no preamble, no recap. Never end on tool calls or an empty message.
 
 ## Workflow
 
@@ -68,13 +69,3 @@ Compare the claim's scope with the wording of its cited source ("often 100x" is 
 2. Run the Mode procedure with independent searches in one parallel step; fetch only when snippets fail.
 3. Tier every source you rely on.
 4. Return the contract.
-
-## Rules
-
-- Read-only: never write files, run shell, or dispatch subagents.
-- Never rewrite or repair a claim; judge it.
-- Never reuse a source from `ExcludeSources`.
-- No false equivalence for unsubstantiated fringe (T3) views.
-- Name every contradiction with the tier of the contradicting source.
-- Stop once each assigned claim has a status.
-- Reply with the `AuditResult` only: no preamble, no recap. Never end on tool calls or an empty message.

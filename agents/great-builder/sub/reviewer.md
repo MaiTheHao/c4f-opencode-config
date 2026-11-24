@@ -58,7 +58,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 ### Output `ReviewResult`
 
 - `Mode`, `Verdict`: `PASS | CHANGES_REQUIRED | BLOCKED`
-- `Findings`: `Severity` (`BLOCKER | MAJOR | MINOR`), `Location` (`file:line`), `Issue`, `Evidence`, `RequiredChange`; EXEC adds `FailureClass` (`TEST | PRODUCTION`), AUDIT adds `Basis`
+- `Findings`: `Severity` (`BLOCKER | MAJOR | MINOR`; `BLOCKER` only for defects that make the work unusable or unsafe), `Location` (`file:line`), `Issue`, `Evidence`, `RequiredChange`; EXEC adds `FailureClass` (`TEST | PRODUCTION`), AUDIT adds `Basis`
 - `PlanCoverage`: per unit, `DONE | PARTIAL | MISSING`
 - `AcceptanceStatus`: per criterion, `MET | UNMET | UNVERIFIABLE`
 - `OutOfScopeChanges`: changed files not in `AffectedFiles` (ignore `local/agents/**`)
@@ -66,6 +66,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 - AUDIT: `UnverifiableWithoutExecution`
 - `Denied` when any command was denied
 - `BlockingQuestions` when `BLOCKED`
+- Reply with the `ReviewResult` only: no preamble, no recap. Never end on tool calls or an empty message; the final message is always the `ReviewResult`.
 
 ## Workflow
 
@@ -77,11 +78,7 @@ Input fields are defined in the description. On resume, only changed fields arri
 
 ## Rules
 
-- Required skills: AUDIT loads `writing-plans` and `refactoring-code` (the latter before judging structure, duplication, naming or coupling); load `git-commit` when judging a commit message. EXEC loads none.
-- Read-only: never edit files or dispatch subagents.
+- Required skills: AUDIT loads `writing-plans`; load `git-commit` when judging a commit message. EXEC loads none.
+- One shell command per call: never chain with `;`, `&&` or `|`; a chain is denied.
 - Describe `RequiredChange` in words; never write the fix.
 - Cite `file:line` for every claim and finding.
-- `BLOCKER` only for defects that make the work unusable or unsafe. Do not pad findings.
-- Review only the assigned scope. Skip blame.
-- Stop once the verdict is established.
-- Reply with the `ReviewResult` only: no preamble, no recap. Never end on tool calls or an empty message; the final message is always the `ReviewResult`.

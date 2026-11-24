@@ -52,23 +52,15 @@ Known venues: CS/SE: ICSE, FSE, ASE, MSR, ISSTA, TSE, TOSEM, EMSE, IST, JSS, CAC
 
 - `Status`: `READY | BLOCKED`
 - `TopicMap`: `{SubQuestion, Aspects[], SearchQueries[]}`
-- `Tags`: `{SubQuestion, Domain, TimeSensitivity: STABLE | SLOW_MOVING | FAST_MOVING | CRITICAL, ControversyLevel: SETTLED | MINOR_DISPUTE | HEATED | FRINGE_ONLY}`
+- `Tags`: `{SubQuestion, Domain, TimeSensitivity: STABLE | SLOW_MOVING | FAST_MOVING | CRITICAL, ControversyLevel: SETTLED | MINOR_DISPUTE | HEATED | FRINGE_ONLY}`; when a sub-question's best evidence is all T3, set its `ControversyLevel` to at least `MINOR_DISPUTE` and list it in `KnownUnknowns`
 - `KeyTerms`, `KnownUnknowns`
 - `SourceTierMap`: `{Source, Tier: T1 | T2 | T3, TierUncertain}`
 - `BlockingQuestions` when `BLOCKED`
+- Reply with the `ScoutReport` only: no preamble, no recap.
 
 ## Workflow
 
 1. Build queries from `Angle` and `Question`; skip anything already in `Known`.
 2. Issue independent searches in one parallel step; fetch full pages per `Depth`.
-3. Tier every source before it enters `SourceTierMap`.
+3. Tier every source before it enters `SourceTierMap`. An existence claim (page, dataset, version) needs a URL you saw; no hit means `not found`, never `exists` by inference.
 4. Return the contract.
-
-## Rules
-
-- Read-only: never write files, run shell, or dispatch subagents.
-- Map, do not answer: sub-questions and queries only, no conclusions.
-- Untiered sources are not allowed in the report.
-- When a sub-question's best evidence is all T3, set its `ControversyLevel` to at least `MINOR_DISPUTE` and list it in `KnownUnknowns`.
-- Existence claims (page, dataset, version) need a URL you saw; no hit means `not found`, never `exists` by inference.
-- Reply with the `ScoutReport` only: no preamble, no recap.

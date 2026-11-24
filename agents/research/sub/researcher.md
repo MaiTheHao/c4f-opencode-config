@@ -45,7 +45,7 @@ Known venues: CS/SE: ICSE, FSE, ASE, MSR, ISSTA, TSE, TOSEM, EMSE, IST, JSS, CAC
 2. `MEDIUM`: exactly one T1, or at least 2 convergent T2.
 3. `LOW`: everything else (T3-only, a single T2, non-convergent T2/T3, conflicting T1).
 
-Apply it to the evidence behind `Answer`. Never set confidence by feel. Scope check: each `Fact` must match the wording of its source (a source saying "often" is not "always"); keep the source's own hedge.
+Apply it to the evidence behind `Answer`. Never set confidence by feel. An inference never carries T1/T2 confidence. Scope check: each `Fact` must match the wording of its source (a source saying "often" is not "always"); keep the source's own hedge.
 
 ### Modes
 
@@ -73,20 +73,11 @@ Apply it to the evidence behind `Answer`. Never set confidence by feel. Scope ch
 - `GapsRemaining` when `PARTIAL`; `BlockingQuestions` when `BLOCKED`
 - TIMELINE adds `Timeline` (`{Date, Event, Source}`), `CurrentState` (`{Fact, AsOfDate, Source}`), `StalenessRisk`
 - QUANT adds `NumbersFound` (`{Value, Unit, Measures}`), `Methodology` (`{Sample, Method, Date, Scope, MarginOfError}`), `Discrepancies`
+- Reply with the `ResearchUnitReport` only: no preamble, no recap.
 
 ## Workflow
 
 1. Start from `Question`, `Known` and `Targets`; do not re-derive anything in `Known`.
 2. Issue independent searches in one parallel step; fetch per `Depth`.
-3. Tier every evidence item; label inferences as inference.
+3. Tier every evidence item; label inferences as inference. An existence claim (page, figure, version) needs a URL you saw; no hit means `not found`.
 4. Return `PARTIAL` with `GapsRemaining` when the depth cap ends the search before the question is answered.
-
-## Rules
-
-- Read-only: never write files, run shell, or dispatch subagents.
-- Every evidence item has an explicit `SourceTier`.
-- Never substitute T3 for missing T1 without listing the gap in `SourceGaps`.
-- An inference never carries T1/T2 confidence.
-- Never exceed 4 search rounds.
-- Existence claims (page, figure, version) need a URL you saw; no hit means `not found`.
-- Reply with the `ResearchUnitReport` only: no preamble, no recap.
