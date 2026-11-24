@@ -5,7 +5,6 @@
 **Custom agent definitions, model routing policies, and configuration optimized for OpenCode 2.x**
 
 [![OpenCode 2.x](https://img.shields.io/badge/OpenCode-2.x-1f6feb?style=for-the-badge)](#)
-[![Validator](https://img.shields.io/badge/Validator-must%20exit%200-3fb950?style=for-the-badge)](#validation)
 
 </div>
 
@@ -14,7 +13,6 @@
 > [!IMPORTANT]
 > **OpenCode 2.x Compatibility**
 > Agent configs adhere to the **V2 specification** — ordered permissions, action renaming (`shell` / `subagent` / `edit`), and native reasoning settings.
-> The authoring standard, validator, and acceptance procedure live in [`skills/oc-agent-config/`](skills/oc-agent-config/).
 
 ---
 
@@ -24,10 +22,9 @@
 |---|---|
 | [Overview](#overview) | [Agents](#agents) |
 | [Quick Start](#quick-start) | [Routing & Skills](#routing--skills) |
-| [External Skills Setup](#external-skills-setup-required) | [Validation](#validation) |
-| [Installation](#installation) | [Sync & Update](#sync--update) |
-| [Directory Structure](#directory-structure) | [Tooling & Diagnostics](#tooling--diagnostics) |
-| [FAQ & Troubleshooting](#faq--troubleshooting) | |
+| [External Skills Setup](#external-skills-setup-required) | [Sync & Update](#sync--update) |
+| [Installation](#installation) | [Tooling & Diagnostics](#tooling--diagnostics) |
+| [Directory Structure](#directory-structure) | [FAQ & Troubleshooting](#faq--troubleshooting) |
 
 ---
 
@@ -40,7 +37,7 @@ This repository ships **two families of agents** plus the skills and tooling tha
 | | **Implementation** | Plan-driven and direct-edit build pipelines, split by effort. |
 | | **Research** | Web research pipelines with evidence tiering, adversarial checking, and structured reports. |
 | | **Routing** | One routing skill for both dev and research lanes; HIGH primaries pin roles and models. |
-| | **Tooling** | Model routing table, catalog queries, static validation, audit and smoke tests. |
+| | **Tooling** | Model routing table, catalog queries, retrieval indexer, and plugin tests. |
 
 ---
 
@@ -54,20 +51,12 @@ This repository ships **two families of agents** plus the skills and tooling tha
 # 1) Config
 git clone https://github.com/MaiTheHao/c4f-opencode-config.git ~/.config/opencode
 
-# 2) Bootstrap: clones c4f-agent-skills, installs deps, seeds opencode.jsonc, verifies
+# 2) Bootstrap: clones c4f-agent-skills, installs deps, seeds opencode.jsonc
 python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install
 ```
 
 `install` is idempotent — the same command is the first-run bootstrap and the everyday
 [sync](#sync--update), so it is safe to re-run at any time.
-
-Re-run validation manually at any time:
-
-```bash
-python3 skills/oc-agent-config/scripts/validate_agent.py \
-  agents/great-builder/*.md agents/great-builder/sub/*.md \
-  agents/research/*.md agents/research/shared/*.md
-```
 
 ---
 
@@ -184,14 +173,13 @@ python3 "$HOME\.config\opencode\skills\c4f-update\scripts\c4f_update.py" install
 ## Sync & Update
 
 Both C4F repos are synced by **one idempotent script**, not by hand-written `git pull`
-sequences — a bare `git pull` skips dependency installs, the skills repo, `opencode.jsonc`
-seeding, and post-update validation.
+sequences — a bare `git pull` skips dependency installs, the skills repo, and `opencode.jsonc`
+seeding.
 
 | Command | What it does |
 |---|---|
 | `status` | Read-only preflight + divergence verdict (`--json`, `--no-fetch`) |
-| `install` | Clone what is missing, fast-forward what is behind, install deps, seed `opencode.jsonc`, verify |
-| `verify` | Validate agents and classify failures as `local` / `introduced` / `upstream` |
+| `install` | Clone what is missing, fast-forward what is behind, install deps, seed `opencode.jsonc` |
 
 ```bash
 # Am I behind? (read-only, changes nothing)
@@ -203,14 +191,11 @@ python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install
 # One repo only
 python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install --only main
 python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py install --only skills
-
-# Validation gate on its own
-python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py verify
 ```
 
 | Exit | Meaning | Next move |
 |:---:|---|---|
-| `0` | Done / already up to date | Nothing to pull (review warnings) |
+| `0` | Done / already up to date | Nothing to pull |
 | `10` | Update available (`status` only) | Run `install` |
 | `11` | Human decision required | Manual flow in [`references/manual-update.md`](skills/c4f-update/references/manual-update.md) |
 | `20` | Fatal precondition | Fix the clone: wrong origin/branch, detached HEAD, merge/rebase in progress |
@@ -245,8 +230,7 @@ Windows: run the same commands in PowerShell with the script path
 │       ├── high.md          # Maximum effort research orchestrator
 │       └── shared/          # Research subagents (scout, deep, quant, skeptic, validation, timeline)
 ├── skills/                  # Local repo skills
-│   ├── oc-agent-config/     # Agent authoring spec, validator, and references
-│   ├── c4f-update/          # Bootstrap, update, deps/config seeding, post-update verify
+│   ├── c4f-update/          # Bootstrap, update, deps/config seeding
 │   ├── oc-research-tiering/ # T1/T2/T3 evidence rubric + ResearchReport schema
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
 ├── plugins/                 # Native plugins (loaded by OpenCode)
@@ -281,8 +265,7 @@ Installed agent IDs are **namespaced by directory** — e.g. `great-builder/buil
 |---|---|---|
 | Routing skill | `skills/oc-routing/` | Single routing skill for **dev + research** lanes; session reuse |
 | Tier rubric | `skills/oc-research-tiering/` | T1/T2/T3 evidence rubric + `ResearchReport` schema |
-| Authoring spec | `skills/oc-agent-config/` | V2 spec, validator, references |
-| Repo update | `skills/c4f-update/` | `status` / `install` / `verify` for both C4F repos |
+| Repo update | `skills/c4f-update/` | `status` / `install` for both C4F repos |
 
 **How routing resolves:**
 
@@ -293,36 +276,12 @@ Installed agent IDs are **namespaced by directory** — e.g. `great-builder/buil
 
 ---
 
-## Validation
-
-Static-check **every** agent file after editing it:
-
-```bash
-python3 skills/oc-agent-config/scripts/validate_agent.py \
-  agents/great-builder/*.md agents/great-builder/sub/*.md \
-  agents/research/*.md agents/research/shared/*.md
-```
-
-Add `--json` for machine-readable output.
-
-> [!CAUTION]
-> The validator **must exit `0`**. Warnings are review items, not passes.
-> Static parsing is **not** behavioral proof — exercise the agent in the installed runtime before shipping.
-
-| Exit code | Meaning | Action |
-|:---:|---|---|
-| `0` | Pass | Ship it (review warnings) |
-| `≠0` | Failure | Fix the agent file, re-run |
-
----
-
 ## Tooling & Diagnostics
 
 | Surface | Purpose |
 |---|---|
 | `model_insights` tool (`list`, `inspect`, `pricing`, `variants`) | Live models: provider, cost class, cost tier, triggers, variants |
 | `code_retrieval` tool (`search`) | Tree-sitter AST + BM25 code search; build or refresh the index with the indexer CLI |
-| `python3 skills/oc-agent-config/scripts/validate_agent.py <files>` | Validate agent files |
 
 `model-insights` is read-only: it never filters, blocks, enables, or disables models.
 Routing policy lives in the agent instructions and `oc-routing`; availability, pricing,
@@ -348,19 +307,6 @@ Update an existing clone with `python3 ~/.config/opencode/skills/c4f-update/scri
 </details>
 
 <details>
-<summary><b>The validator fails after I edit an agent</b></summary>
-
-Re-run with machine-readable output to see exactly which rule broke:
-
-```bash
-python3 skills/oc-agent-config/scripts/validate_agent.py --json <files>
-```
-
-Check the V2 requirements: ordered permissions, action names (`shell` / `subagent` / `edit`), and native reasoning settings.
-
-</details>
-
-<details>
 <summary><b>Windows paths differ from the docs</b></summary>
 
 Use `%USERPROFILE%\.config\opencode` — or `%APPDATA%\opencode` if your OpenCode build resolves there. Skills go to `%USERPROFILE%\.agents\skills`.
@@ -370,7 +316,7 @@ Use `%USERPROFILE%\.config\opencode` — or `%APPDATA%\opencode` if your OpenCod
 <details>
 <summary><b>Do I need the external skills repo?</b></summary>
 
-Yes. The workflow skills are **required**; the local `skills/` folder only contains routing, tiering, retrieval, and the agent-authoring spec.
+Yes. The workflow skills are **required**; the local `skills/` folder only contains routing and repo update.
 
 </details>
 
@@ -378,7 +324,7 @@ Yes. The workflow skills are **required**; the local `skills/` folder only conta
 
 <div align="center">
 
-**Built for OpenCode 2.x** · Validate → run → ship
+**Built for OpenCode 2.x** · Run → ship
 
 [Back to top](#opencode-configuration--agents)
 

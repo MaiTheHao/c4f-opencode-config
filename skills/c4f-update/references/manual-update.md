@@ -59,17 +59,12 @@ git -C "$REPO" rebase --continue    # or: git -C "$REPO" rebase --abort
 git -C "$REPO" status               # must show no MERGE_HEAD / REBASE_HEAD / cherry-pick state
 ```
 
-## 5. Verify and report
+## 5. Report
 
-```bash
-python3 ~/.config/opencode/skills/c4f-update/scripts/c4f_update.py verify
-```
-
-In manual mode there is no pull range, so `verify` reports `local` vs `upstream` only — `introduced` needs the `install` path. Then report: commits pulled, how each conflict was resolved, remaining dirty/untracked paths, validator result with the bucket breakdown.
+Report: commits pulled, how each conflict was resolved, remaining dirty/untracked paths.
 
 ## 6. When to stop and ask
 
 - The user has local commits that may be intentional but unpushed (`ahead-only`).
 - A conflict resolution changes behavior the user did not mention.
 - An untracked file is the only copy of user data.
-- Validation fails on files the update did not touch: that is upstream drift. Report it; do not patch upstream during an update.

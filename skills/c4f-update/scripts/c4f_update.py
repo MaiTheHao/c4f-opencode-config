@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Version-check, fast-forward update, and post-update verification for the C4F repos.
+"""Version-check and fast-forward update for the C4F repos.
 
-Three commands:
+Two commands:
     status   read-only preflight + divergence + verdict (replaces 4-6 hand-written git calls)
     install  clone what is missing, fast-forward what is behind, install deps, seed config
-    verify   run the agent validator and classify failures as local / introduced / upstream
 
 The script never stashes, resets, cleans, checks out, or resolves conflicts. Anything
 beyond a clean fast-forward is manual on purpose; see references/manual-update.md.
@@ -25,7 +24,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 EXIT_OK, EXIT_ACTION, EXIT_MANUAL, EXIT_FATAL = 0, 10, 11, 20
-EXIT_DRIFT = 12  # validation failures, but every one of them is upstream content
 
 VERDICT_EXIT = {
     "up-to-date": EXIT_OK,
@@ -45,7 +43,6 @@ VERDICT_EXIT = {
 
 FATAL_VERDICTS = {v for v, code in VERDICT_EXIT.items() if code == EXIT_FATAL}
 MAX_INCOMING = 8
-MAX_FAILURES_SHOWN = 8
 
 
 # --------------------------------------------------------------------------- targets
@@ -503,7 +500,7 @@ def forget_update_cache(targets: list[Target]) -> str | None:
 
 
 def _install_one(target: Target, deps: bool, config: bool,
-                 pulled: dict[str, tuple[str, str]], changed_repos: set[str]) -> tuple[int, list[str]]:
+                 changed_repos: set[str]) -> tuple[int, list[str]]:
     lines: list[str] = []
     code = EXIT_OK
     ready, state = _path_state(target)
@@ -533,7 +530,6 @@ def _install_one(target: Target, deps: bool, config: bool,
             _, commits, _ = git(target.path, "rev-list", "--count", f"{old}..{new}")
             _, files, _ = git(target.path, "diff", "--name-only", f"{old}..{new}")
             changed = [line for line in files.splitlines() if line.strip()]
-            pulled[target.name] = (old, new)
             changed_repos.add(target.name)
             lines.append(f"  update     {old} -> {new}  ({commits or '0'} commit(s), {len(changed)} file(s))")
             lines.extend(f"    {path}" for path in changed[:8])
@@ -561,15 +557,14 @@ def _install_one(target: Target, deps: bool, config: bool,
     return code, lines
 
 
-def cmd_install(targets: list[Target], run_verify: bool, deps: bool, config: bool) -> int:
-    pulled: dict[str, tuple[str, str]] = {}
+def cmd_install(targets: list[Target], deps: bool, config: bool) -> int:
     changed_repos: set[str] = set()
     codes: list[int] = []
     for index, target in enumerate(targets):
         if index:
             print()
         print(f"{target.name}  {target.label}", flush=True)
-        code, lines = _install_one(target, deps, config, pulled, changed_repos)
+        code, lines = _install_one(target, deps, config, changed_repos)
         codes.append(code)
         for line in lines:
             print(line)
@@ -580,162 +575,11 @@ def cmd_install(targets: list[Target], run_verify: bool, deps: bool, config: boo
         print(f"cache      {cache_line}")
 
     code = EXIT_FATAL if EXIT_FATAL in codes else (EXIT_MANUAL if EXIT_MANUAL in codes else EXIT_OK)
-    if run_verify:
-        print()
-        verify_code, _ = _verify_all(targets, as_json=False, since=pulled)
-        if verify_code == EXIT_FATAL:
-            code = EXIT_FATAL
-        elif verify_code == EXIT_MANUAL and code == EXIT_OK:
-            code = EXIT_MANUAL
 
     states = ["ok" if c == EXIT_OK else ("fatal" if c == EXIT_FATAL else "action") for c in codes]
     summary = ", ".join(f"{t.name}={s}" for t, s in zip(targets, states))
     print(f"\nSUMMARY  {summary}  (exit {code})")
     return code
-
-
-# --------------------------------------------------------------------------- verify
-
-
-HEADING_RE = re.compile(r"'(#{2,4})\s+([^']+?)'")
-FAILURE_JOIN = "; "
-
-
-def _local_edit(repo: Path, rel: str) -> bool:
-    if git(repo, "ls-files", "--error-unmatch", rel)[0] != 0:
-        return True
-    return git(repo, "diff", "--quiet", "HEAD", "--", rel)[0] != 0
-
-
-def _heading_hints(failure: str, body: str) -> list[str]:
-    hints = []
-    for hashes, name in HEADING_RE.findall(failure):
-        name = name.strip()
-        match = re.search(rf"^(#{{1,6}})\s+{re.escape(name)}\s*$", body, re.MULTILINE)
-        if match and len(match.group(1)) != len(hashes):
-            hints.append(f"{name} is H{len(match.group(1))}, validator expects H{len(hashes)}")
-    return hints
-
-
-def _verify_repo(repo: Path, label: str, since: str | None, as_json: bool) -> tuple[int, dict]:
-    validator = repo / "skills" / "oc-agent-config" / "scripts" / "validate_agent.py"
-    agents = sorted(p for p in (repo / "agents").rglob("*.md")) if (repo / "agents").is_dir() else []
-    if not validator.is_file() or not agents:
-        return EXIT_OK, {"repo": label, "status": "n/a", "code": EXIT_OK,
-                         "reason": "no agents/ or validator in this repo"}
-
-    proc = subprocess.run(
-        [sys.executable, str(validator), "--json", *[str(p) for p in agents]],
-        capture_output=True, text=True, errors="replace",
-    )
-    try:
-        results = json.loads(proc.stdout)
-    except ValueError:
-        return EXIT_MANUAL, {"repo": label, "status": "error", "code": EXIT_MANUAL,
-                             "reason": (proc.stderr or proc.stdout).strip()[:300]}
-
-    changed: set[str] = set()
-    if since:
-        _, paths, _ = git(repo, "diff", "--name-only", f"{since}..HEAD")
-        changed = {line.strip() for line in paths.splitlines() if line.strip()}
-
-    failures, warnings, hint_counts = [], 0, {}
-    buckets = {"local": 0, "introduced": 0, "upstream": 0}
-    for item in results:
-        rel = Path(item["path"]).resolve().relative_to(repo.resolve()).as_posix()
-        warnings += len(item.get("warnings") or [])
-        if item.get("ok"):
-            continue
-        local = _local_edit(repo, rel)
-        bucket = "local" if local else ("introduced" if rel in changed else "upstream")
-        buckets[bucket] += 1
-        body = (repo / rel).read_text(encoding="utf-8", errors="replace")
-        hints = {
-            hint
-            for message in item.get("failures") or []
-            for hint in _heading_hints(message, body)
-        }
-        for hint in hints:
-            hint_counts[hint] = hint_counts.get(hint, 0) + 1
-        failures.append({
-            "file": rel,
-            "bucket": bucket,
-            "messages": item.get("failures") or [],
-            "hints": sorted(hints),
-        })
-
-    passed = len(results) - len(failures)
-    if not failures:
-        code = EXIT_OK
-    elif buckets["local"] or buckets["introduced"]:
-        code = EXIT_MANUAL
-    else:
-        code = EXIT_DRIFT
-    payload = {
-        "repo": label,
-        "status": "checked",
-        "code": code,
-        "passed": passed,
-        "total": len(results),
-        "warnings": warnings,
-        "buckets": buckets,
-        "hints": hint_counts,
-        "failures": failures,
-    }
-    if as_json:
-        return code, payload
-
-    print(f"verify {label}  ({repo})")
-    print(f"  validator  {passed}/{len(results)} pass · {len(failures)} fail "
-          f"({buckets['local']} local, {buckets['introduced']} introduced, {buckets['upstream']} upstream) "
-          f"· {warnings} warning(s)")
-    for hint, count in sorted(hint_counts.items(), key=lambda kv: -kv[1])[:2]:
-        print(f"  hint       {count} file(s): {hint}")
-    for failure in failures[:MAX_FAILURES_SHOWN]:
-        first = FAILURE_JOIN.join(failure["messages"][:2])
-        print(f"    {failure['file']:<38} {failure['bucket']:<10} {first[:110]}")
-    if len(failures) > MAX_FAILURES_SHOWN:
-        print(f"    (+{len(failures) - MAX_FAILURES_SHOWN} more failing files)")
-    if not failures:
-        print("  result     conformant")
-    elif buckets["upstream"] == len(failures):
-        print("  result     upstream drift only — not caused by this update; report it, do not edit upstream files")
-    elif buckets["local"]:
-        print("  result     local edits fail validation — fix or revert them, then re-run verify")
-    elif all(f["hints"] for f in failures):
-        print("  result     layout drift — the changed files use a different heading level than the validator; "
-              "treat it as validator/spec lag, confirm the intended standard before editing")
-    else:
-        print("  result     review needed — the pull changed these files and they fail validation; "
-              "separate layout drift from structural failures and let the user decide the upstream fix")
-    return code, payload
-
-
-def _verify_all(targets: list[Target], as_json: bool,
-                since: dict[str, tuple[str, str]] | None = None) -> tuple[int, list[dict]]:
-    codes, payloads = [], []
-    for target in targets:
-        start = (since or {}).get(target.name, (None, None))[0]
-        code, payload = _verify_repo(target.path, target.name, start, as_json)
-        codes.append(code)
-        payloads.append(payload)
-        if not as_json and payload.get("status") == "n/a":
-            print(f"verify {target.name}  ({target.path})\n  skipped    {payload['reason']}")
-        if not as_json and payload.get("status") == "error":
-            print(f"verify {target.name}  ({target.path})\n  error      {payload['reason']}")
-    if as_json:
-        print(json.dumps({"repos": payloads}, indent=2, default=str))
-    if EXIT_MANUAL in codes:
-        return EXIT_MANUAL, payloads
-    if EXIT_DRIFT in codes:
-        return EXIT_DRIFT, payloads
-    return max(codes, default=EXIT_OK), payloads
-
-
-def cmd_verify(targets: list[Target], as_json: bool) -> int:
-    code, _ = _verify_all(targets, as_json)
-    # Standalone verify surfaces drift as a decision point; install treats it as a successful provision.
-    return EXIT_MANUAL if code == EXIT_DRIFT else code
 
 
 # --------------------------------------------------------------------------- cli
@@ -744,7 +588,7 @@ def cmd_verify(targets: list[Target], as_json: bool) -> int:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
         prog="c4f_update.py",
-        description="Bootstrap, update, and verify the C4F config repositories.",
+        description="Bootstrap and update the C4F config repositories.",
     )
     parser.add_argument("--repo", action="append", metavar="PATH",
                         help="target repo (repeatable); default: both known C4F repos")
@@ -755,15 +599,11 @@ def main(argv: list[str]) -> int:
     status.add_argument("--no-fetch", action="store_true", help="skip git fetch (offline)")
 
     install = sub.add_parser("install", help="clone what is missing, fast-forward what is behind, "
-                                              "install deps, seed config, then verify")
+                                              "install deps, seed config")
     install.add_argument("--only", choices=["both", "main", "skills"], default="both",
                          help="limit to one of the two known repos (default: both)")
     install.add_argument("--no-deps", action="store_true", help="skip npm install")
     install.add_argument("--no-config", action="store_true", help="do not seed opencode.jsonc")
-    install.add_argument("--no-verify", action="store_true", help="skip post-update validation")
-
-    verify = sub.add_parser("verify", help="validate agents and classify failures")
-    verify.add_argument("--json", action="store_true")
 
     args = parser.parse_args(argv)
     if args.repo and getattr(args, "only", "both") != "both":
@@ -775,9 +615,7 @@ def main(argv: list[str]) -> int:
 
     if args.command == "status":
         return cmd_status(targets, args.json, not args.no_fetch)
-    if args.command == "install":
-        return cmd_install(targets, not args.no_verify, not args.no_deps, not args.no_config)
-    return cmd_verify(targets, args.json)
+    return cmd_install(targets, not args.no_deps, not args.no_config)
 
 
 if __name__ == "__main__":
