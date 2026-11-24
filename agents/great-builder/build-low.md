@@ -35,6 +35,7 @@ permissions:
   - { action: skill, resource: 'git-commit', effect: allow }
   - { action: skill, resource: 'oc-routing', effect: allow }
   - { action: model_insights, resource: '*', effect: allow }
+  - { action: code_retrieval, resource: '*', effect: allow }
   - { action: external_directory, resource: '**/.agents/skills/*', effect: allow }
   - { action: subagent, resource: 'general', effect: allow }
   - { action: subagent, resource: 'great-builder/sub/analyzer', effect: allow }

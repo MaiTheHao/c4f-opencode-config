@@ -12,9 +12,9 @@ config/migrations/infrastructure — even if it sounds operational. Also RETRIEV
 first for anything involving schema, permissions, scheduling, tokens or
 providers.
 
-Then call `code_retrieval` (inside `execute`):
+Then call `code_retrieval` directly, before grep/read/shell:
 
-`tools.code_retrieval({ query: "<identifiers or technical terms>", top_k: 8 })`
+`code_retrieval({ query: "<identifiers or technical terms>", top_k: 8 })`
 
 Rewrite a business-level question into technical terms before querying.
 
