@@ -8,21 +8,29 @@ permissions:
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
   - { action: skill, resource: '*', effect: allow }
-  # Observed 2026-11-12: in headless subagents `ask` executed with no prompt. Treat it as allow; the deny rules below are the guard.
-  - { action: shell, resource: '*', effect: ask }
+  - { action: code_retrieval, resource: '*', effect: allow }
+  # Shell is an allowlist: anything not listed is denied. Read-only git + build/test runners.
   - { action: shell, resource: 'ls *', effect: allow }
   - { action: shell, resource: 'tree *', effect: allow }
   - { action: shell, resource: 'git status*', effect: allow }
   - { action: shell, resource: 'git diff*', effect: allow }
   - { action: shell, resource: 'git log*', effect: allow }
   - { action: shell, resource: 'git show*', effect: allow }
-  - { action: shell, resource: 'git commit*', effect: deny }
-  - { action: shell, resource: 'git push*', effect: deny }
-  - { action: shell, resource: 'git reset*', effect: deny }
-  - { action: shell, resource: 'git clean*', effect: deny }
-  - { action: shell, resource: 'rm -rf*', effect: deny }
-  - { action: execute, resource: '*', effect: allow }
-  - { action: code_retrieval, resource: '*', effect: allow }
+  - { action: shell, resource: 'git -C * status*', effect: allow }
+  - { action: shell, resource: 'git -C * diff*', effect: allow }
+  - { action: shell, resource: 'git -C * log*', effect: allow }
+  - { action: shell, resource: 'git -C * show*', effect: allow }
+  - { action: shell, resource: 'mvn *', effect: allow }
+  - { action: shell, resource: './mvnw *', effect: allow }
+  - { action: shell, resource: 'gradle *', effect: allow }
+  - { action: shell, resource: './gradlew *', effect: allow }
+  - { action: shell, resource: 'npm test*', effect: allow }
+  - { action: shell, resource: 'npm run *', effect: allow }
+  - { action: shell, resource: 'pnpm test*', effect: allow }
+  - { action: shell, resource: 'pnpm run *', effect: allow }
+  - { action: shell, resource: 'node --test*', effect: allow }
+  - { action: shell, resource: 'pytest*', effect: allow }
+  - { action: shell, resource: 'python -m pytest*', effect: allow }
 ---
 
 ## Context

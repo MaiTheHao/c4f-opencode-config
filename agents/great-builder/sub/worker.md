@@ -8,17 +8,29 @@ permissions:
   - { action: grep, resource: '*', effect: allow }
   - { action: glob, resource: '*', effect: allow }
   - { action: edit, resource: '*', effect: allow }
-  - { action: write, resource: '*', effect: allow }
-  - { action: patch, resource: '*', effect: allow }
   - { action: edit, resource: 'AGENTS.md', effect: deny }
-  - { action: write, resource: 'AGENTS.md', effect: deny }
-  - { action: execute, resource: '*', effect: allow }
-  - { action: skill, resource: '*', effect: ask }
-  # Observed 2026-11-12: in headless subagents `ask` executed with no prompt. Treat it as allow; the deny rules below are the guard.
-  - { action: shell, resource: '*', effect: ask }
+  - { action: code_retrieval, resource: '*', effect: allow }
+  - { action: skill, resource: '*', effect: allow }
+  # Shell is an allowlist: anything not listed is denied. Read-only git, build/test runners, file delete/mkdir, path-scoped restore.
   - { action: shell, resource: 'git status*', effect: allow }
   - { action: shell, resource: 'git diff*', effect: allow }
-  - { action: shell, resource: 'git worktree*', effect: deny }
+  - { action: shell, resource: 'git -C * status*', effect: allow }
+  - { action: shell, resource: 'git -C * diff*', effect: allow }
+  - { action: shell, resource: 'rm *', effect: allow }
+  - { action: shell, resource: 'rm -*', effect: deny }
+  - { action: shell, resource: 'mkdir *', effect: allow }
+  - { action: shell, resource: 'git restore -- *', effect: allow }
+  - { action: shell, resource: 'mvn *', effect: allow }
+  - { action: shell, resource: './mvnw *', effect: allow }
+  - { action: shell, resource: 'gradle *', effect: allow }
+  - { action: shell, resource: './gradlew *', effect: allow }
+  - { action: shell, resource: 'npm test*', effect: allow }
+  - { action: shell, resource: 'npm run *', effect: allow }
+  - { action: shell, resource: 'pnpm test*', effect: allow }
+  - { action: shell, resource: 'pnpm run *', effect: allow }
+  - { action: shell, resource: 'node --test*', effect: allow }
+  - { action: shell, resource: 'pytest*', effect: allow }
+  - { action: shell, resource: 'python -m pytest*', effect: allow }
 ---
 
 ## Role
@@ -36,8 +48,8 @@ You are an executor, not a designer. The approved plan is the execution contract
 - Grep only for a symbol or string the plan names. No exploratory search.
 - Do not change `Goal`, `Acceptance`, `Verify`, `Rules`, `Review Focus`, or any unit's `Spec` or `Tests`. You may tick `Done` and append `## Deviation Log`.
 - Never create, switch or remove a worktree. Work only in the repo path you were given; never change the working root.
-- Never dispatch subagents. Never commit, push, reset, or delete outside scope.
-- Never install dependencies, run destructive commands, or touch non-local environments unless the plan says so.
+- Never dispatch subagents. Commit, push and reset are not permitted. Delete only files the plan marks `DELETE`.
+- Shell is an allowlist (read-only git, build/test runners, `rm <file>`, `mkdir`, `git restore -- <path>`). Nothing else runs, even if the plan asks for it: return `BLOCKED` naming the command. One shell command per call; never chain with `;`, `&&` or `|`.
 - Never weaken assertions, skip tests, suppress errors, add dummy fallbacks, or edit tests to force a pass.
 - Never print secrets in logs or walkthroughs.
 
@@ -52,7 +64,7 @@ You are an executor, not a designer. The approved plan is the execution contract
 
 ## Scope self-check
 
-`git diff --name-only` plus untracked files from `git status --porcelain`, excluding `local/agents/**`, must be a subset of `AffectedFiles`. Revert any stray file you changed and report it. Leave pre-existing unrelated changes alone and report them.
+`git diff --name-only` plus untracked files from `git status --porcelain`, excluding `local/agents/**`, must be a subset of `AffectedFiles`. Revert any stray file you changed (`git restore -- <path>` if tracked, `rm <path>` if untracked) and report it. Leave pre-existing unrelated changes alone and report them.
 
 ## Status
 

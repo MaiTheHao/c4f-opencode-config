@@ -23,7 +23,6 @@ permissions:
   - { action: shell, resource: 'git -C * show*', effect: allow }
   - { action: shell, resource: 'git -C * ls-files*', effect: allow }
   - { action: shell, resource: 'git -C * rev-parse*', effect: allow }
-  - { action: execute, resource: '*', effect: allow }
   - { action: code_retrieval, resource: '*', effect: allow }
   - { action: skill, resource: '*', effect: allow }
 ---
