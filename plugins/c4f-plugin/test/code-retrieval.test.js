@@ -75,10 +75,17 @@ const SEARCH_HITS = [
   { score: -2.1, file_path: 'src/JwtProvider.java', symbol: 'validateToken', node_type: 'method_declaration', start_line: 66, end_line: 73 },
 ];
 
+test('registers a direct tool by default; Code Mode is opt-in', () => {
+  assert.equal(normalizeOptions({}, {}).codemode, false);
+  assert.equal(normalizeOptions({ codemode: true }, {}).codemode, true);
+  assert.equal(normalizeOptions({ codemode: false }, { C4F_RETRIEVAL_CODEMODE: '1' }).codemode, false);
+  assert.equal(normalizeOptions({}, { C4F_RETRIEVAL_CODEMODE: '1' }).codemode, true);
+});
+
 test('search on an initialized repo renders hits best-first with metadata', async (t) => {
   const { out, tool } = await execute(t, { input: { query: 'jwt validate' }, hits: SEARCH_HITS });
 
-  assert.equal(tool.options.codemode, true);
+  assert.equal(tool.options.codemode, false);
   assert.match(out.content, /2 hit\(s\)/);
   assert.match(out.content, /`validateToken`/);
   const first = out.content.indexOf('src/AccessTokenStrategy.java');

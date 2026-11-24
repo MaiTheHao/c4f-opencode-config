@@ -44,6 +44,7 @@ test('registers model_insights with trigger metadata and live variants', async (
     registration = await setup(ctx);
     assert.equal(added.length, 1);
     assert.equal(added[0].name, 'model_insights');
+    assert.equal(added[0].options.codemode, false);
 
     const list = await added[0].execute({ action: 'list' });
     assert.match(list.content, /model-a/);

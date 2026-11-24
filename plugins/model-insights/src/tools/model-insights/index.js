@@ -53,7 +53,9 @@ export async function registerModelInsightsTool({ ctx, snapshot, refresh }) {
   const transformResult = await ctx.tool.transform((editor) => {
     editor.add({
       name: TOOL_NAME,
-      options: { codemode: true },
+      // First-class tool: one call per routing decision, and the orchestrators
+      // that need it also need it without a Code Mode detour.
+      options: { codemode: false },
       description: DESCRIPTION,
       input: INPUT_SCHEMA,
       execute: async (input) => {

@@ -33,8 +33,12 @@ export function normalizeOptions(input = {}, env = process.env) {
     scriptsDir: String(input.scriptsDir ?? env.C4F_RETRIEVAL_SCRIPTS ?? DEFAULT_SCRIPTS_DIR),
     root: String(input.root ?? env.C4F_RETRIEVAL_ROOT ?? ''),
     db: String(input.db ?? env.C4F_RETRIEVAL_DB ?? ''),
-    // Code Mode keeps parity with model_insights; set codemode: false for a first-class tool.
-    codemode: input.codemode !== false,
+    // First-class tool by default: a single-shot lookup with a small schema, and
+    // the "retrieve before grep" rule should not depend on a Code Mode detour.
+    // Opt back in with codeRetrieval.codemode=true or C4F_RETRIEVAL_CODEMODE=1.
+    codemode: input.codemode === undefined
+      ? env.C4F_RETRIEVAL_CODEMODE === '1'
+      : input.codemode !== false,
   };
 }
 

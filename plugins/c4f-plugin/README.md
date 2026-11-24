@@ -10,7 +10,7 @@ independent and is registered in `src/modules/registry.js`.
 
 ## Module: code-retrieval
 
-Registers one Code Mode tool, `code_retrieval`, backed by the Python indexer in
+Registers one first-class tool, `code_retrieval`, backed by the Python indexer in
 `src/modules/code-retrieval/scripts/` (the scripts ship with the plugin — there is no separate skill).
 Reads go through a readonly FTS5 store; indexing happens exclusively via the
 indexer CLI (`scripts/index.py`, incl. `--watch`).
@@ -84,7 +84,7 @@ spawns the indexer. `C4F_RETRIEVAL_TOOL=0` disables the tool.
 | `scriptsDir` | `<module>/scripts` | Python indexer location |
 | `root` | session directory | Default project root |
 | `db` | `<root>/local/agents/retrieval/code_bm25.db` | Explicit database file |
-| `codemode` | `true` | Code Mode tool; `false` exposes a first-class tool |
+| `codemode` | `false` | First-class tool; `true` moves it into Code Mode |
 
 Failures are returned as tool content, never thrown. A search against a missing
 index explains how to build it; a stale index names the rebuild command; without

@@ -6,8 +6,8 @@ export const MAX_QUERY_LENGTH = 256;
 
 // NOTE: tool catalogs truncate descriptions (~140 chars visible). The first
 // sentence(s) below MUST carry the retrieval trigger rule so the rule survives
-// truncation; the rest reinforces. Agents can read the full text via
-// search({ query: "code_retrieval" }).
+// truncation; the rest reinforces. The tool is registered as a first-class tool
+// by default, so the full text ships with its definition.
 export const DESCRIPTION = [
   'Semantic code+config+docs search. Use BEFORE grep/read/shell for HOW/WHY/WHERE,',
   'unnamed behaviors, multi-component flows, config/migration/infra topics,',

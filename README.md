@@ -321,7 +321,7 @@ Add `--json` for machine-readable output.
 | Surface | Purpose |
 |---|---|
 | `model_insights` tool (`list`, `inspect`, `pricing`, `variants`) | Live models: provider, cost class, cost tier, triggers, variants |
-| `code_retrieval` tool (`search`, `index`) | Tree-sitter AST + BM25 code search; initialized per repo by `action=index` |
+| `code_retrieval` tool (`search`) | Tree-sitter AST + BM25 code search; build or refresh the index with the indexer CLI |
 | `python3 skills/oc-agent-config/scripts/validate_agent.py <files>` | Validate agent files |
 
 `model-insights` is read-only: it never filters, blocks, enables, or disables models.
