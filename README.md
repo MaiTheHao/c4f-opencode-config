@@ -108,18 +108,18 @@ python3 "$HOME\.config\opencode\skills\c4f-update\scripts\c4f_update.py" install
 | Skill | Purpose |
 |---|---|
 | `brainstorming` | Architecture & requirements clarification |
-| `refactoring-code` | Code quality, SOLID, and refactoring guidelines |
 | `writing-plans` | Implementation plan drafting standard |
 | `executing-plans` | Checkpoint-driven execution process |
 | `git-commit` | Conventional commit analysis and staging |
 | `mermaid` | Workflow and architectural diagrams |
 | `skill-creator` | Skill creation, iteration, and evaluation workflow |
+| `find-skills` | Skill discovery and installation |
 
 > [!NOTE]
 > `skills/oc-routing` is the **single routing skill** for both dev and research subagents.
 > Every primary embeds its lane parameters and audit rules in a `### Routing` section —
 > the **HIGH primaries** also pin roles and models, while the others pick the model from the skill's table.
-> The evidence-tier rubric lives in `skills/oc-research-tiering`, loaded by every research agent through the `skill` tool **before** it classifies a source.
+> Source-tiering and confidence rules live inside each research subagent; there is no separate tiering skill.
 
 ---
 
@@ -217,21 +217,22 @@ Windows: run the same commands in PowerShell with the script path
 .
 ├── agents/                  # OpenCode agent definitions
 │   ├── great-builder/       # Implementation pipelines, split by effort
-│   │   ├── build-low.md     # Primary: direct edit of one small change (≤2 files)
-│   │   ├── build-medium.md  # Primary: analyzer, one checkpoint, direct edit or ≤5 workers
-│   │   ├── build-high.md    # Primary: plan-driven, one plan at a time, mandatory review before report
-│   │   └── sub/             # Read-only specialist subagents
-│   │       ├── analyzer.md  # Scope discovery and codebase analysis
-│   │       ├── bulk.md      # Mechanical, spec-complete edits
-│   │       └── reviewer.md  # Verifies the diff or commit against an approved plan
+│   │   ├── build-low.md     # Guided builder: direct edit for Trivial/Bounded changes (≤3 files)
+│   │   ├── build-medium.md  # Delegating orchestrator: plans, workers, selective review
+│   │   ├── build-high.md    # Master orchestrator: approved plans, one worker at a time, independent review
+│   │   └── sub/             # Specialist subagents
+│   │       ├── analyzer.md  # Read-only code tracing, `file:line` evidence
+│   │       ├── reviewer.md  # Independent diff review against the plan (EXEC/AUDIT)
+│   │       └── worker.md    # Executes one approved plan test-first, edits only `AffectedFiles`
 │   └── research/            # Web research pipelines
-│       ├── fast.md          # Low effort research orchestrator
-│       ├── normal.md        # Medium effort research orchestrator
-│       ├── high.md          # Maximum effort research orchestrator
-│       └── shared/          # Research subagents (scout, deep, quant, skeptic, validation, timeline)
+│       ├── research-medium.md # Delegating orchestrator: scouts, units, one selective audit
+│       ├── research-high.md   # Master orchestrator: waves, paired independent audits
+│       └── sub/               # Research subagents
+│           ├── auditor.md     # Independent claim audit (SKEPTIC/VERIFY)
+│           ├── researcher.md  # Evidence gathering for one research unit
+│           └── scout.md       # Web reconnaissance: tagged sub-questions, no answers
 ├── skills/                  # Local repo skills
 │   ├── c4f-update/          # Bootstrap, update, deps/config seeding
-│   ├── oc-research-tiering/ # T1/T2/T3 evidence rubric + ResearchReport schema
 │   └── oc-routing/          # Model routing & session reuse (dev + research lanes)
 ├── plugins/                 # Native plugins (loaded by OpenCode)
 │   ├── model-insights/      # Live availability, pricing, variants, task triggers (read-only)
@@ -252,7 +253,7 @@ Two agent families plus shared routing. The **authoritative, up-to-date list of 
 | Implementation | [`agents/great-builder/`](agents/great-builder/) | Effort-tiered build pipelines with read-only analyzer and reviewer subagents |
 | Research | [`agents/research/`](agents/research/) | Effort-tiered research pipelines with shared research subagents |
 
-Installed agent IDs are **namespaced by directory** — e.g. `great-builder/build-low`, `great-builder/sub/analyzer`, `research/high`, `research/shared/scout`.
+Installed agent IDs are **namespaced by directory** — e.g. `great-builder/build-low`, `great-builder/sub/analyzer`, `research/research-high`, `research/sub/scout`.
 
 > [!NOTE]
 > Effort tiers (low / medium / high) select the flow, worker budget, and checkpoint policy for each family. The exact tiering behaviour is defined in the individual agent files and in `skills/oc-routing` — not restated here, to avoid drift.
@@ -264,7 +265,6 @@ Installed agent IDs are **namespaced by directory** — e.g. `great-builder/buil
 | Layer | Location | Notes |
 |---|---|---|
 | Routing skill | `skills/oc-routing/` | Single routing skill for **dev + research** lanes; session reuse |
-| Tier rubric | `skills/oc-research-tiering/` | T1/T2/T3 evidence rubric + `ResearchReport` schema |
 | Repo update | `skills/c4f-update/` | `status` / `install` for both C4F repos |
 
 **How routing resolves:**
@@ -272,7 +272,7 @@ Installed agent IDs are **namespaced by directory** — e.g. `great-builder/buil
 1. Every primary agent embeds its **lane parameters** and **audit rules** under `### Routing`.
 2. **HIGH primaries** pin both roles and models explicitly.
 3. All other primaries select the model from the routing skill's table.
-4. Every research agent loads `oc-research-tiering` via the `skill` tool **before** classifying a source.
+4. Research primaries dispatch `research/sub/*` units; each subagent applies the source-tier rubric inline.
 
 ---
 
