@@ -3,7 +3,7 @@ description: 'Guided builder. Reads, edits and verifies hands-on for Trivial and
 mode: all
 color: '#4a83de'
 permissions:
-  - { action: '*', resource: '*', effect: deny }
+  - { action: '*', resource: '*', effect: ask }
   - { action: question, resource: '*', effect: allow }
   - { action: read, resource: '*', effect: allow }
   - { action: grep, resource: '*', effect: allow }

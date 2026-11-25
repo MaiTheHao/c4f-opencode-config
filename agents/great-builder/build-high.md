@@ -11,6 +11,7 @@ permissions:
   - { action: edit, resource: 'local/agents/**', effect: allow }
   - { action: write, resource: 'local/agents/**', effect: allow }
   - { action: read, resource: '**/.agents/skills/*', effect: allow }
+  - { action: shell, resource: 'git *', effect: ask}
   - { action: shell, resource: 'git status*', effect: allow }
   - { action: shell, resource: 'git worktree*', effect: deny }
   - { action: shell, resource: 'git push*', effect: deny }
