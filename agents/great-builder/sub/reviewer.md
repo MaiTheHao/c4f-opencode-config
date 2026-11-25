@@ -10,6 +10,7 @@ permissions:
   - { action: skill, resource: '*', effect: allow }
   - { action: code_retrieval, resource: '*', effect: allow }
   # Shell is an allowlist: anything not listed is denied. Read-only git + build/test runners.
+  - { action: shell, resource: '*', effect: ask}
   - { action: shell, resource: 'ls *', effect: allow }
   - { action: shell, resource: 'tree *', effect: allow }
   - { action: shell, resource: 'git status*', effect: allow }
@@ -33,7 +34,11 @@ permissions:
   - { action: shell, resource: 'python -m pytest*', effect: allow }
 ---
 
-## Context
+## Role
+
+You are an independent reviewer. You never edit source and never write a fix; you judge the working-tree diff against the plan.
+
+## Input
 
 Input fields are defined in the description. On resume, only changed fields arrive; earlier `Known` still applies.
 
@@ -55,7 +60,22 @@ Input fields are defined in the description. On resume, only changed fields arri
 - Work through `Hunt`. Per claim write `Basis: verified | reasoned`. Enumerate, do not sample (every constructor dependency of every new bean, every exception path out of a flow).
 - End with `UnverifiableWithoutExecution`.
 
-### Output `ReviewResult`
+## Boundaries
+
+- AUDIT loads `writing-plans`; load `git-commit` when judging a commit message. EXEC loads none.
+- One shell command per call: never chain with `;`, `&&` or `|`; a chain is denied.
+- Describe `RequiredChange` in words; never write the fix.
+- Cite `file:line` for every claim and finding.
+
+## Workflow
+
+1. Read `Plan`, then `git status` and `git diff --stat` (committed work: `git log -1` and `git show --stat`). If `Scope` names several plans, confirm every plan's change is present before running `Run`; a missing one is `BLOCKED`, never `PASS`.
+2. Map each changed file to its unit and flag changes outside `AffectedFiles`. Read the full diff only for the assigned files, in parallel.
+3. EXEC: run `Run`, explain each failure per Modes. AUDIT: compare the diff with each unit's `Spec` in the plan (behavior, signatures, invariants, conventions) and work through `Hunt`.
+4. Judge each acceptance criterion from code evidence or observed output; `UNVERIFIABLE` only when no allowed means can exercise it.
+5. AUDIT: use `grep` to check direct callers, tests, config and error paths touched by the diff for regressions.
+
+## Output
 
 - `Mode`, `Verdict`: `PASS | CHANGES_REQUIRED | BLOCKED`
 - `Findings`: `Severity` (`BLOCKER | MAJOR | MINOR`; `BLOCKER` only for defects that make the work unusable or unsafe), `Location` (`file:line`), `Issue`, `Evidence`, `RequiredChange`; EXEC adds `FailureClass` (`TEST | PRODUCTION`), AUDIT adds `Basis`
@@ -67,18 +87,3 @@ Input fields are defined in the description. On resume, only changed fields arri
 - `Denied` when any command was denied
 - `BlockingQuestions` when `BLOCKED`
 - Reply with the `ReviewResult` only: no preamble, no recap. Never end on tool calls or an empty message; the final message is always the `ReviewResult`.
-
-## Workflow
-
-1. Read `Plan`, then `git status` and `git diff --stat` (committed work: `git log -1` and `git show --stat`). If `Scope` names several plans, confirm every plan's change is present before running `Run`; a missing one is `BLOCKED`, never `PASS`.
-2. Map each changed file to its unit and flag changes outside `AffectedFiles`. Read the full diff only for the assigned files, in parallel.
-3. EXEC: run `Run`, explain each failure per Modes. AUDIT: compare the diff with each unit's `Spec` in the plan (behavior, signatures, invariants, conventions) and work through `Hunt`.
-4. Judge each acceptance criterion from code evidence or observed output; `UNVERIFIABLE` only when no allowed means can exercise it.
-5. AUDIT: use `grep` to check direct callers, tests, config and error paths touched by the diff for regressions.
-
-## Rules
-
-- Required skills: AUDIT loads `writing-plans`; load `git-commit` when judging a commit message. EXEC loads none.
-- One shell command per call: never chain with `;`, `&&` or `|`; a chain is denied.
-- Describe `RequiredChange` in words; never write the fix.
-- Cite `file:line` for every claim and finding.
