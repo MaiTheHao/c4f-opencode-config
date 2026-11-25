@@ -22,21 +22,14 @@
       ]
     },
     {
-      "id": "mimo-v2.6-flash",
-      "costTier": 3,
-      "triggers": [
-        "Review code và audit chất lượng mã, phát hiện lỗi tiềm ẩn và vấn đề thiết kế",
-        "Kiểm tra dependency, phiên bản và rủi ro chuỗi cung ứng phần mềm"
-      ]
-    },
-    {
       "id": "glm-5.3-flash",
       "costTier": 4,
       "triggers": [
         "Đánh giá bảo mật mã nguồn và rà soát lỗ hổng theo checklist",
         "Audit tĩnh (static audit) và kiểm tra tuân thủ quy ước, pattern trong dự án",
-        "Tổng hợp kết quả từ nhiều nguồn và viết báo cáo cuối cùng",
-        "Review kiến trúc và đánh giá tác động của thay đổi ở mức hệ thống"
+        "Review kiến trúc và đánh giá tác động của thay đổi ở mức hệ thống",
+        "Review code và audit chất lượng mã, phát hiện lỗi tiềm ẩn và vấn đề thiết kế",
+        "Kiểm tra dependency, phiên bản và rủi ro chuỗi cung ứng phần mềm"
       ]
     }
   ]
